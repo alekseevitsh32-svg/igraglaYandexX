@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Сборка ПК — Idle Tycoon</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --card: #1a2233;
+    --card-hover: #222c42;
+    --border: #2a3450;
+    --text: #e6ecff;
+    --muted: #7b8bb0;
+    --accent: #00e0b8;
+    --accent2: #00b3ff;
+    --gold: #ffc93c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #16203a 0%, #0a0e17 60%);
+    color: var(--text);
+    min-height: 100vh;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(10, 14, 23, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .stat {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 12px;
+    min-width: 0;
+  }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .value { font-size: 18px; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat .value.acc { color: var(--accent); }
+
+  /* LAYOUT */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  /* CLICKER */
+  .clicker {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pc-visual {
+    font-size: 120px;
+    line-height: 1;
+    filter: drop-shadow(0 0 30px rgba(0, 224, 184, 0.35));
+    transition: transform 0.08s ease;
+  }
+  .pc-visual.punch { transform: scale(1.12); }
+
+  #buildBtn {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #04121a;
+    border: none;
+    border-radius: 16px;
+    padding: 18px 32px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 224, 184, 0.35);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    line-height: 1.2;
+    text-align: center;
+  }
+  #buildBtn small { display: block; font-size: 13px; font-weight: 600; opacity: 0.75; margin-top: 4px; }
+  #buildBtn:active { transform: scale(0.96); box-shadow: 0 4px 12px rgba(0, 224, 184, 0.45); }
+
+  /* FLOAT TEXT */
+  .float-text {
+    position: fixed;
+    pointer-events: none;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--gold);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    animation: floatUp 0.8s ease-out forwards;
+    z-index: 100;
+    transform: translate(-50%, 0);
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(1.2); }
+  }
+
+  /* SHOP */
+  .shop {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+  .shop h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .upgrade {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text);
+    width: 100%;
+  }
+  .upgrade:hover { background: var(--card-hover); transform: translateY(-1px); }
+  .upgrade.disabled { opacity: 0.45; cursor: not-allowed; }
+  .upgrade.disabled:hover { transform: none; background: var(--bg); }
+  .upgrade.affordable { border-color: rgba(0, 224, 184, 0.5); }
+  .upgrade .icon { font-size: 28px; flex-shrink: 0; width: 40px; text-align: center; }
+  .upgrade .info { flex: 1; min-width: 0; }
+  .upgrade .name { font-size: 14px; font-weight: 700; }
+  .upgrade .lvl { color: var(--accent); font-size: 12px; font-weight: 600; margin-left: 4px; }
+  .upgrade .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .upgrade .cost { font-size: 14px; font-weight: 800; color: var(--gold); white-space: nowrap; }
+
+  footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  footer button {
+    background: none; border: none; color: var(--muted);
+    text-decoration: underline; cursor: pointer; font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="stat">
+    <div class="label">Деньги</div>
+    <div class="value" id="money">0 ₽</div>
+  </div>
+  <div class="stat">
+    <div class="label">В секунду</div>
+    <div class="value acc" id="ips">0 ₽</div>
+  </div>
+  <div class="stat">
+    <div class="label">Собрано ПК</div>
+    <div class="value" id="pcs">0</div>
+  </div>
+</header>
+
+<main>
+  <section class="clicker">
+    <div class="pc-visual" id="pcVisual">🖥️</div>
+    <button id="buildBtn">
+      Собрать ПК
+      <small id="pcPrice">+10 ₽</small>
+    </button>
+  </section>
+
+  <aside class="shop">
+    <h2>Комплектующие</h2>
+    <div id="click-upgrades"></div>
+
+    <h2>Автоматизация</h2>
+    <div id="auto-upgrades"></div>
+  </aside>
+</main>
+
+<footer>
+  <button id="resetBtn">Сбросить прогресс</button>
+</footer>
+
+<script>
+/* ===========================
+   КОНФИГ ИГРЫ
+   =========================== */
+const SAVE_KEY = 'pc-tycoon-v1';
+const BASE_PRICE = 10;          // базовая цена ПК за клик
+const OFFLINE_CAP_HOURS = 8;    // максимум часов офлайн-дохода
+const OFFLINE_EFFICIENCY = 0.5; // офлайн даёт 50% от обычного дохода
+const SAVE_INTERVAL = 5000;     // автосейв каждые 5 сек
+
+// Все апгрейды. type: 'click' (увеличивает цену ПК) или 'auto' (доход в секунду)
+const UPGRADES = [
+  // Комплектующие
+  { id: 'case',    name: 'Корпус',            icon: '📦', type: 'click', bonus: 1,  baseCost: 10,    costMult: 1.10 },
+  { id: 'mb',      name: 'Материнка',         icon: '🔌', type: 'click', bonus: 2,  baseCost: 25,    costMult: 1.11 },
+  { id: 'ram',     name: 'ОЗУ',               icon: '🧠', type: 'click', bonus: 4,  baseCost: 60,    costMult: 1.12 },
+  { id: 'cooler',  name: 'Охлаждение',        icon: '❄️', type: 'click', bonus: 6,  baseCost: 140,   costMult: 1.13 },
+  { id: 'ssd',     name: 'SSD',               icon: '💾', type: 'click', bonus: 8,  baseCost: 220,   costMult: 1.13 },
+  { id: 'cpu',     name: 'Процессор',         icon: '🔲', type: 'click', bonus: 12, baseCost: 400,   costMult: 1.14 },
+  { id: 'monitor', name: 'Монитор',           icon: '🖥️', type: 'click', bonus: 18, baseCost: 700,   costMult: 1.15 },
+  { id: 'gpu',     name: 'Видеокарта',        icon: '🎮', type: 'click', bonus: 30, baseCost: 1500,  costMult: 1.16 },
+
+  // Автоматизация
+  { id: 'assembler', name: 'Сборщик',         icon: '👷', type: 'auto', bonus: 1,  baseCost: 100,    costMult: 1.20 },
+  { id: 'courier',   name: 'Курьер',          icon: '🚚', type: 'auto', bonus: 8,  baseCost: 900,    costMult: 1.22 },
+  { id: 'shop',      name: 'Магазин',         icon: '🏪', type: 'auto', bonus: 50, baseCost: 7000,   costMult: 1.25 },
+  { id: 'factory',   name: 'Фабрика',         icon: '🏭', type: 'auto', bonus: 300, baseCost: 60000, costMult: 1.28 },
+];
+
+/* ===========================
+   СОСТОЯНИЕ
+   =========================== */
+const state = {
+  money: 0,
+  totalPCs: 0,
+  levels: {},   // id -> уровень
+  lastTick: Date.now(),
+};
+
+// Быстрый доступ к DOM
+const $ = (id) => document.getElementById(id);
+const els = {
+  money: $('money'),
+  ips: $('ips'),
+  pcs: $('pcs'),
+  pcPrice: $('pcPrice'),
+  pcVisual: $('pcVisual'),
+  buildBtn: $('buildBtn'),
+  clickList: $('click-upgrades'),
+  autoList: $('auto-upgrades'),
+  resetBtn: $('resetBtn'),
+};
+
+/* ===========================
+   ХЕЛПЕРЫ
+   =========================== */
+function getLevel(id) { return state.levels[id] || 0; }
+
+function getCost(u) {
+  return Math.floor(u.baseCost * Math.pow(u.costMult, getLevel(u.id)));
+}
+
+function getClickPrice() {
+  let price = BASE_PRICE;
+  for (const u of UPGRADES) {
+    if (u.type === 'click') price += u.bonus * getLevel(u.id);
+  }
+  return price;
+}
+
+function getIncomePerSec() {
+  let ips = 0;
+  for (const u of UPGRADES) {
+    if (u.type === 'auto') ips += u.bonus * getLevel(u.id);
+  }
+  return ips;
+}
+
+function fmt(n) {
+  n = Math.floor(n);
+  if (n < 1000) return n.toString();
+  if (n < 1e6) return (n / 1e3).toFixed(2) + 'K';
+  if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
+  if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
+  return (n / 1e12).toFixed(2) + 'T';
+}
+
+/* ===========================
+   ДЕЙСТВИЯ
+   =========================== */
+function buildPC() {
+  const price = getClickPrice();
+  state.money += price;
+  state.totalPCs += 1;
+
+  // анимация
+  els.pcVisual.classList.add('punch');
+  setTimeout(() => els.pcVisual.classList.remove('punch'), 80);
+  showFloat('+' + fmt(price) + ' ₽');
+
+  updateHeader();
+}
+
+function buyUpgrade(id) {
+  const u = UPGRADES.find(x => x.id === id);
+  if (!u) return;
+  const cost = getCost(u);
+  if (state.money < cost) return;
+
+  state.money -= cost;
+  state.levels[id] = getLevel(id) + 1;
+
+  updateHeader();
+  updateShopUI();
+  updateClickPrice();
+}
+
+function showFloat(text) {
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  const rect = els.buildBtn.getBoundingClientRect();
+  el.style.left = (rect.left + rect.width / 2) + 'px';
+  el.style.top = (rect.top + rect.height / 2) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+/* ===========================
+   UI
+   =========================== */
+function updateHeader() {
+  els.money.textContent = fmt(state.money) + ' ₽';
+  els.ips.textContent = fmt(getIncomePerSec()) + ' ₽';
+  els.pcs.textContent = fmt(state.totalPCs);
+}
+
+function updateClickPrice() {
+  els.pcPrice.textContent = '+' + fmt(getClickPrice()) + ' ₽';
+}
+
+const upgEls = {}; // id -> { root, lvl, cost }
+
+function buildShop() {
+  for (const u of UPGRADES) {
+    const btn = document.createElement('button');
+    btn.className = 'upgrade';
+    btn.innerHTML = `
+      <div class="icon">${u.icon}</div>
+      <div class="info">
+        <div class="name">${u.name}<span class="lvl">Ур. 0</span></div>
+        <div class="desc">${u.type === 'click' ? '+' + u.bonus + ' ₽ за клик' : '+' + u.bonus + ' ₽/сек'}</div>
+      </div>
+      <div class="cost">0 ₽</div>
+    `;
+    btn.addEventListener('click', () => buyUpgrade(u.id));
+    (u.type === 'click' ? els.clickList : els.autoList).appendChild(btn);
+
+    upgEls[u.id] = {
+      root: btn,
+      lvl: btn.querySelector('.lvl'),
+      cost: btn.querySelector('.cost'),
+    };
+  }
+}
+
+function updateShopUI() {
+  for (const u of UPGRADES) {
+    const ref = upgEls[u.id];
+    const lvl = getLevel(u.id);
+    const cost = getCost(u);
+    const canBuy = state.money >= cost;
+
+    ref.lvl.textContent = 'Ур. ' + lvl;
+    ref.cost.textContent = fmt(cost) + ' ₽';
+    ref.root.classList.toggle('affordable', canBuy);
+    ref.root.classList.toggle('disabled', !canBuy);
+  }
+}
+
+/* ===========================
+   СОХРАНЕНИЕ
+   =========================== */
+function save() {
+  state.lastTick = Date.now();
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (e) { /* ignore */ }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    Object.assign(state, saved);
+    if (!state.levels) state.levels = {};
+
+    // офлайн-доход
+    const elapsedSec = Math.max(0, (Date.now() - (state.lastTick || Date.now())) / 1000);
+    const cappedSec = Math.min(elapsedSec, OFFLINE_CAP_HOURS * 3600);
+    const offline = Math.floor(getIncomePerSec() * cappedSec * OFFLINE_EFFICIENCY);
+    if (offline > 0) state.money += offline;
+  } catch (e) { /* ignore */ }
+}
+
+/* ===========================
+   ГЛАВНЫЙ ЦИКЛ
+   =========================== */
+let lastFrame = performance.now();
+function loop(now) {
+  const dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+
+  const ips = getIncomePerSec();
+  if (ips > 0) state.money += ips * dt;
+
+  updateHeader();
+  updateShopUI();
+  requestAnimationFrame(loop);
+}
+
+/* ===========================
+   ИНИЦИАЛИЗАЦИЯ
+   =========================== */
+function init() {
+  load();
+  buildShop();
+  updateHeader();
+  updateClickPrice();
+  updateShopUI();
+
+  els.buildBtn.addEventListener('click', buildPC);
+  els.resetBtn.addEventListener('click', () => {
+    if (confirm('Сбросить весь прогресс?')) {
+      localStorage.removeItem(SAVE_KEY);
+      location.reload();
+    }
+  });
+
+  // автосейв
+  setInterval(save, SAVE_INTERVAL);
+  window.addEventListener('beforeunload', save);
+
+  requestAnimationFrame(loop);
+}
+
+init();
+</script>
+</body>
+</html>
