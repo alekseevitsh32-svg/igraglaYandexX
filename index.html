@@ -75,6 +75,35 @@
     transition:opacity .15s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
   #prompt.show{opacity:1}
 
+  /* Диалоговый пузырь */
+  #dialogBubble{
+    position:fixed;top:160px;left:50%;
+    transform:translateX(-50%) translateY(-10px);
+    background:rgba(10,14,23,.96);
+    border:2px solid #00e0b8;border-radius:16px;
+    padding:14px 22px;max-width:min(560px,90vw);
+    color:#e6ecff;font-size:15px;line-height:1.4;
+    z-index:14;opacity:0;pointer-events:none;
+    transition:opacity .3s, transform .3s;
+    box-shadow:0 8px 32px rgba(0,0,0,.75), 0 0 24px rgba(0,224,184,.25);
+    text-align:center;
+  }
+  #dialogBubble.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #dialogBubble::after{
+    content:'';position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
+    width:0;height:0;
+    border-left:12px solid transparent;
+    border-right:12px solid transparent;
+    border-top:12px solid #00e0b8;
+  }
+  #dialogBubble .speaker{
+    font-size:11px;text-transform:uppercase;color:#7b8bb0;
+    letter-spacing:1.5px;margin-bottom:6px;font-weight:700;
+  }
+  #dialogBubble .speaker b{color:#00e0b8;font-weight:900;letter-spacing:.5px;}
+  #dialogBubble .text{font-style:italic;}
+  body.is-mobile #dialogBubble{top:130px;font-size:13px;padding:10px 16px;max-width:92vw;}
+
   #startScreen{position:fixed;inset:0;background:radial-gradient(ellipse at center,#16203a 0%,#050710 70%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;
     text-align:center;padding:20px;transition:opacity .3s;overflow:auto}
@@ -157,6 +186,10 @@
   <button id="giveBtn">🎁 ВЫДАТЬ ПК КЛИЕНТУ</button>
   <div id="crosshair"></div>
   <div id="prompt"></div>
+  <div id="dialogBubble">
+    <div class="speaker">— <b id="dialogSpeaker">Клиент</b> —</div>
+    <div class="text" id="dialogText"></div>
+  </div>
 
   <div id="startScreen">
     <h1>PC SHOP TYCOON</h1>
@@ -393,7 +426,7 @@
   signLight.position.set(0,3,-ROOM+1); scene.add(signLight);
 
   // ============================================================
-  // ДЕТАЛИ (те же, что были)
+  // ДЕТАЛИ
   // ============================================================
   function makeMotherboard(tier){
     const g = new THREE.Group();
@@ -577,20 +610,11 @@
   // ============================================================
   function makeHuman(opts = {}){
     const {
-      shirt = 0x3498db,
-      pants = 0x2c3e50,
-      skin = 0xffdbac,
-      hair = 0x1a1a1a,
-      shoes = 0x1a1a1a,
-      height = 1,
-      hat = null,          // { type:'cap'|'beanie'|'top', color }
-      headphones = false,
-      sunglasses = false,
-      beard = false,
-      mustache = false,
-      accessory = null,    // 'briefcase'|'bottle'|'backpack'|'watch'|'tie'
-      dirty = false,
-      tieColor = null,
+      shirt = 0x3498db, pants = 0x2c3e50, skin = 0xffdbac,
+      hair = 0x1a1a1a, shoes = 0x1a1a1a, height = 1,
+      hat = null, headphones = false, sunglasses = false,
+      beard = false, mustache = false,
+      accessory = null, dirty = false, tieColor = null,
     } = opts;
 
     const g = new THREE.Group();
@@ -601,20 +625,17 @@
     const pantsMat = new THREE.MeshStandardMaterial({color:pants, roughness:.9});
     const shoeMat  = new THREE.MeshStandardMaterial({color:shoes, roughness:.7});
 
-    // Ноги
     for(const dx of [-.11,.11]){
       const leg = new THREE.Mesh(new THREE.CapsuleGeometry(.075*S,.45*S,6,12), pantsMat);
       leg.position.set(dx*S,.35*S,0); leg.castShadow=!isMobile; g.add(leg);
     }
-    // Обувь
     for(const dx of [-.11,.11]){
       const shoe = new THREE.Mesh(new THREE.BoxGeometry(.15*S,.09*S,.25*S), shoeMat);
       shoe.position.set(dx*S,.045*S,.03*S); shoe.castShadow=!isMobile; g.add(shoe);
     }
-    // Торс
     const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.2*S,.55*S,8,16), shirtMat);
     torso.position.y = 1.02*S; torso.castShadow=!isMobile; g.add(torso);
-    // Галстук
+
     if(tieColor !== null){
       const tieMat = new THREE.MeshStandardMaterial({color:tieColor, roughness:.6});
       const tie = new THREE.Mesh(new THREE.BoxGeometry(.06*S,.32*S,.02*S), tieMat);
@@ -622,32 +643,24 @@
       const knot = new THREE.Mesh(new THREE.BoxGeometry(.07*S,.05*S,.025*S), tieMat);
       knot.position.set(0,1.22*S,.2*S); g.add(knot);
     }
-    // Руки
     for(const dx of [-.26,.26]){
       const arm = new THREE.Mesh(new THREE.CapsuleGeometry(.06*S,.48*S,6,12), shirtMat);
       arm.position.set(dx*S,1.0*S,0); arm.castShadow=!isMobile; g.add(arm);
       const hand = new THREE.Mesh(new THREE.SphereGeometry(.07*S,12,10), skinMat);
       hand.position.set(dx*S,.7*S,0); g.add(hand);
     }
-    // Шея
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(.075*S,.085*S,.1*S,12), skinMat);
     neck.position.y = 1.36*S; g.add(neck);
-    // Голова
     const head = new THREE.Mesh(new THREE.SphereGeometry(.185*S,24,20), skinMat);
     head.position.y = 1.58*S; head.scale.set(1,1.12,1); head.castShadow=!isMobile; g.add(head);
-    // Волосы
     const hairTop = new THREE.Mesh(
-      new THREE.SphereGeometry(.19*S,24,20,0,Math.PI*2,0,Math.PI*.55),
-      hairMat
-    );
+      new THREE.SphereGeometry(.19*S,24,20,0,Math.PI*2,0,Math.PI*.55), hairMat);
     hairTop.position.y = 1.6*S; hairTop.scale.set(1,1.15,1); g.add(hairTop);
-    // Чёлка (если нет шляпы и наушников)
     if(!headphones && !hat){
       const bang = new THREE.Mesh(new THREE.BoxGeometry(.28*S,.06*S,.04*S), hairMat);
       bang.position.set(0,1.66*S,.16*S); g.add(bang);
     }
 
-    // Глаза / очки
     if(sunglasses){
       const sg = new THREE.Mesh(new THREE.BoxGeometry(.32*S,.1*S,.04*S),
         new THREE.MeshStandardMaterial({color:0x050505, metalness:.8, roughness:.15}));
@@ -667,39 +680,31 @@
           new THREE.MeshBasicMaterial({color:0xffffff}));
         glint.position.set(dx*S-.005*S,1.606*S,.183*S); g.add(glint);
       }
-      // Брови
       for(const dx of [-.065,.065]){
         const brow = new THREE.Mesh(new THREE.BoxGeometry(.05*S,.012*S,.02*S), hairMat);
         brow.position.set(dx*S,1.645*S,.16*S); g.add(brow);
       }
     }
-    // Нос
     const nose = new THREE.Mesh(new THREE.ConeGeometry(.022*S,.05*S,8), skinMat);
     nose.rotation.x = Math.PI/2; nose.position.set(0,1.555*S,.175*S); g.add(nose);
-    // Рот
     const mouth = new THREE.Mesh(new THREE.TorusGeometry(.035*S,.008*S,8,16,Math.PI),
       new THREE.MeshBasicMaterial({color:0x8b1a1a}));
     mouth.rotation.x = Math.PI; mouth.rotation.z = Math.PI;
     mouth.position.set(0,1.49*S,.165*S); g.add(mouth);
-    // Уши
     for(const dx of [-.185,.185]){
       const ear = new THREE.Mesh(new THREE.SphereGeometry(.035*S,10,8), skinMat);
       ear.position.set(dx*S,1.57*S,0); ear.scale.set(.6,1,1); g.add(ear);
     }
-    // Усы / борода
     if(mustache){
       const m = new THREE.Mesh(new THREE.BoxGeometry(.11*S,.025*S,.03*S), hairMat);
       m.position.set(0,1.52*S,.17*S); g.add(m);
     }
     if(beard){
       const bd = new THREE.Mesh(
-        new THREE.SphereGeometry(.165*S,16,12,0,Math.PI*2,Math.PI*.6,Math.PI*.4),
-        hairMat
-      );
+        new THREE.SphereGeometry(.165*S,16,12,0,Math.PI*2,Math.PI*.6,Math.PI*.4), hairMat);
       bd.position.set(0,1.56*S,.01*S); g.add(bd);
     }
 
-    // Шляпа
     if(hat){
       const hatMat = new THREE.MeshStandardMaterial({color:hat.color, roughness:.85});
       if(hat.type === 'cap'){
@@ -722,7 +727,6 @@
       }
     }
 
-    // Наушники
     if(headphones){
       const hpMat = new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.5, roughness:.4});
       const arc = new THREE.Mesh(new THREE.TorusGeometry(.21*S,.018*S,8,24,Math.PI), hpMat);
@@ -731,7 +735,6 @@
         const cup = new THREE.Mesh(new THREE.CylinderGeometry(.065*S,.065*S,.045*S,16), hpMat);
         cup.rotation.z = Math.PI/2;
         cup.position.set(dx*S,1.58*S,0); g.add(cup);
-        // RGB-подсветка чашек
         const glow = new THREE.Mesh(new THREE.TorusGeometry(.06*S,.008*S,8,20),
           new THREE.MeshBasicMaterial({color:0x00e0b8}));
         glow.rotation.y = Math.PI/2;
@@ -739,12 +742,10 @@
       }
     }
 
-    // Аксессуары
     if(accessory === 'briefcase'){
       const brMat = new THREE.MeshStandardMaterial({color:0x3a2410, roughness:.6, metalness:.15});
       const br = new THREE.Mesh(new THREE.BoxGeometry(.26*S,.2*S,.1*S), brMat);
       br.position.set(-.34*S,.5*S,0); g.add(br);
-      // Замки
       for(const dx of [-.07,.07]){
         const lock = new THREE.Mesh(new THREE.BoxGeometry(.03*S,.03*S,.02*S),
           new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
@@ -764,11 +765,9 @@
       const bpMat = new THREE.MeshStandardMaterial({color:0x2a4a8a, roughness:.85});
       const bp = new THREE.Mesh(new THREE.BoxGeometry(.36*S,.42*S,.18*S), bpMat);
       bp.position.set(0,1.05*S,-.21*S); g.add(bp);
-      // Замок
       const pocket = new THREE.Mesh(new THREE.BoxGeometry(.26*S,.16*S,.04*S),
         new THREE.MeshStandardMaterial({color:0x1a3a6a, roughness:.85}));
       pocket.position.set(0,.92*S,-.3*S); g.add(pocket);
-      // Лямки
       for(const dx of [-.13,.13]){
         const strap = new THREE.Mesh(new THREE.BoxGeometry(.05*S,.5*S,.02*S),
           new THREE.MeshStandardMaterial({color:0x1a3a6a, roughness:.9}));
@@ -785,7 +784,6 @@
       dial.position.set(.26*S,.72*S,.045*S); g.add(dial);
     }
 
-    // Пятна / потрёпанная одежда
     if(dirty){
       const patchMat = new THREE.MeshStandardMaterial({color:0x2a2018, roughness:1});
       for(let i=0;i<7;i++){
@@ -805,7 +803,6 @@
   // КЛИЕНТЫ ПО TIER
   // ============================================================
   function makeHomeless(){
-    // Базовая — бомж с бутылкой
     const g = new THREE.Group();
     const h = makeHuman({
       shirt: 0x4a3a2a, pants: 0x3a3028, skin: 0x8d5524,
@@ -815,14 +812,12 @@
       accessory: 'bottle', dirty: true,
       height: 0.92,
     });
-    // Слегка сгорблен
     h.rotation.x = 0.06;
     g.add(h);
     return g;
   }
 
   function makeWorker(){
-    // Стандарт — работяга с чемоданом
     const g = new THREE.Group();
     const h = makeHuman({
       shirt: 0xf39c12, pants: 0x2c3e50, skin: 0xffdbac,
@@ -837,7 +832,6 @@
   }
 
   function makeSchoolkid(){
-    // Игровая — школьник в наушниках
     const g = new THREE.Group();
     const kid = makeHuman({
       shirt: 0x9b59b6, pants: 0x2c3e50, skin: 0xffdbac,
@@ -862,7 +856,6 @@
   }
 
   function makeRichMan(){
-    // Премиум — богатый в костюме с часами
     const g = new THREE.Group();
     const h = makeHuman({
       shirt: 0x1a1a2a, pants: 0x1a1a2a, skin: 0xffdbac,
@@ -894,43 +887,29 @@
     g.userData.kind = 'customer';
 
     if(tier === 0){
-      // БОМЖ
       g.add(makeHomeless());
     } else if(tier === 1){
-      // РАБОТЯГА
       g.add(makeWorker());
     } else if(tier === 2){
-      // ШКОЛЬНИК + РОДИТЕЛИ
       const kid = makeSchoolkid();
-      kid.position.set(0, 0, 0);
       g.add(kid);
-
       const mom = makeParent('f');
-      mom.position.set(-0.72, 0, -0.35);
-      mom.rotation.y = 0.18;
+      mom.position.set(-0.72, 0, -0.35); mom.rotation.y = 0.18;
       g.add(mom);
-
       const dad = makeParent('m');
-      dad.position.set(0.72, 0, -0.35);
-      dad.rotation.y = -0.18;
+      dad.position.set(0.72, 0, -0.35); dad.rotation.y = -0.18;
       g.add(dad);
     } else {
-      // БОГАЧ + 2 ОХРАННИКА
       const rich = makeRichMan();
       g.add(rich);
-
       const bg1 = makeBodyguard();
-      bg1.position.set(-0.88, 0, -0.4);
-      bg1.rotation.y = 0.2;
+      bg1.position.set(-0.88, 0, -0.4); bg1.rotation.y = 0.2;
       g.add(bg1);
-
       const bg2 = makeBodyguard();
-      bg2.position.set(0.88, 0, -0.4);
-      bg2.rotation.y = -0.2;
+      bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2;
       g.add(bg2);
     }
 
-    // Помечаем все меши
     g.traverse(o => {
       if(o.isMesh){
         o.userData.kind = 'customer';
@@ -1067,6 +1046,126 @@
   }
 
   // ============================================================
+  // ДИАЛОГИ
+  // ============================================================
+  const dialogBubbleEl = document.getElementById('dialogBubble');
+  const dialogSpeakerEl = document.getElementById('dialogSpeaker');
+  const dialogTextEl = document.getElementById('dialogText');
+  let dialogTimer = null;
+
+  const GREETINGS = {
+    0: [
+      { who:'Бомж', text:'Эй, братан... *ик*... мне бы комп, а? Ну там... погамать...' },
+      { who:'Бомж', text:'Слышь... *ик*... у меня интернет есть! Почти... комп нужен!' },
+      { who:'Бомж', text:'Э, начальник! *ик*... дай комп... я отдам... когда-нибудь...' },
+      { who:'Бомж', text:'Слушай, брат... *ик*... я тут подумал... а давай комп, а?' },
+      { who:'Бомж', text:'Мне бы... *ик*... чтобы в танки играть... и в... *ик*... в эти...' },
+    ],
+    1: [
+      { who:'Работяга', text:'Здорово. Комп нужен рабочий. Без наворотов, но чтобы работал.' },
+      { who:'Работяга', text:'Добрый день. Сыну старому надо — документы печатать.' },
+      { who:'Работяга', text:'Мне бы понадёжнее. Работать буду, не играть.' },
+      { who:'Работяга', text:'Привет. Есть что-нибудь простое, но чтобы лет 5 тянуло?' },
+      { who:'Работяга', text:'Здорово, мужик. Ты мне сборку попроще, я в этом не шарю.' },
+    ],
+    2: [
+      { who:'Школьник', text:'ЙОУ! Нужен игровой ПК! Чтобы КС и Майн шли на ультрах!' },
+      { who:'Школьник', text:'Бро, нужна тема для стрима! С подсветкой, чтобы все завидовали!' },
+      { who:'Школьник', text:'Хочу с RTX! И чтоб 240 ФПС! Ну пожалуйста!' },
+      { who:'Школьник', text:'Мам, скажи ему! Я хочу игровой! А не этот скучный!' },
+      { who:'Мама',     text:'Сынок, только не очень дорогой, хорошо?' },
+      { who:'Папа',     text:'И чтобы уроки делал! Иначе заберу, ясно?' },
+      { who:'Мама',     text:'Он всё лето копил. Сделайте что-нибудь хорошее, пожалуйста.' },
+    ],
+    3: [
+      { who:'Богач',    text:'Мне нужен компьютер. Самый лучший. Цена не имеет значения.' },
+      { who:'Богач',    text:'Я не разбираюсь в этом. Просто соберите что-то... дорогое.' },
+      { who:'Богач',    text:'У меня мало времени. Сделайте максимальную сборку.' },
+      { who:'Богач',    text:'Позвоните моему ассистенту. Мне нужен топовый конфиг.' },
+      { who:'Богач',    text:'Что у вас тут вообще есть? Показывайте самое дорогое.' },
+      { who:'Охранник', text:'Шеф, тут... э... компьютерный магазин. Как вы и просили.' },
+    ],
+  };
+
+  const REACTIONS = {
+    perfect: {
+      0: [
+        { who:'Бомж', text:'Вот это... *ик*... по-нашему! Спасибо, брат!' },
+        { who:'Бомж', text:'Ооо... *ик*... вот это вещь! Уважаю!' },
+        { who:'Бомж', text:'*ик*... я всегда знал, что ты хороший человек!' },
+      ],
+      1: [
+        { who:'Работяга', text:'О, то что надо. Спасибо, мужик.' },
+        { who:'Работяга', text:'Отлично. Именно то, что просил. Уважаю.' },
+        { who:'Работяга', text:'Ну вот, другое дело. Спасибо.' },
+      ],
+      2: [
+        { who:'Школьник', text:'ЙОУ! КРУТО! Спасибо огромное!' },
+        { who:'Школьник', text:'ВОТ ЭТО ТЕМА! Мам, смотри, какой!' },
+        { who:'Школьник', text:'Спасибо!! Это лучший день в моей жизни!' },
+        { who:'Мама',     text:'Спасибо большое, сынок будет доволен!' },
+      ],
+      3: [
+        { who:'Богач',    text:'Приемлемо. Охрана, оплатите.' },
+        { who:'Богач',    text:'Хм. На удивление неплохо. Благодарю.' },
+        { who:'Богач',    text:'Наконец-то хоть кто-то сделал нормально.' },
+      ],
+    },
+    cheap: {
+      0: [
+        { who:'Бомж', text:'Э... это чё... *ик*... это не тянет... воняет...' },
+        { who:'Бомж', text:'Ты чё, *ик*... меня за лоха держишь?' },
+      ],
+      1: [
+        { who:'Работяга', text:'Слушай, это старьё. Я просил нормальное.' },
+        { who:'Работяга', text:'Это не потянет. Я хоть и не айтишник, но разбираюсь.' },
+      ],
+      2: [
+        { who:'Школьник', text:'Эээ... это не потянет КС... :(' },
+        { who:'Школьник', text:'Мам, он мне старьё подсунул!' },
+        { who:'Мама',     text:'Мы просили нормальную сборку, а не это.' },
+      ],
+      3: [
+        { who:'Богач',    text:'Это... что это? Я просил лучшее, а не это.' },
+        { who:'Богач',    text:'Мне это не подходит. Я разочарован.' },
+      ],
+    },
+    expensive: {
+      0: [
+        { who:'Бомж', text:'Ты чё... *ик*... обалдел? Я тебе не олигарх!' },
+        { who:'Бомж', text:'Эээ... *ик*... у меня столько нету... ты дурак, что ли?' },
+      ],
+      1: [
+        { who:'Работяга', text:'Слышь, ты чего цены задираешь? Мне такое не по карману.' },
+        { who:'Работяга', text:'Это перебор. Я не за этим пришёл.' },
+      ],
+      2: [
+        { who:'Школьник', text:'Мам, он дорогое сделал!' },
+        { who:'Мама',     text:'Мы не настолько богаты! Заберите это.' },
+        { who:'Папа',     text:'Ты чего нас разводишь? Мы так не договаривались!' },
+      ],
+      3: [
+        { who:'Богач',    text:'Что за безвкусица? Слишком вычурно.' },
+        { who:'Богач',    text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' },
+      ],
+    },
+  };
+
+  function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function showDialog(who, text, dur=5500){
+    dialogSpeakerEl.textContent = who;
+    dialogTextEl.textContent = text;
+    dialogBubbleEl.classList.add('show');
+    clearTimeout(dialogTimer);
+    dialogTimer = setTimeout(() => dialogBubbleEl.classList.remove('show'), dur);
+  }
+  function hideDialog(){
+    clearTimeout(dialogTimer);
+    dialogBubbleEl.classList.remove('show');
+  }
+
+  // ============================================================
   // СПАВН КЛИЕНТА
   // ============================================================
   function spawnCustomer(){
@@ -1089,6 +1188,13 @@
     updateOrderHUD();
     beep(880,.08,'sine',.04);
     setTimeout(()=>beep(1200,.1,'sine',.04),80);
+
+    // Приветствие — показывается когда клиент дойдёт до стойки
+    setTimeout(() => {
+      if(!state.customer || state.customer.tier !== tier) return;
+      const g = pickRandom(GREETINGS[tier]);
+      showDialog(g.who, g.text, 5500);
+    }, 1700);
   }
 
   function updateCustomerMovement(dt){
@@ -1101,22 +1207,13 @@
       if(Math.abs(dz) < .05){ c.arrived = true; pos.z = targetZ; }
       else {
         pos.z += Math.sign(dz) * Math.min(2.2*dt, Math.abs(dz));
-        // Лёгкое покачивание при ходьбе
         c.mesh.rotation.z = Math.sin(performance.now()*.012) * .04;
       }
       c.mesh.rotation.y = Math.PI;
     } else {
-      // Лёгкое idle-покачивание
       c.idleT += dt;
       c.mesh.rotation.z = Math.sin(c.idleT * 1.5) * .012;
     }
-  }
-
-  function removeCustomer(){
-    if(state.customer){ scene.remove(state.customer.mesh); state.customer = null; }
-    state.order = null;
-    updateOrderHUD();
-    setTimeout(() => { if(!state.customer) spawnCustomer(); }, 1500);
   }
 
   // ============================================================
@@ -1172,18 +1269,18 @@
 
     let ratingDelta = 0;
     let rewardMul = 1;
-    let msg = '';
+    let reactionKey = '';
     let good = true;
 
     if(Math.abs(diff) <= 0.4){
       ratingDelta = +4; rewardMul = 1.3;
-      msg = 'ИДЕАЛЬНО! Клиент доволен'; good = true;
+      reactionKey = 'perfect'; good = true;
     } else if(diff < -0.4){
       ratingDelta = -3; rewardMul = 0.7;
-      msg = 'Слишком дешёвая сборка. Клиент недоволен'; good = false;
+      reactionKey = 'cheap'; good = false;
     } else {
       ratingDelta = -6; rewardMul = 0.9;
-      msg = 'Слишком дорогие детали! Клиент в ярости'; good = false;
+      reactionKey = 'expensive'; good = false;
     }
 
     const baseReward = TIERS[expected].cost * 5 * 2;
@@ -1191,15 +1288,51 @@
     state.money += reward;
     state.rating = Math.max(0, Math.min(100, state.rating + ratingDelta));
     state.ordersDone++;
-    if(Math.abs(diff) <= 0.4) state.perfectOrders++;
+    if(reactionKey === 'perfect') state.perfectOrders++;
 
     if(good){ sfxWin(); sfxCoin(); } else { sfxFail(); }
-    toast(msg + ' · ' + (ratingDelta>0?'+':'') + ratingDelta + ' рейтинг · +' + reward + ' ₽', !good);
+
+    // Реакция клиента
+    const reaction = pickRandom(REACTIONS[reactionKey][expected]);
+    showDialog(reaction.who, reaction.text, 4500);
+
+    const deltaStr = (ratingDelta>0?'+':'') + ratingDelta;
+    toast(
+      (good ? '✅' : '❌') + ' Рейтинг ' + deltaStr + ' · +' + reward + ' ₽',
+      !good
+    );
 
     state.holdingPC = null;
-    removeCustomer();
+    const leavingCustomer = state.customer;
+    state.customer = null;
+    state.order = null;
+    updateOrderHUD();
     updateAll();
     save();
+
+    // Клиент уходит через 4.5 сек
+    setTimeout(() => {
+      if(leavingCustomer){
+        const startTime = performance.now();
+        const startZ = leavingCustomer.mesh.position.z;
+        const endZ = ROOM + 1;
+        const dur = 1200;
+        function walkOut(now){
+          const t = Math.min((now - startTime) / dur, 1);
+          leavingCustomer.mesh.position.z = startZ + (endZ - startZ) * t;
+          leavingCustomer.mesh.rotation.z = Math.sin(now * .02) * .05;
+          if(t < 1){ requestAnimationFrame(walkOut); }
+          else {
+            scene.remove(leavingCustomer.mesh);
+            setTimeout(() => { if(!state.customer) spawnCustomer(); }, 600);
+          }
+        }
+        requestAnimationFrame(walkOut);
+      } else {
+        setTimeout(() => { if(!state.customer) spawnCustomer(); }, 600);
+      }
+      hideDialog();
+    }, 4500);
   }
 
   function getComp(id){ return COMPONENTS.find(c => c.id === id); }
@@ -1323,7 +1456,7 @@
   }
 
   // ============================================================
-  // RAYCAST / КЛИКИ
+  // RAYCAST
   // ============================================================
   const raycaster = new THREE.Raycaster();
 
