@@ -2,467 +2,946 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Сборка ПК — Idle Tycoon</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>PC Shop Tycoon 3D</title>
 <style>
-  :root {
-    --bg: #0a0e17;
-    --card: #1a2233;
-    --card-hover: #222c42;
-    --border: #2a3450;
-    --text: #e6ecff;
-    --muted: #7b8bb0;
-    --accent: #00e0b8;
-    --accent2: #00b3ff;
-    --gold: #ffc93c;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: radial-gradient(ellipse at top, #16203a 0%, #0a0e17 60%);
-    color: var(--text);
-    min-height: 100vh;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    overflow-x: hidden;
-  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#000;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:#fff}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
 
-  /* HEADER */
-  header {
-    display: flex;
-    gap: 10px;
-    padding: 12px 16px;
-    background: rgba(10, 14, 23, 0.85);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .stat {
-    flex: 1;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 8px 12px;
-    min-width: 0;
-  }
-  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat .value { font-size: 18px; font-weight: 700; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .stat .value.acc { color: var(--accent); }
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+  .panel{position:absolute;background:rgba(10,14,23,.78);backdrop-filter:blur(8px);
+    border:1px solid rgba(0,224,184,.35);border-radius:12px;padding:10px 14px}
+  .panel .label{font-size:11px;color:#7b8bb0;letter-spacing:.5px;text-transform:uppercase}
+  .panel .value{font-size:22px;font-weight:800;color:#ffc93c}
+  #moneyPanel{top:16px;left:16px}
+  #orderPanel{top:16px;left:50%;transform:translateX(-50%);text-align:center;min-width:240px}
+  #orderPanel .order{font-size:18px;font-weight:800;margin-top:4px}
+  #orderPanel .reward{font-size:13px;color:#ffc93c;margin-top:2px;min-height:16px}
+  #buildPanel{bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:10px}
+  .slot{width:56px;height:56px;border-radius:10px;background:rgba(0,0,0,.5);
+    border:2px solid rgba(255,255,255,.15);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:22px;transition:all .2s}
+  .slot .slot-name{font-size:8px;color:#7b8bb0;margin-top:1px;text-transform:uppercase}
+  .slot.filled{border-color:#00e0b8;background:rgba(0,224,184,.15);box-shadow:0 0 12px rgba(0,224,184,.4)}
+  .slot.correct{border-color:#00e0b8;background:rgba(0,224,184,.3)}
+  .slot.wrong{border-color:#ff4d6a;background:rgba(255,77,106,.2)}
 
-  /* LAYOUT */
-  main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding: 16px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-  @media (max-width: 720px) {
-    main { grid-template-columns: 1fr; }
-  }
+  #crosshair{position:fixed;top:50%;left:50%;width:8px;height:8px;margin:-4px 0 0 -4px;
+    border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 8px rgba(0,224,184,.8);
+    pointer-events:none;z-index:11}
+  #prompt{position:fixed;top:55%;left:50%;transform:translateX(-50%);padding:8px 16px;
+    background:rgba(10,14,23,.9);border:1px solid rgba(0,224,184,.5);border-radius:10px;
+    font-size:14px;color:#e6ecff;pointer-events:none;z-index:11;opacity:0;
+    transition:opacity .15s;white-space:nowrap}
+  #prompt.show{opacity:1}
 
-  /* CLICKER */
-  .clicker {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 24px 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    min-height: 420px;
-    position: relative;
-    overflow: hidden;
-  }
-  .pc-visual {
-    font-size: 120px;
-    line-height: 1;
-    filter: drop-shadow(0 0 30px rgba(0, 224, 184, 0.35));
-    transition: transform 0.08s ease;
-  }
-  .pc-visual.punch { transform: scale(1.12); }
+  #startScreen{position:fixed;inset:0;background:radial-gradient(ellipse at center,#16203a 0%,#050710 70%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;
+    text-align:center;padding:20px;transition:opacity .3s}
+  #startScreen.hidden{opacity:0;pointer-events:none}
+  #startScreen h1{font-size:clamp(32px,6vw,64px);font-weight:900;
+    background:linear-gradient(135deg,#00e0b8,#00b3ff);-webkit-background-clip:text;
+    background-clip:text;color:transparent;margin-bottom:12px;letter-spacing:-1px}
+  #startScreen p{color:#7b8bb0;margin-bottom:8px;font-size:15px;max-width:520px;line-height:1.5}
+  #startScreen .controls{margin:24px 0;color:#b4c0dd;font-size:14px;line-height:2}
+  #startScreen .controls b{display:inline-block;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.15);padding:2px 10px;border-radius:6px;
+    font-family:monospace;font-size:13px;min-width:30px;text-align:center;color:#00e0b8}
+  #startBtn{background:linear-gradient(135deg,#00e0b8,#00b3ff);color:#04121a;border:none;
+    border-radius:14px;padding:18px 44px;font-size:20px;font-weight:800;cursor:pointer;
+    box-shadow:0 8px 32px rgba(0,224,184,.4);transition:transform .1s}
+  #startBtn:hover{transform:scale(1.03)}#startBtn:active{transform:scale(.97)}
 
-  #buildBtn {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-    color: #04121a;
-    border: none;
-    border-radius: 16px;
-    padding: 18px 32px;
-    font-size: 18px;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 8px 24px rgba(0, 224, 184, 0.35);
-    transition: transform 0.08s ease, box-shadow 0.08s ease;
-    line-height: 1.2;
-    text-align: center;
-  }
-  #buildBtn small { display: block; font-size: 13px; font-weight: 600; opacity: 0.75; margin-top: 4px; }
-  #buildBtn:active { transform: scale(0.96); box-shadow: 0 4px 12px rgba(0, 224, 184, 0.45); }
-
-  /* FLOAT TEXT */
-  .float-text {
-    position: fixed;
-    pointer-events: none;
-    font-weight: 800;
-    font-size: 18px;
-    color: var(--gold);
-    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-    animation: floatUp 0.8s ease-out forwards;
-    z-index: 100;
-    transform: translate(-50%, 0);
-  }
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -60px) scale(1.2); }
-  }
-
-  /* SHOP */
-  .shop {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-  }
-  .shop h2 {
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-  .upgrade {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 12px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: left;
-    font-family: inherit;
-    color: var(--text);
-    width: 100%;
-  }
-  .upgrade:hover { background: var(--card-hover); transform: translateY(-1px); }
-  .upgrade.disabled { opacity: 0.45; cursor: not-allowed; }
-  .upgrade.disabled:hover { transform: none; background: var(--bg); }
-  .upgrade.affordable { border-color: rgba(0, 224, 184, 0.5); }
-  .upgrade .icon { font-size: 28px; flex-shrink: 0; width: 40px; text-align: center; }
-  .upgrade .info { flex: 1; min-width: 0; }
-  .upgrade .name { font-size: 14px; font-weight: 700; }
-  .upgrade .lvl { color: var(--accent); font-size: 12px; font-weight: 600; margin-left: 4px; }
-  .upgrade .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .upgrade .cost { font-size: 14px; font-weight: 800; color: var(--gold); white-space: nowrap; }
-
-  footer {
-    text-align: center;
-    padding: 16px;
-    color: var(--muted);
-    font-size: 12px;
-  }
-  footer button {
-    background: none; border: none; color: var(--muted);
-    text-decoration: underline; cursor: pointer; font-size: 12px;
-  }
+  .toast{position:fixed;top:90px;left:50%;transform:translateX(-50%);padding:12px 24px;
+    background:rgba(0,224,184,.95);color:#04121a;font-weight:800;border-radius:12px;
+    z-index:20;pointer-events:none;animation:toastAnim 1.8s ease-out forwards;font-size:16px;
+    box-shadow:0 8px 24px rgba(0,224,184,.4)}
+  .toast.error{background:#ff4d6a;color:#fff;box-shadow:0 8px 24px rgba(255,77,106,.4)}
+  @keyframes toastAnim{
+    0%{opacity:0;transform:translate(-50%,-10px)}
+    15%{opacity:1;transform:translate(-50%,0)}
+    85%{opacity:1;transform:translate(-50%,0)}
+    100%{opacity:0;transform:translate(-50%,-20px)}}
 </style>
 </head>
 <body>
+  <div id="app"></div>
 
-<header>
-  <div class="stat">
-    <div class="label">Деньги</div>
-    <div class="value" id="money">0 ₽</div>
+  <div id="hud">
+    <div class="panel" id="moneyPanel">
+      <div class="label">Баланс</div>
+      <div class="value" id="money">0 ₽</div>
+    </div>
+    <div class="panel" id="orderPanel">
+      <div class="label">Заказ клиента</div>
+      <div class="order" id="orderText">—</div>
+      <div class="reward" id="orderReward"></div>
+    </div>
+    <div class="panel" id="buildPanel"></div>
   </div>
-  <div class="stat">
-    <div class="label">В секунду</div>
-    <div class="value acc" id="ips">0 ₽</div>
+
+  <div id="crosshair"></div>
+  <div id="prompt"></div>
+
+  <div id="startScreen">
+    <h1>PC SHOP TYCOON</h1>
+    <p>Управляй магазином сборки ПК. Принимай заказы, находи комплектующие на полках и собирай компьютеры.</p>
+    <div class="controls">
+      <div><b>W</b> <b>A</b> <b>S</b> <b>D</b> — движение · <b>Shift</b> — бег</div>
+      <div><b>Мышь</b> — обзор · <b>ЛКМ</b> — взаимодействие · <b>ПКМ</b> — убрать деталь</div>
+      <div><b>ESC</b> — пауза</div>
+    </div>
+    <button id="startBtn">НАЧАТЬ ИГРУ</button>
   </div>
-  <div class="stat">
-    <div class="label">Собрано ПК</div>
-    <div class="value" id="pcs">0</div>
-  </div>
-</header>
 
-<main>
-  <section class="clicker">
-    <div class="pc-visual" id="pcVisual">🖥️</div>
-    <button id="buildBtn">
-      Собрать ПК
-      <small id="pcPrice">+10 ₽</small>
-    </button>
-  </section>
-
-  <aside class="shop">
-    <h2>Комплектующие</h2>
-    <div id="click-upgrades"></div>
-
-    <h2>Автоматизация</h2>
-    <div id="auto-upgrades"></div>
-  </aside>
-</main>
-
-<footer>
-  <button id="resetBtn">Сбросить прогресс</button>
-</footer>
-
-<script>
-/* ===========================
-   КОНФИГ ИГРЫ
-   =========================== */
-const SAVE_KEY = 'pc-tycoon-v1';
-const BASE_PRICE = 10;          // базовая цена ПК за клик
-const OFFLINE_CAP_HOURS = 8;    // максимум часов офлайн-дохода
-const OFFLINE_EFFICIENCY = 0.5; // офлайн даёт 50% от обычного дохода
-const SAVE_INTERVAL = 5000;     // автосейв каждые 5 сек
-
-// Все апгрейды. type: 'click' (увеличивает цену ПК) или 'auto' (доход в секунду)
-const UPGRADES = [
-  // Комплектующие
-  { id: 'case',    name: 'Корпус',            icon: '📦', type: 'click', bonus: 1,  baseCost: 10,    costMult: 1.10 },
-  { id: 'mb',      name: 'Материнка',         icon: '🔌', type: 'click', bonus: 2,  baseCost: 25,    costMult: 1.11 },
-  { id: 'ram',     name: 'ОЗУ',               icon: '🧠', type: 'click', bonus: 4,  baseCost: 60,    costMult: 1.12 },
-  { id: 'cooler',  name: 'Охлаждение',        icon: '❄️', type: 'click', bonus: 6,  baseCost: 140,   costMult: 1.13 },
-  { id: 'ssd',     name: 'SSD',               icon: '💾', type: 'click', bonus: 8,  baseCost: 220,   costMult: 1.13 },
-  { id: 'cpu',     name: 'Процессор',         icon: '🔲', type: 'click', bonus: 12, baseCost: 400,   costMult: 1.14 },
-  { id: 'monitor', name: 'Монитор',           icon: '🖥️', type: 'click', bonus: 18, baseCost: 700,   costMult: 1.15 },
-  { id: 'gpu',     name: 'Видеокарта',        icon: '🎮', type: 'click', bonus: 30, baseCost: 1500,  costMult: 1.16 },
-
-  // Автоматизация
-  { id: 'assembler', name: 'Сборщик',         icon: '👷', type: 'auto', bonus: 1,  baseCost: 100,    costMult: 1.20 },
-  { id: 'courier',   name: 'Курьер',          icon: '🚚', type: 'auto', bonus: 8,  baseCost: 900,    costMult: 1.22 },
-  { id: 'shop',      name: 'Магазин',         icon: '🏪', type: 'auto', bonus: 50, baseCost: 7000,   costMult: 1.25 },
-  { id: 'factory',   name: 'Фабрика',         icon: '🏭', type: 'auto', bonus: 300, baseCost: 60000, costMult: 1.28 },
-];
-
-/* ===========================
-   СОСТОЯНИЕ
-   =========================== */
-const state = {
-  money: 0,
-  totalPCs: 0,
-  levels: {},   // id -> уровень
-  lastTick: Date.now(),
-};
-
-// Быстрый доступ к DOM
-const $ = (id) => document.getElementById(id);
-const els = {
-  money: $('money'),
-  ips: $('ips'),
-  pcs: $('pcs'),
-  pcPrice: $('pcPrice'),
-  pcVisual: $('pcVisual'),
-  buildBtn: $('buildBtn'),
-  clickList: $('click-upgrades'),
-  autoList: $('auto-upgrades'),
-  resetBtn: $('resetBtn'),
-};
-
-/* ===========================
-   ХЕЛПЕРЫ
-   =========================== */
-function getLevel(id) { return state.levels[id] || 0; }
-
-function getCost(u) {
-  return Math.floor(u.baseCost * Math.pow(u.costMult, getLevel(u.id)));
-}
-
-function getClickPrice() {
-  let price = BASE_PRICE;
-  for (const u of UPGRADES) {
-    if (u.type === 'click') price += u.bonus * getLevel(u.id);
-  }
-  return price;
-}
-
-function getIncomePerSec() {
-  let ips = 0;
-  for (const u of UPGRADES) {
-    if (u.type === 'auto') ips += u.bonus * getLevel(u.id);
-  }
-  return ips;
-}
-
-function fmt(n) {
-  n = Math.floor(n);
-  if (n < 1000) return n.toString();
-  if (n < 1e6) return (n / 1e3).toFixed(2) + 'K';
-  if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
-  if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
-  return (n / 1e12).toFixed(2) + 'T';
-}
-
-/* ===========================
-   ДЕЙСТВИЯ
-   =========================== */
-function buildPC() {
-  const price = getClickPrice();
-  state.money += price;
-  state.totalPCs += 1;
-
-  // анимация
-  els.pcVisual.classList.add('punch');
-  setTimeout(() => els.pcVisual.classList.remove('punch'), 80);
-  showFloat('+' + fmt(price) + ' ₽');
-
-  updateHeader();
-}
-
-function buyUpgrade(id) {
-  const u = UPGRADES.find(x => x.id === id);
-  if (!u) return;
-  const cost = getCost(u);
-  if (state.money < cost) return;
-
-  state.money -= cost;
-  state.levels[id] = getLevel(id) + 1;
-
-  updateHeader();
-  updateShopUI();
-  updateClickPrice();
-}
-
-function showFloat(text) {
-  const el = document.createElement('div');
-  el.className = 'float-text';
-  el.textContent = text;
-  const rect = els.buildBtn.getBoundingClientRect();
-  el.style.left = (rect.left + rect.width / 2) + 'px';
-  el.style.top = (rect.top + rect.height / 2) + 'px';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 800);
-}
-
-/* ===========================
-   UI
-   =========================== */
-function updateHeader() {
-  els.money.textContent = fmt(state.money) + ' ₽';
-  els.ips.textContent = fmt(getIncomePerSec()) + ' ₽';
-  els.pcs.textContent = fmt(state.totalPCs);
-}
-
-function updateClickPrice() {
-  els.pcPrice.textContent = '+' + fmt(getClickPrice()) + ' ₽';
-}
-
-const upgEls = {}; // id -> { root, lvl, cost }
-
-function buildShop() {
-  for (const u of UPGRADES) {
-    const btn = document.createElement('button');
-    btn.className = 'upgrade';
-    btn.innerHTML = `
-      <div class="icon">${u.icon}</div>
-      <div class="info">
-        <div class="name">${u.name}<span class="lvl">Ур. 0</span></div>
-        <div class="desc">${u.type === 'click' ? '+' + u.bonus + ' ₽ за клик' : '+' + u.bonus + ' ₽/сек'}</div>
-      </div>
-      <div class="cost">0 ₽</div>
-    `;
-    btn.addEventListener('click', () => buyUpgrade(u.id));
-    (u.type === 'click' ? els.clickList : els.autoList).appendChild(btn);
-
-    upgEls[u.id] = {
-      root: btn,
-      lvl: btn.querySelector('.lvl'),
-      cost: btn.querySelector('.cost'),
-    };
-  }
-}
-
-function updateShopUI() {
-  for (const u of UPGRADES) {
-    const ref = upgEls[u.id];
-    const lvl = getLevel(u.id);
-    const cost = getCost(u);
-    const canBuy = state.money >= cost;
-
-    ref.lvl.textContent = 'Ур. ' + lvl;
-    ref.cost.textContent = fmt(cost) + ' ₽';
-    ref.root.classList.toggle('affordable', canBuy);
-    ref.root.classList.toggle('disabled', !canBuy);
-  }
-}
-
-/* ===========================
-   СОХРАНЕНИЕ
-   =========================== */
-function save() {
-  state.lastTick = Date.now();
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  } catch (e) { /* ignore */ }
-}
-
-function load() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return;
-    const saved = JSON.parse(raw);
-    Object.assign(state, saved);
-    if (!state.levels) state.levels = {};
-
-    // офлайн-доход
-    const elapsedSec = Math.max(0, (Date.now() - (state.lastTick || Date.now())) / 1000);
-    const cappedSec = Math.min(elapsedSec, OFFLINE_CAP_HOURS * 3600);
-    const offline = Math.floor(getIncomePerSec() * cappedSec * OFFLINE_EFFICIENCY);
-    if (offline > 0) state.money += offline;
-  } catch (e) { /* ignore */ }
-}
-
-/* ===========================
-   ГЛАВНЫЙ ЦИКЛ
-   =========================== */
-let lastFrame = performance.now();
-function loop(now) {
-  const dt = (now - lastFrame) / 1000;
-  lastFrame = now;
-
-  const ips = getIncomePerSec();
-  if (ips > 0) state.money += ips * dt;
-
-  updateHeader();
-  updateShopUI();
-  requestAnimationFrame(loop);
-}
-
-/* ===========================
-   ИНИЦИАЛИЗАЦИЯ
-   =========================== */
-function init() {
-  load();
-  buildShop();
-  updateHeader();
-  updateClickPrice();
-  updateShopUI();
-
-  els.buildBtn.addEventListener('click', buildPC);
-  els.resetBtn.addEventListener('click', () => {
-    if (confirm('Сбросить весь прогресс?')) {
-      localStorage.removeItem(SAVE_KEY);
-      location.reload();
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
     }
+  }
+  </script>
+
+  <script type="module">
+  import * as THREE from 'three';
+  import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+  // ============================================================
+  // КОНФИГ
+  // ============================================================
+  const COMPONENTS = [
+    { id:'mb',  name:'Материнка', icon:'🔌', size:[.55,.06,.4],  color:0x1f7a3a },
+    { id:'cpu', name:'Процессор', icon:'🔲', size:[.25,.08,.25], color:0xc4a233 },
+    { id:'ram', name:'ОЗУ',       icon:'🧠', size:[.5,.08,.12],  color:0x2a6fd8 },
+    { id:'gpu', name:'Видеокарта',icon:'🎮', size:[.6,.16,.32],  color:0x1a1a1a },
+    { id:'psu', name:'Питание',   icon:'⚡', size:[.35,.28,.35], color:0x4a4a4a },
+  ];
+  const TIERS = [
+    { name:'Бюджетный', color:0x8fa0b8, baseCost:100 },
+    { name:'Средний',   color:0x3a9bff, baseCost:200 },
+    { name:'Игровой',   color:0x00e0b8, baseCost:400 },
+    { name:'Премиум',   color:0xffc93c, baseCost:800 },
+  ];
+  const START_MONEY = 1500;
+  const SAVE_KEY = 'pc-shop-3d-v1';
+  const PLAYER_HEIGHT = 1.6;
+  const WALK_SPEED = 4;
+  const RUN_SPEED = 7;
+
+  // ============================================================
+  // СОСТОЯНИЕ
+  // ============================================================
+  const state = {
+    money: START_MONEY,
+    workbench: {},       // { typeId: tierIndex }
+    order: null,         // { tier }
+    customer: null,      // { mesh, targetZ, arrived }
+    ordersCompleted: 0,
+    lastSave: Date.now(),
+  };
+
+  // ============================================================
+  // АУДИО
+  // ============================================================
+  let audioCtx = null;
+  function beep(freq, dur=.1, type='sine', vol=.06){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = vol;
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + dur);
+    }catch(e){}
+  }
+  const sfxPickup = () => { beep(650,.07,'triangle',.05); setTimeout(()=>beep(950,.07,'triangle',.05),45); };
+  const sfxPlace  = () => beep(280,.1,'square',.04);
+  const sfxWin    = () => { beep(660,.1); setTimeout(()=>beep(880,.1),90); setTimeout(()=>beep(1320,.2),180); };
+  const sfxFail   = () => { beep(220,.15,'sawtooth',.05); setTimeout(()=>beep(160,.2,'sawtooth',.05),100); };
+  const sfxMoney  = () => { beep(1200,.05,'sine',.05); setTimeout(()=>beep(1600,.08,'sine',.05),50); };
+
+  // ============================================================
+  // ТЕКСТУРЫ (процедурные)
+  // ============================================================
+  function canvasTex(w,h,draw){
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'); draw(ctx,w,h);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }
+  function noiseFill(ctx,w,h,count,alpha){
+    for(let i=0;i<count;i++){
+      ctx.fillStyle = `rgba(0,0,0,${Math.random()*alpha})`;
+      ctx.fillRect(Math.random()*w|0, Math.random()*h|0, 2, 2);
+    }
+  }
+  const floorTex = (()=>{
+    const t = canvasTex(512,512,(ctx,w,h)=>{
+      ctx.fillStyle='#15171e'; ctx.fillRect(0,0,w,h);
+      const step=64;
+      for(let y=0;y<h;y+=step) for(let x=0;x<w;x+=step){
+        const v = 22 + Math.random()*16;
+        ctx.fillStyle = `rgb(${v},${v+3},${v+10})`;
+        ctx.fillRect(x+2,y+2,step-4,step-4);
+      }
+      ctx.strokeStyle='#08090e'; ctx.lineWidth=3;
+      for(let i=0;i<=w;i+=step){
+        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke();
+      }
+      noiseFill(ctx,w,h,4000,.15);
+    });
+    t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(6,6);
+    return t;
+  })();
+  const wallTex = (()=>{
+    const t = canvasTex(256,256,(ctx,w,h)=>{
+      ctx.fillStyle='#26293a'; ctx.fillRect(0,0,w,h);
+      for(let y=0;y<h;y+=48){
+        ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(0,y,w,2);
+      }
+      noiseFill(ctx,w,h,4000,.15);
+    });
+    t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,1);
+    return t;
+  })();
+  const ceilTex = (()=>{
+    const t = canvasTex(256,256,(ctx,w,h)=>{
+      ctx.fillStyle='#0d0f16'; ctx.fillRect(0,0,w,h);
+      noiseFill(ctx,w,h,3000,.2);
+    });
+    t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,4);
+    return t;
+  })();
+  const woodTex = (()=>{
+    const t = canvasTex(256,256,(ctx,w,h)=>{
+      ctx.fillStyle='#5a3a22'; ctx.fillRect(0,0,w,h);
+      for(let i=0;i<80;i++){
+        ctx.strokeStyle = `rgba(${30+Math.random()*30},${20+Math.random()*15},0,.4)`;
+        ctx.lineWidth = Math.random()*2+.5;
+        ctx.beginPath();
+        const y = Math.random()*h;
+        ctx.moveTo(0,y);
+        for(let x=0;x<=w;x+=16) ctx.lineTo(x, y + Math.sin(x*.08+i)*4);
+        ctx.stroke();
+      }
+      noiseFill(ctx,w,h,2000,.15);
+    });
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    return t;
+  })();
+  const metalTex = (()=>{
+    const t = canvasTex(256,256,(ctx,w,h)=>{
+      ctx.fillStyle='#3a3d4a'; ctx.fillRect(0,0,w,h);
+      for(let i=0;i<2000;i++){
+        const v = Math.random()*60+20;
+        ctx.fillStyle = `rgba(${v},${v},${v+5},.25)`;
+        ctx.fillRect(Math.random()*w,Math.random()*h,3,1);
+      }
+    });
+    t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2);
+    return t;
+  })();
+  const neonTex = canvasTex(1024,256,(ctx,w,h)=>{
+    ctx.fillStyle='#050710'; ctx.fillRect(0,0,w,h);
+    const grad = ctx.createLinearGradient(0,0,w,0);
+    grad.addColorStop(0,'#00e0b8'); grad.addColorStop(1,'#00b3ff');
+    ctx.font='bold 130px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor='#00e0b8'; ctx.shadowBlur=40;
+    ctx.fillStyle=grad;
+    ctx.fillText('PC SHOP', w/2, h/2);
+    ctx.shadowBlur=0; ctx.fillStyle='#fff';
+    ctx.font='bold 130px sans-serif';
+    ctx.globalAlpha=.6; ctx.fillText('PC SHOP', w/2, h/2);
   });
 
-  // автосейв
-  setInterval(save, SAVE_INTERVAL);
-  window.addEventListener('beforeunload', save);
+  // ============================================================
+  // THREE.JS SETUP
+  // ============================================================
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050710);
+  scene.fog = new THREE.Fog(0x050710, 12, 32);
+
+  const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, .05, 100);
+  camera.position.set(0, PLAYER_HEIGHT, 6.5);
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.getElementById('app').appendChild(renderer.domElement);
+
+  addEventListener('resize', ()=>{
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // ---------- Свет ----------
+  scene.add(new THREE.AmbientLight(0x8899bb, .55));
+  const hemi = new THREE.HemisphereLight(0x00e0b8, 0x0a0e17, .35);
+  scene.add(hemi);
+  const dirLight = new THREE.DirectionalLight(0xffffff, .7);
+  dirLight.position.set(6, 12, 6);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(2048, 2048);
+  Object.assign(dirLight.shadow.camera, { left:-16, right:16, top:16, bottom:-16, near:.5, far:40 });
+  scene.add(dirLight);
+
+  // точечные лампы на потолке
+  const lampSpots = [[-6,0],[6,0],[0,-6],[0,6]];
+  for(const [x,z] of lampSpots){
+    const lamp = new THREE.PointLight(0xaaccff, .55, 14, 2);
+    lamp.position.set(x, 3.6, z);
+    scene.add(lamp);
+    const bulb = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4,.08,.4),
+      new THREE.MeshBasicMaterial({color:0xddeeff})
+    );
+    bulb.position.set(x, 3.9, z);
+    scene.add(bulb);
+  }
+
+  // ============================================================
+  // ПОСТРОЙКА МАГАЗИНА
+  // ============================================================
+  const ROOM = 12;    // половина размера
+  const WALL_H = 4;
+
+  // пол
+  const floorMat = new THREE.MeshStandardMaterial({ map:floorTex, roughness:.8, metalness:.05 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, ROOM*2), floorMat);
+  floor.rotation.x = -Math.PI/2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // потолок
+  const ceilMat = new THREE.MeshStandardMaterial({ map:ceilTex, roughness:1 });
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, ROOM*2), ceilMat);
+  ceil.rotation.x = Math.PI/2;
+  ceil.position.y = WALL_H;
+  scene.add(ceil);
+
+  // стены
+  const wallMat = new THREE.MeshStandardMaterial({ map:wallTex, roughness:.9 });
+  function addWall(x, z, rotY, w=ROOM*2){
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, WALL_H), wallMat);
+    m.position.set(x, WALL_H/2, z);
+    m.rotation.y = rotY;
+    m.receiveShadow = true;
+    scene.add(m);
+  }
+  addWall(0, -ROOM, 0);              // задняя
+  addWall(0,  ROOM, Math.PI);        // передняя
+  addWall(-ROOM, 0, Math.PI/2);      // левая
+  addWall( ROOM, 0,-Math.PI/2);      // правая
+
+  // входная дверь (визуально)
+  const doorMat = new THREE.MeshStandardMaterial({ color:0x1a2030, metalness:.4, roughness:.6,
+    emissive:0x003828, emissiveIntensity:.3 });
+  const door = new THREE.Mesh(new THREE.BoxGeometry(3, 3.2, .12), doorMat);
+  door.position.set(0, 1.6, ROOM - .06);
+  scene.add(door);
+  const doorFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(3.3, 3.5, .18),
+    new THREE.MeshStandardMaterial({ color:0x00e0b8, emissive:0x00e0b8, emissiveIntensity:.6 })
+  );
+  doorFrame.position.set(0, 1.75, ROOM - .1);
+  scene.add(doorFrame);
+
+  // ============================================================
+  // СТОЙКА (counter)
+  // ============================================================
+  const counterZ = -7.5;
+  const counterMat = new THREE.MeshStandardMaterial({ map:woodTex, roughness:.75 });
+  const counterBody = new THREE.Mesh(new THREE.BoxGeometry(7, 1.2, 1.4), counterMat);
+  counterBody.position.set(0, .6, counterZ);
+  counterBody.castShadow = true; counterBody.receiveShadow = true;
+  scene.add(counterBody);
+  const counterTop = new THREE.Mesh(
+    new THREE.BoxGeometry(7.2, .08, 1.6),
+    new THREE.MeshStandardMaterial({ color:0x00e0b8, metalness:.6, roughness:.35,
+      emissive:0x00a888, emissiveIntensity:.4 })
+  );
+  counterTop.position.set(0, 1.24, counterZ);
+  scene.add(counterTop);
+
+  // Вывеска над стойкой
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(6, 1.5),
+    new THREE.MeshBasicMaterial({ map:neonTex, transparent:true })
+  );
+  sign.position.set(0, 3.1, -ROOM + .1);
+  scene.add(sign);
+  const signLight = new THREE.PointLight(0x00e0b8, 1.4, 10, 2);
+  signLight.position.set(0, 3, -ROOM + 1);
+  scene.add(signLight);
+
+  // ============================================================
+  // ПОЛКИ С КОМПЛЕКТУЮЩИМИ (слева)
+  // ============================================================
+  const SHELF_X = -10.5;
+  const SHELF_Z_SPACING = 2;
+  const SHELF_Z_START = -4;
+  const SHELF_TIER_Y = [.75, 1.5, 2.25, 3.0];
+  const componentMeshes = []; // всё, что можно тыкнуть
+
+  // каркас полок
+  const rackMat = new THREE.MeshStandardMaterial({ map:metalTex, metalness:.6, roughness:.5 });
+  for(let c=0;c<COMPONENTS.length;c++){
+    const z = SHELF_Z_START + c*SHELF_Z_SPACING;
+    // вертикальные стойки
+    for(const dx of [-.4,.4]){
+      const post = new THREE.Mesh(new THREE.BoxGeometry(.08, WALL_H-.4, .08), rackMat);
+      post.position.set(SHELF_X + dx, (WALL_H-.4)/2, z);
+      post.castShadow = true;
+      scene.add(post);
+    }
+    // полки под каждый tier
+    for(const y of SHELF_TIER_Y){
+      const board = new THREE.Mesh(new THREE.BoxGeometry(1.1, .05, 1.6),
+        new THREE.MeshStandardMaterial({ map:woodTex, roughness:.8 }));
+      board.position.set(SHELF_X, y - .12, z);
+      board.castShadow = true; board.receiveShadow = true;
+      scene.add(board);
+    }
+  }
+
+  // Сами комплектующие на полках
+  function createComponentMesh(comp, tierIndex){
+    const tier = TIERS[tierIndex];
+    const [sx,sy,sz] = comp.size;
+    const mat = new THREE.MeshStandardMaterial({
+      color: comp.color,
+      metalness: comp.id==='gpu'||comp.id==='psu' ? .8 : .5,
+      roughness: comp.id==='mb' ? .8 : .35,
+      emissive: tier.color,
+      emissiveIntensity: .15 + tierIndex * .08,
+    });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    m.castShadow = true;
+    // подсветка tier'а — маленький индикатор сверху
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(.04, 8, 8),
+      new THREE.MeshBasicMaterial({ color: tier.color })
+    );
+    dot.position.y = sy/2 + .05;
+    m.add(dot);
+    return m;
+  }
+
+  for(let c=0;c<COMPONENTS.length;c++){
+    const comp = COMPONENTS[c];
+    const z = SHELF_Z_START + c*SHELF_Z_SPACING;
+    for(let t=0;t<TIERS.length;t++){
+      const y = SHELF_TIER_Y[t] - .12 + comp.size[1]/2 + .06;
+      const mesh = createComponentMesh(comp, t);
+      mesh.position.set(SHELF_X, y, z);
+      mesh.userData = { kind:'shelf-component', componentId:comp.id, tier:t };
+      scene.add(mesh);
+      componentMeshes.push(mesh);
+    }
+  }
+
+  // ============================================================
+  // ВЕРСТАК (справа)
+  // ============================================================
+  const BENCH_X = 10.5;
+  const benchMat = new THREE.MeshStandardMaterial({ map:metalTex, metalness:.4, roughness:.6 });
+  const benchTop = new THREE.Mesh(new THREE.BoxGeometry(1.6, .1, 8), benchMat);
+  benchTop.position.set(BENCH_X, 1, 0);
+  benchTop.castShadow = true; benchTop.receiveShadow = true;
+  scene.add(benchTop);
+  // ножки
+  for(const dz of [-3.6, 3.6]){
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(1.4,.95,1.4), benchMat);
+    leg.position.set(BENCH_X, .475, dz);
+    leg.castShadow = true;
+    scene.add(leg);
+  }
+  // подсветка верстака
+  const benchLight = new THREE.PointLight(0x00e0b8, .8, 6, 2);
+  benchLight.position.set(BENCH_X - 1, 2.5, 0);
+  scene.add(benchLight);
+
+  // 5 слотов на верстаке — визуальные площадки
+  const BENCH_SLOT_Z = [-2, -1, 0, 1, 2];
+  const benchSlotMeshes = {};
+  for(let i=0;i<COMPONENTS.length;i++){
+    const comp = COMPONENTS[i];
+    const z = BENCH_SLOT_Z[i];
+    // пьедестал
+    const pad = new THREE.Mesh(
+      new THREE.CylinderGeometry(.32, .32, .04, 24),
+      new THREE.MeshStandardMaterial({ color:0x0a1620, metalness:.8, roughness:.3,
+        emissive:0x003322, emissiveIntensity:.4 })
+    );
+    pad.position.set(BENCH_X, 1.06, z);
+    pad.userData = { kind:'bench-slot', componentId:comp.id };
+    scene.add(pad);
+    benchSlotMeshes[comp.id] = { pad, placedMesh:null, z, comp };
+  }
+
+  function refreshBenchVisuals(){
+    for(const comp of COMPONENTS){
+      const slot = benchSlotMeshes[comp.id];
+      if(slot.placedMesh){ scene.remove(slot.placedMesh); slot.placedMesh = null; }
+      const tier = state.workbench[comp.id];
+      if(tier !== undefined){
+        const m = createComponentMesh(comp, tier);
+        m.position.set(BENCH_X, 1.06 + comp.size[1]/2 + .05, slot.z);
+        scene.add(m);
+        slot.placedMesh = m;
+        // свечение площадки в цвет tier
+        slot.pad.material.emissive.setHex(TIERS[tier].color);
+        slot.pad.material.emissiveIntensity = .8;
+      } else {
+        slot.pad.material.emissive.setHex(0x003322);
+        slot.pad.material.emissiveIntensity = .4;
+      }
+    }
+  }
+
+  // ============================================================
+  // КЛИЕНТЫ
+  // ============================================================
+  const SHIRT_COLORS = [0xe74c3c, 0x3498db, 0x9b59b6, 0xf1c40f, 0x1abc9c, 0xe67e22, 0x2ecc71];
+
+  function createCustomerMesh(){
+    const g = new THREE.Group();
+    const shirt = SHIRT_COLORS[Math.floor(Math.random()*SHIRT_COLORS.length)];
+    const bodyMat = new THREE.MeshStandardMaterial({ color:shirt, roughness:.8 });
+    const skinMat = new THREE.MeshStandardMaterial({ color:0xffcc99, roughness:.7 });
+    const pantsMat = new THREE.MeshStandardMaterial({ color:0x2c3e50, roughness:.9 });
+
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(.28, .6, 8, 16), bodyMat);
+    body.position.y = 1.0; body.castShadow = true;
+    g.add(body);
+
+    const hips = new THREE.Mesh(new THREE.BoxGeometry(.55, .3, .32), pantsMat);
+    hips.position.y = .55; hips.castShadow = true;
+    g.add(hips);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.2, 20, 16), skinMat);
+    head.position.y = 1.6; head.castShadow = true;
+    g.add(head);
+
+    // глаза
+    for(const dx of [-.07,.07]){
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(.025,8,8),
+        new THREE.MeshBasicMaterial({color:0x111111}));
+      eye.position.set(dx, 1.63, .18);
+      g.add(eye);
+    }
+
+    return g;
+  }
+
+  function spawnCustomer(){
+    if(state.customer) return;
+    // определить tier заказа
+    let tier;
+    if(state.ordersCompleted < 2) tier = 0;                      // первые 2 — простые
+    else {
+      const r = Math.random();
+      if(r < .35) tier = 0;
+      else if(r < .65) tier = 1;
+      else if(r < .88) tier = 2;
+      else tier = 3;
+    }
+
+    const mesh = createCustomerMesh();
+    mesh.position.set(0, 0, ROOM - 1.5);   // появляется у двери
+    scene.add(mesh);
+
+    state.customer = { mesh, arrived:false, tier };
+    state.order = { tier };
+    updateOrderHUD();
+    beep(880, .08, 'sine', .04);
+    setTimeout(()=>beep(1200,.1,'sine',.04), 80);
+  }
+
+  function updateCustomerMovement(dt){
+    const c = state.customer;
+    if(!c) return;
+    const targetZ = counterZ + 1.8;   // клиент стоит за стойкой
+    const pos = c.mesh.position;
+    if(!c.arrived){
+      const dz = targetZ - pos.z;
+      if(Math.abs(dz) < .05){
+        c.arrived = true;
+        pos.z = targetZ;
+      } else {
+        pos.z += Math.sign(dz) * Math.min(2.2 * dt, Math.abs(dz));
+        // лёгкое покачивание
+        c.mesh.rotation.z = Math.sin(performance.now()*.012) * .03;
+      }
+      // поворот на игрока
+      c.mesh.rotation.y = Math.PI;
+    }
+  }
+
+  function removeCustomer(){
+    if(state.customer){
+      scene.remove(state.customer.mesh);
+      state.customer = null;
+    }
+    state.order = null;
+    updateOrderHUD();
+    // следующий через 1.5 сек
+    setTimeout(() => { if(!state.customer) spawnCustomer(); }, 1500);
+  }
+
+  // ============================================================
+  // ЭКОНОМИКА И ЛОГИКА
+  // ============================================================
+  function componentCost(compIdx, tierIdx){
+    return TIERS[tierIdx].baseCost;
+  }
+  function orderReward(tierIdx){
+    // 5 деталей * baseCost * 2.4
+    return Math.floor(TIERS[tierIdx].baseCost * 5 * 2.4);
+  }
+
+  function tryBuyComponent(componentId, tierIdx){
+    if(!state.order){
+      toast('Нет активного заказа. Дождись клиента.', true);
+      return;
+    }
+    if(state.workbench[componentId] !== undefined){
+      toast('Слот уже занят. ПКМ — убрать.', true);
+      return;
+    }
+    const cost = TIERS[tierIdx].baseCost;
+    if(state.money < cost){
+      toast('Не хватает денег: нужно ' + cost + ' ₽', true);
+      sfxFail();
+      return;
+    }
+    state.money -= cost;
+    state.workbench[componentId] = tierIdx;
+    sfxPlace();
+    refreshBenchVisuals();
+    updateAll();
+  }
+
+  function tryRemoveComponent(componentId){
+    if(state.workbench[componentId] === undefined) return;
+    const tierIdx = state.workbench[componentId];
+    const refund = Math.floor(TIERS[tierIdx].baseCost * .5);
+    state.money += refund;
+    delete state.workbench[componentId];
+    sfxPickup();
+    refreshBenchVisuals();
+    updateAll();
+    toast('Возврат: +' + refund + ' ₽');
+  }
+
+  function tryDeliver(){
+    if(!state.customer || !state.customer.arrived){
+      toast('Клиент ещё не подошёл', true);
+      return;
+    }
+    if(!state.order){
+      toast('Нет заказа', true);
+      return;
+    }
+    const needTier = state.order.tier;
+    // все ли детали на месте и с правильным tier?
+    const slotsFilled = COMPONENTS.every(c => state.workbench[c.id] !== undefined);
+    if(!slotsFilled){
+      toast('Собери все 5 деталей на верстаке', true);
+      sfxFail();
+      return;
+    }
+    const allCorrect = COMPONENTS.every(c => state.workbench[c.id] === needTier);
+    if(!allCorrect){
+      toast('Не те комплектующие. Нужны: ' + TIERS[needTier].name, true);
+      sfxFail();
+      return;
+    }
+    // успех
+    const reward = orderReward(needTier);
+    state.money += reward;
+    state.ordersCompleted++;
+    sfxWin(); sfxMoney();
+    toast('Заказ выполнен! +' + reward + ' ₽');
+    // очистить верстак
+    state.workbench = {};
+    refreshBenchVisuals();
+    removeCustomer();
+    updateAll();
+    save();
+  }
+
+  // ============================================================
+  // RAYCAST / ВЗАИМОДЕЙСТВИЕ
+  // ============================================================
+  const raycaster = new THREE.Raycaster();
+  raycaster.far = 4.5;
+  const screenCenter = new THREE.Vector2(0, 0);
+
+  function getHovered(){
+    raycaster.setFromCamera(screenCenter, camera);
+    const targets = [];
+    // полки
+    for(const m of componentMeshes) targets.push(m);
+    // слоты верстака
+    for(const id in benchSlotMeshes) targets.push(benchSlotMeshes[id].pad);
+    // клиент
+    if(state.customer && state.customer.mesh){
+      state.customer.mesh.traverse(o => { if(o.isMesh) targets.push(o); });
+    }
+    const hits = raycaster.intersectObjects(targets, false);
+    if(!hits.length) return null;
+    let obj = hits[0].object;
+    // если попали в часть клиента — поднимаемся к Group
+    if(!obj.userData.kind){
+      let p = obj.parent;
+      while(p && !p.userData.kind && p.userData.kind !== 'customer'){ p = p.parent; }
+      if(p === state.customer?.mesh) obj.userData = { kind:'customer' };
+    }
+    return obj;
+  }
+
+  function onClick(button){
+    if(!controls.isLocked) return;
+    const hit = getHovered();
+    if(!hit) return;
+
+    if(button === 2){
+      // ПКМ — убрать деталь
+      if(hit.userData.kind === 'bench-slot'){
+        tryRemoveComponent(hit.userData.componentId);
+      }
+      return;
+    }
+
+    // ЛКМ
+    switch(hit.userData.kind){
+      case 'shelf-component':
+        tryBuyComponent(hit.userData.componentId, hit.userData.tier);
+        break;
+      case 'bench-slot':
+        tryRemoveComponent(hit.userData.componentId);
+        break;
+      case 'customer':
+        tryDeliver();
+        break;
+    }
+  }
+
+  // ============================================================
+  // УПРАВЛЕНИЕ
+  // ============================================================
+  const controls = new PointerLockControls(camera, renderer.domElement);
+  const keys = {};
+  addEventListener('keydown', e => { keys[e.code] = true; });
+  addEventListener('keyup',   e => { keys[e.code] = false; });
+
+  const startScreen = document.getElementById('startScreen');
+  document.getElementById('startBtn').addEventListener('click', () => {
+    try{ if(audioCtx) audioCtx.resume(); }catch(e){}
+    controls.lock();
+  });
+  controls.addEventListener('lock',   () => startScreen.classList.add('hidden'));
+  controls.addEventListener('unlock', () => startScreen.classList.remove('hidden'));
+
+  renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+  renderer.domElement.addEventListener('mousedown', e => {
+    if(!controls.isLocked){ controls.lock(); return; }
+    onClick(e.button);
+  });
+
+  // ============================================================
+  // ДВИЖЕНИЕ
+  // ============================================================
+  const fwdVec = new THREE.Vector3();
+  const rightVec = new THREE.Vector3();
+  const upVec = new THREE.Vector3(0,1,0);
+
+  function updateMovement(dt){
+    if(!controls.isLocked) return;
+    camera.getWorldDirection(fwdVec);
+    fwdVec.y = 0;
+    if(fwdVec.lengthSq() < 1e-6) fwdVec.set(0,0,-1);
+    fwdVec.normalize();
+    rightVec.crossVectors(fwdVec, upVec).normalize();
+
+    const speed = keys.ShiftLeft || keys.ShiftRight ? RUN_SPEED : WALK_SPEED;
+    let mx = (keys.KeyD?1:0) - (keys.KeyA?1:0);
+    let mz = (keys.KeyW?1:0) - (keys.KeyS?1:0);
+    if(mx || mz){
+      const len = Math.hypot(mx, mz);
+      mx /= len; mz /= len;
+      camera.position.addScaledVector(rightVec, mx * speed * dt);
+      camera.position.addScaledVector(fwdVec,   mz * speed * dt);
+    }
+
+    // коллизии: границы комнаты
+    const lim = ROOM - 1;
+    camera.position.x = Math.max(-lim, Math.min(lim, camera.position.x));
+    camera.position.z = Math.max(-lim, Math.min(lim, camera.position.z));
+
+    // коллизия со стойкой
+    const nearCounter = Math.abs(camera.position.z - counterZ) < 1.4 &&
+                        Math.abs(camera.position.x) < 3.8;
+    if(nearCounter){
+      // выталкиваем игрока перед стойкой
+      if(camera.position.z < counterZ) camera.position.z = counterZ - 1.4;
+      else camera.position.z = counterZ + 1.4;
+    }
+
+    camera.position.y = PLAYER_HEIGHT;
+  }
+
+  // ============================================================
+  // HUD
+  // ============================================================
+  const $ = id => document.getElementById(id);
+  const moneyEl = $('money');
+  const orderTextEl = $('orderText');
+  const orderRewardEl = $('orderReward');
+  const buildPanel = $('buildPanel');
+  const promptEl = $('prompt');
+
+  // создать слоты для работы
+  const slotEls = {};
+  for(const c of COMPONENTS){
+    const el = document.createElement('div');
+    el.className = 'slot';
+    el.innerHTML = `<div>${c.icon}</div><div class="slot-name">${c.id}</div>`;
+    buildPanel.appendChild(el);
+    slotEls[c.id] = el;
+  }
+
+  function updateHUD(){
+    moneyEl.textContent = Math.floor(state.money) + ' ₽';
+    for(const c of COMPONENTS){
+      const el = slotEls[c.id];
+      const tier = state.workbench[c.id];
+      el.classList.remove('filled','correct','wrong');
+      if(tier !== undefined){
+        el.classList.add('filled');
+        if(state.order && tier === state.order.tier) el.classList.add('correct');
+        else if(state.order) el.classList.add('wrong');
+        el.style.boxShadow = `0 0 12px #${TIERS[tier].color.toString(16).padStart(6,'0')}`;
+      } else {
+        el.style.boxShadow = '';
+      }
+    }
+  }
+
+  function updateOrderHUD(){
+    if(!state.order){
+      orderTextEl.textContent = 'Ожидание клиента...';
+      orderRewardEl.textContent = '';
+      return;
+    }
+    orderTextEl.textContent = TIERS[state.order.tier].name + ' ПК';
+    orderTextEl.style.color = '#' + TIERS[state.order.tier].color.toString(16).padStart(6,'0');
+    orderRewardEl.textContent = 'Награда: ' + orderReward(state.order.tier) + ' ₽';
+  }
+
+  function updateAll(){ updateHUD(); updateOrderHUD(); }
+
+  // тосты
+  function toast(text, isError=false){
+    const t = document.createElement('div');
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1800);
+  }
+
+  // подсказка при наведении
+  let lastPromptText = '';
+  function updatePrompt(){
+    const hit = controls.isLocked ? getHovered() : null;
+    let text = '';
+    if(hit){
+      switch(hit.userData.kind){
+        case 'shelf-component': {
+          const comp = COMPONENTS.find(c => c.id === hit.userData.componentId);
+          const tier = TIERS[hit.userData.tier];
+          text = `${comp.name} — ${tier.name} (${tier.baseCost} ₽) · ЛКМ купить`;
+          break;
+        }
+        case 'bench-slot': {
+          const comp = COMPONENTS.find(c => c.id === hit.userData.componentId);
+          const filled = state.workbench[hit.userData.componentId] !== undefined;
+          text = filled ? `${comp.name} — ПКМ/ЛКМ убрать` : `${comp.name} — слот свободен`;
+          break;
+        }
+        case 'customer':
+          text = 'ЛКМ — сдать сборку';
+          break;
+      }
+    }
+    if(text !== lastPromptText){
+      lastPromptText = text;
+      promptEl.textContent = text;
+      promptEl.classList.toggle('show', !!text);
+    }
+  }
+
+  // ============================================================
+  // СОХРАНЕНИЕ
+  // ============================================================
+  function save(){
+    try{
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        money: state.money,
+        ordersCompleted: state.ordersCompleted,
+      }));
+    }catch(e){}
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      if(typeof d.money === 'number') state.money = d.money;
+      if(typeof d.ordersCompleted === 'number') state.ordersCompleted = d.ordersCompleted;
+    }catch(e){}
+  }
+
+  // ============================================================
+  // ГЛАВНЫЙ ЦИКЛ
+  // ============================================================
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min((now - last) / 1000, .05);
+    last = now;
+
+    updateMovement(dt);
+    updateCustomerMovement(dt);
+    updatePrompt();
+    updateHUD();
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+
+  // ============================================================
+  // ИНИЦИАЛИЗАЦИЯ
+  // ============================================================
+  load();
+  refreshBenchVisuals();
+  updateAll();
+  spawnCustomer();
+
+  setInterval(save, 5000);
+  addEventListener('beforeunload', save);
 
   requestAnimationFrame(loop);
-}
-
-init();
-</script>
+  </script>
 </body>
 </html>
