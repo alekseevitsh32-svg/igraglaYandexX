@@ -75,7 +75,6 @@
     transition:opacity .15s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
   #prompt.show{opacity:1}
 
-  /* Диалоговый пузырь */
   #dialogBubble{
     position:fixed;top:160px;left:50%;
     transform:translateX(-50%) translateY(-10px);
@@ -231,7 +230,7 @@
     { name:'Премиум',  short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
   ];
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v4';
+  const SAVE_KEY = 'pc-shop-3d-v5';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -375,17 +374,18 @@
   document.getElementById('app').appendChild(renderer.domElement);
   addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-  scene.add(new THREE.AmbientLight(0x8899bb, .6));
+  scene.add(new THREE.AmbientLight(0x8899bb, .55));
   scene.add(new THREE.HemisphereLight(0x00e0b8, 0x0a0e17, .35));
-  const dirLight = new THREE.DirectionalLight(0xffffff, .75);
+  const dirLight = new THREE.DirectionalLight(0xffffff, .7);
   dirLight.position.set(6, 12, 6);
   dirLight.castShadow = !isMobile;
   if(!isMobile){ dirLight.shadow.mapSize.set(2048,2048);
     Object.assign(dirLight.shadow.camera, { left:-16,right:16,top:16,bottom:-16,near:.5,far:40 }); }
   scene.add(dirLight);
 
+  // Потолочные лампы — панели
   for(const [x,z] of [[-6,0],[6,0],[0,-6],[0,6]]){
-    const lamp = new THREE.PointLight(0xaaccff, .55, 14, 2);
+    const lamp = new THREE.PointLight(0xaaccff, .5, 14, 2);
     lamp.position.set(x, 3.6, z); scene.add(lamp);
     const bulb = new THREE.Mesh(new THREE.BoxGeometry(1.4,.08,.4), new THREE.MeshBasicMaterial({color:0xddeeff}));
     bulb.position.set(x, 3.9, z); scene.add(bulb);
@@ -403,6 +403,7 @@
     m.position.set(x, WALL_H/2, z); m.rotation.y=r; m.receiveShadow=true; scene.add(m); }
   addWall(0,-ROOM,0); addWall(0,ROOM,Math.PI); addWall(-ROOM,0,Math.PI/2); addWall(ROOM,0,-Math.PI/2);
 
+  // Дверь
   const door = new THREE.Mesh(new THREE.BoxGeometry(3,3.2,.12),
     new THREE.MeshStandardMaterial({color:0x1a2030, metalness:.4, roughness:.6, emissive:0x003828, emissiveIntensity:.3}));
   door.position.set(0,1.6,ROOM-.06); scene.add(door);
@@ -419,6 +420,7 @@
     new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.6, roughness:.35, emissive:0x00a888, emissiveIntensity:.4}));
   counterTop.position.set(0,1.24,COUNTER_Z); scene.add(counterTop);
 
+  // Неоновая вывеска
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(6,1.5),
     new THREE.MeshBasicMaterial({ map:neonTex, transparent:true }));
   sign.position.set(0,3.1,-ROOM+.1); scene.add(sign);
@@ -426,7 +428,336 @@
   signLight.position.set(0,3,-ROOM+1); scene.add(signLight);
 
   // ============================================================
-  // ДЕТАЛИ
+  // 🪴 ИНТЕРЬЕР МАГАЗИНА
+  // ============================================================
+
+  // --- Тумбочка с цветком ---
+  function createNightstand(x, z, rotation=0){
+    const g = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({color:0x3a2410, roughness:.8});
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.55, 0.5), woodMat);
+    body.position.y = 0.275; body.castShadow = !isMobile; body.receiveShadow = true;
+    g.add(body);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.04, 0.56),
+      new THREE.MeshStandardMaterial({color:0x4a2e14, roughness:.7}));
+    top.position.y = 0.57; top.castShadow = !isMobile;
+    g.add(top);
+    // дверца
+    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.02),
+      new THREE.MeshStandardMaterial({color:0x4a2e14, roughness:.75}));
+    doorPanel.position.set(0, 0.28, 0.255);
+    g.add(doorPanel);
+    // ручка
+    const handle = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10),
+      new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
+    handle.position.set(0.2, 0.28, 0.28);
+    g.add(handle);
+
+    // Горшок с цветком
+    const potMat = new THREE.MeshStandardMaterial({color:0xb85a2a, roughness:.7});
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.14, 16), potMat);
+    pot.position.set(-0.15, 0.66, 0); pot.castShadow = !isMobile; g.add(pot);
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.02, 16),
+      new THREE.MeshStandardMaterial({color:0x2a1a0a, roughness:1}));
+    soil.position.set(-0.15, 0.72, 0); g.add(soil);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8),
+      new THREE.MeshStandardMaterial({color:0x2a6a2a, roughness:.9}));
+    stem.position.set(-0.15, 0.83, 0); g.add(stem);
+    // листья
+    for(let i=0;i<3;i++){
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6),
+        new THREE.MeshStandardMaterial({color:0x3a8a3a, roughness:.85}));
+      leaf.scale.set(1.5, 0.5, 0.8);
+      leaf.position.set(-0.15 + Math.cos(i*2.1)*0.05, 0.8 + i*0.03, Math.sin(i*2.1)*0.05);
+      g.add(leaf);
+    }
+    // Цветок
+    const flowerColors = [0xe74c3c, 0xffc93c, 0xec4899, 0xf97316, 0xa855f7];
+    const flowerColor = flowerColors[Math.floor(Math.random()*flowerColors.length)];
+    const flowerMat = new THREE.MeshStandardMaterial({color:flowerColor, roughness:.7, emissive:flowerColor, emissiveIntensity:.15});
+    for(let i=0;i<5;i++){
+      const petal = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), flowerMat);
+      petal.scale.set(1, 0.4, 1.6);
+      const ang = i/5*Math.PI*2;
+      petal.position.set(-0.15 + Math.cos(ang)*0.04, 0.95, Math.sin(ang)*0.04);
+      petal.lookAt(new THREE.Vector3(-0.15 + Math.cos(ang)*0.1, 0.95, Math.sin(ang)*0.1));
+      g.add(petal);
+    }
+    const center = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 10),
+      new THREE.MeshStandardMaterial({color:0xffd700, emissive:0xffd700, emissiveIntensity:.4}));
+    center.position.set(-0.15, 0.97, 0); g.add(center);
+
+    // Чашка кофе
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.08, 14),
+      new THREE.MeshStandardMaterial({color:0xffffff, roughness:.4}));
+    cup.position.set(0.18, 0.63, 0.05); g.add(cup);
+    const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.01, 14),
+      new THREE.MeshStandardMaterial({color:0x3a1a0a, roughness:.5}));
+    coffee.position.set(0.18, 0.67, 0.05); g.add(coffee);
+    // пар
+    const steamMat = new THREE.MeshBasicMaterial({color:0xdddddd, transparent:true, opacity:.25});
+    for(let i=0;i<3;i++){
+      const steam = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), steamMat);
+      steam.position.set(0.18 + (Math.random()-0.5)*0.03, 0.72 + i*0.04, 0.05);
+      g.add(steam);
+    }
+
+    g.position.set(x, 0, z);
+    g.rotation.y = rotation;
+    return g;
+  }
+
+  // --- Торшер (напольный светильник) ---
+  function createFloorLamp(x, z){
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.05, 20),
+      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.6, roughness:.4}));
+    base.position.y = 0.025; base.castShadow = !isMobile;
+    g.add(base);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.7, 12),
+      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.35}));
+    pole.position.y = 0.85; g.add(pole);
+    const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.28, 20, 1, true),
+      new THREE.MeshStandardMaterial({color:0xfff4d6, emissive:0xffd18a, emissiveIntensity:.35, side:THREE.DoubleSide, roughness:.9}));
+    shade.position.y = 1.78; g.add(shade);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 12),
+      new THREE.MeshBasicMaterial({color:0xffeebb}));
+    bulb.position.y = 1.7; g.add(bulb);
+    const light = new THREE.PointLight(0xffd18a, .8, 5, 2);
+    light.position.y = 1.7; g.add(light);
+    g.position.set(x, 0, z);
+    return g;
+  }
+
+  // --- Настольная лампа ---
+  function createDeskLamp(){
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.02, 16),
+      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.7, roughness:.35}));
+    g.add(base);
+    const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 8),
+      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.4}));
+    arm1.position.set(0, 0.18, 0); g.add(arm1);
+    const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28, 8),
+      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.4}));
+    arm2.rotation.z = -Math.PI/3;
+    arm2.position.set(0.1, 0.42, 0); g.add(arm2);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.16, 16, 1, true),
+      new THREE.MeshStandardMaterial({color:0x00e0b8, emissive:0x00e0b8, emissiveIntensity:.4, side:THREE.DoubleSide}));
+    shade.position.set(0.24, 0.42, 0);
+    shade.rotation.z = Math.PI/3;
+    g.add(shade);
+    const light = new THREE.PointLight(0x00e0b8, .6, 3, 2);
+    light.position.set(0.24, 0.35, 0); g.add(light);
+    return g;
+  }
+
+  // --- Телевизор с PCSHOP ---
+  function createTV(width=1.6, height=0.9){
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.06),
+      new THREE.MeshStandardMaterial({color:0x0a0a0a, metalness:.7, roughness:.4}));
+    frame.castShadow = !isMobile;
+    g.add(frame);
+
+    const screenTex = canvasTex(1024, 512, (ctx,w,h)=>{
+      const grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0, '#0a1520');
+      grad.addColorStop(1, '#050a14');
+      ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+
+      // сетка
+      ctx.strokeStyle = 'rgba(0,224,184,.08)'; ctx.lineWidth = 1;
+      for(let x=0;x<w;x+=32){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+      for(let y=0;y<h;y+=32){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+      // PC SHOP
+      ctx.font = 'bold 190px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#00e0b8'; ctx.shadowBlur = 50;
+      const grad2 = ctx.createLinearGradient(0,0,w,0);
+      grad2.addColorStop(0,'#00e0b8'); grad2.addColorStop(1,'#00b3ff');
+      ctx.fillStyle = grad2;
+      ctx.fillText('PC SHOP', w/2, h/2 - 20);
+
+      // подпись
+      ctx.font = 'bold 44px sans-serif';
+      ctx.shadowBlur = 25;
+      ctx.fillStyle = '#7b8bb0';
+      ctx.fillText('ИДЕАЛЬНАЯ СБОРКА', w/2, h/2 + 110);
+
+      // LIVE индикатор
+      ctx.fillStyle = '#ff4d6a';
+      ctx.shadowColor = '#ff4d6a'; ctx.shadowBlur = 20;
+      ctx.beginPath(); ctx.arc(60, 60, 14, 0, Math.PI*2); ctx.fill();
+      ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'left';
+      ctx.shadowBlur = 0; ctx.fillStyle = '#ff4d6a';
+      ctx.fillText('LIVE', 88, 72);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#00e0b8';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillText('● ОТКРЫТО', w-40, 72);
+    });
+
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(width-0.08, height-0.08),
+      new THREE.MeshBasicMaterial({map:screenTex}));
+    screen.position.z = 0.032;
+    g.add(screen);
+
+    const light = new THREE.PointLight(0x00e0b8, .5, 4, 2);
+    light.position.z = 0.6; g.add(light);
+    return g;
+  }
+
+  // --- Терминал оплаты на стойке ---
+  function createPaymentTerminal(){
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.14),
+      new THREE.MeshStandardMaterial({color:0x1a1a2a, metalness:.5, roughness:.4}));
+    body.castShadow = !isMobile;
+    g.add(body);
+
+    const screenTex = canvasTex(256, 160, (ctx,w,h)=>{
+      const grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0, '#00e0b8'); grad.addColorStop(1, '#00b3ff');
+      ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = '#04121a';
+      ctx.font = 'bold 90px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('₽', w/2, h/2 - 10);
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('К ОПЛАТЕ', w/2, h/2 + 50);
+    });
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.12),
+      new THREE.MeshBasicMaterial({map:screenTex}));
+    screen.position.set(0, 0.04, 0.071);
+    g.add(screen);
+
+    // кнопки
+    for(let i=0;i<3;i++){
+      for(let j=0;j<4;j++){
+        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.018, 0.008),
+          new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.6, roughness:.4}));
+        btn.position.set(-0.09 + j*0.06, -0.07 + i*0.025, 0.072);
+        g.add(btn);
+      }
+    }
+    // слот для карты
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.008, 0.03),
+      new THREE.MeshStandardMaterial({color:0x000000}));
+    slot.position.set(0, 0.108, 0.055);
+    g.add(slot);
+    // индикатор
+    const ind = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8),
+      new THREE.MeshBasicMaterial({color:0x00ff00}));
+    ind.position.set(0.1, -0.09, 0.072);
+    g.add(ind);
+    return g;
+  }
+
+  // --- Стопка купюр ---
+  function createCashStack(){
+    const g = new THREE.Group();
+    const colors = [0x5a8a3a, 0x6a5a2a, 0x4a6a8a, 0x8a3a5a, 0x3a6a4a];
+    for(let i=0;i<10;i++){
+      const c = colors[Math.floor(Math.random()*colors.length)];
+      const bill = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.0022, 0.075),
+        new THREE.MeshStandardMaterial({color:c, roughness:.9}));
+      bill.position.set((Math.random()-0.5)*0.004, i*0.0022, (Math.random()-0.5)*0.004);
+      bill.rotation.y = (Math.random()-0.5)*0.06;
+      g.add(bill);
+    }
+    // верхняя купюра с номиналом
+    const topTex = canvasTex(128, 64, (ctx,w,h)=>{
+      ctx.fillStyle = '#5a8a3a'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 26px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('100 ₽', w/2, h/2);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(4,4,w-8,h-8);
+    });
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.003, 0.075),
+      new THREE.MeshBasicMaterial({map:topTex}));
+    top.position.y = 10*0.0022 + 0.001;
+    top.rotation.y = 0.05;
+    g.add(top);
+    return g;
+  }
+
+  // --- Большое напольное растение ---
+  function createBigPlant(x, z){
+    const g = new THREE.Group();
+    const potMat = new THREE.MeshStandardMaterial({color:0x5a3a22, roughness:.75});
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.4, 18), potMat);
+    pot.position.y = 0.2; pot.castShadow = !isMobile; g.add(pot);
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 18),
+      new THREE.MeshStandardMaterial({color:0x2a1a0a, roughness:1}));
+    soil.position.y = 0.4; g.add(soil);
+    // листья — пальма
+    const leafMat = new THREE.MeshStandardMaterial({color:0x2a7a3a, roughness:.8, side:THREE.DoubleSide});
+    for(let i=0;i<8;i++){
+      const leaf = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.9), leafMat);
+      const ang = i/8 * Math.PI*2;
+      leaf.position.set(Math.cos(ang)*0.15, 0.85, Math.sin(ang)*0.15);
+      leaf.rotation.y = ang;
+      leaf.rotation.x = -0.5;
+      g.add(leaf);
+    }
+    g.position.set(x, 0, z);
+    return g;
+  }
+
+  // --- Расположение декора ---
+  // Тумбочки у входа по бокам
+  scene.add(createNightstand(-5.5, 10.2, Math.PI));
+  scene.add(createNightstand( 5.5, 10.2, Math.PI));
+  // Тумбочка за стойкой (для сотрудника)
+  scene.add(createNightstand(-5.5, -10.2, 0));
+  scene.add(createNightstand( 5.5, -10.2, 0));
+
+  // Торшеры в углах
+  scene.add(createFloorLamp(-9.5,  9.5));
+  scene.add(createFloorLamp( 9.5,  9.5));
+  scene.add(createFloorLamp(-9.5, -10));
+  scene.add(createFloorLamp( 9.5, -10));
+
+  // Напольные растения
+  scene.add(createBigPlant(-9.8, 5));
+  scene.add(createBigPlant( 9.8, 5));
+
+  // ТЕЛЕВИЗОР на стене справа от неона
+  const tv = createTV(1.8, 1.0);
+  tv.position.set(-6.5, 2.6, -ROOM + 0.15);
+  scene.add(tv);
+
+  // второй телевизор слева (реклама)
+  const tv2 = createTV(1.8, 1.0);
+  tv2.position.set(6.5, 2.6, -ROOM + 0.15);
+  scene.add(tv2);
+
+  // ТЕРМИНАЛ ОПЛАТЫ на стойке
+  const terminal = createPaymentTerminal();
+  terminal.position.set(2.2, 1.28, COUNTER_Z);
+  terminal.rotation.y = -0.4;
+  scene.add(terminal);
+
+  // КУПЮРЫ на стойке
+  const cash1 = createCashStack();
+  cash1.position.set(1.5, 1.28, COUNTER_Z + 0.1);
+  scene.add(cash1);
+
+  const cash2 = createCashStack();
+  cash2.position.set(1.75, 1.28, COUNTER_Z - 0.15);
+  cash2.rotation.y = 0.3;
+  scene.add(cash2);
+
+  // Настольная лампа у стойки
+  const deskLamp = createDeskLamp();
+  deskLamp.position.set(-2.4, 1.28, COUNTER_Z);
+  deskLamp.rotation.y = -Math.PI/2;
+  scene.add(deskLamp);
+
+  // ============================================================
+  // ДЕТАЛИ (модели комплектующих)
   // ============================================================
   function makeMotherboard(tier){
     const g = new THREE.Group();
@@ -719,11 +1050,6 @@
         cap.position.y = 1.65*S; g.add(cap);
         const band = new THREE.Mesh(new THREE.TorusGeometry(.19*S,.02*S,8,24), hatMat);
         band.rotation.x = Math.PI/2; band.position.y = 1.65*S; g.add(band);
-      } else if(hat.type === 'top'){
-        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(.15*S,.15*S,.32*S,20), hatMat);
-        cylinder.position.y = 1.85*S; g.add(cylinder);
-        const brim = new THREE.Mesh(new THREE.CylinderGeometry(.24*S,.24*S,.02*S,20), hatMat);
-        brim.position.y = 1.7*S; g.add(brim);
       }
     }
 
@@ -809,8 +1135,7 @@
       hair: 0x4a3a2a, shoes: 0x2a2018,
       hat: { type:'beanie', color: 0x3a2a20 },
       beard: true, mustache: true,
-      accessory: 'bottle', dirty: true,
-      height: 0.92,
+      accessory: 'bottle', dirty: true, height: 0.92,
     });
     h.rotation.x = 0.06;
     g.add(h);
@@ -824,8 +1149,7 @@
       hair: 0x3a2410,
       hat: { type:'cap', color: 0xe67e22 },
       mustache: true,
-      accessory: 'briefcase',
-      height: 1.0,
+      accessory: 'briefcase', height: 1.0,
     });
     g.add(h);
     return g;
@@ -859,11 +1183,9 @@
     const g = new THREE.Group();
     const h = makeHuman({
       shirt: 0x1a1a2a, pants: 0x1a1a2a, skin: 0xffdbac,
-      hair: 0x1a1a1a,
-      sunglasses: true,
+      hair: 0x1a1a1a, sunglasses: true,
       tieColor: 0xb8860b,
-      accessory: 'watch',
-      height: 1.02,
+      accessory: 'watch', height: 1.02,
     });
     g.add(h);
     return g;
@@ -873,10 +1195,8 @@
     const g = new THREE.Group();
     const h = makeHuman({
       shirt: 0x0a0a0a, pants: 0x0a0a0a, skin: 0xf1c27d,
-      hair: 0x0a0a0a,
-      sunglasses: true,
-      tieColor: 0x1a1a1a,
-      height: 1.12,
+      hair: 0x0a0a0a, sunglasses: true,
+      tieColor: 0x1a1a1a, height: 1.12,
     });
     g.add(h);
     return g;
@@ -891,8 +1211,7 @@
     } else if(tier === 1){
       g.add(makeWorker());
     } else if(tier === 2){
-      const kid = makeSchoolkid();
-      g.add(kid);
+      g.add(makeSchoolkid());
       const mom = makeParent('f');
       mom.position.set(-0.72, 0, -0.35); mom.rotation.y = 0.18;
       g.add(mom);
@@ -900,8 +1219,7 @@
       dad.position.set(0.72, 0, -0.35); dad.rotation.y = -0.18;
       g.add(dad);
     } else {
-      const rich = makeRichMan();
-      g.add(rich);
+      g.add(makeRichMan());
       const bg1 = makeBodyguard();
       bg1.position.set(-0.88, 0, -0.4); bg1.rotation.y = 0.2;
       g.add(bg1);
@@ -916,7 +1234,6 @@
         o.userData.root = g;
       }
     });
-
     return g;
   }
 
@@ -940,7 +1257,7 @@
       board.position.set(SHELF_X, y-.15, z);
       board.castShadow = !isMobile; board.receiveShadow = true; scene.add(board);
     }
-    const l = new THREE.PointLight(0x88bbff, .3, 3, 2);
+    const l = new THREE.PointLight(0x88bbff, .25, 3, 2);
     l.position.set(SHELF_X + .3, 2.2, z); scene.add(l);
   }
 
@@ -1189,7 +1506,6 @@
     beep(880,.08,'sine',.04);
     setTimeout(()=>beep(1200,.1,'sine',.04),80);
 
-    // Приветствие — показывается когда клиент дойдёт до стойки
     setTimeout(() => {
       if(!state.customer || state.customer.tier !== tier) return;
       const g = pickRandom(GREETINGS[tier]);
@@ -1292,15 +1608,11 @@
 
     if(good){ sfxWin(); sfxCoin(); } else { sfxFail(); }
 
-    // Реакция клиента
     const reaction = pickRandom(REACTIONS[reactionKey][expected]);
     showDialog(reaction.who, reaction.text, 4500);
 
     const deltaStr = (ratingDelta>0?'+':'') + ratingDelta;
-    toast(
-      (good ? '✅' : '❌') + ' Рейтинг ' + deltaStr + ' · +' + reward + ' ₽',
-      !good
-    );
+    toast((good ? '✅' : '❌') + ' Рейтинг ' + deltaStr + ' · +' + reward + ' ₽', !good);
 
     state.holdingPC = null;
     const leavingCustomer = state.customer;
@@ -1310,7 +1622,6 @@
     updateAll();
     save();
 
-    // Клиент уходит через 4.5 сек
     setTimeout(() => {
       if(leavingCustomer){
         const startTime = performance.now();
