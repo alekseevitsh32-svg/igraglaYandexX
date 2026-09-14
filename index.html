@@ -125,6 +125,32 @@
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
   body.is-mobile #dialogBubble{top:130px;font-size:13px;padding:10px 16px;max-width:92vw;}
 
+  /* LANGUAGE SCREEN */
+  #langScreen{position:fixed;inset:0;z-index:150;
+    background:radial-gradient(ellipse at center,#16203a 0%,#050710 70%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:20px;gap:20px;
+    transition:opacity .3s}
+  #langScreen.hidden{opacity:0;pointer-events:none;visibility:hidden}
+  #langScreen .flag-row{display:flex;gap:40px;font-size:60px;margin-bottom:10px}
+  #langScreen h1{font-size:clamp(24px,5vw,42px);font-weight:900;
+    background:linear-gradient(135deg,#00e0b8,#00b3ff);-webkit-background-clip:text;
+    background-clip:text;color:transparent;letter-spacing:-1px}
+  #langScreen .sub{color:#7b8bb0;font-size:16px;margin-bottom:16px}
+  #langScreen .lang-buttons{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
+  #langScreen .lang-btn{
+    background:linear-gradient(135deg,#1a2233,#0d1420);color:#e6ecff;
+    border:2px solid rgba(0,224,184,.5);border-radius:16px;
+    padding:20px 40px;font-size:20px;font-weight:800;cursor:pointer;
+    font-family:inherit;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px;
+    min-width:180px}
+  #langScreen .lang-btn:hover{
+    background:linear-gradient(135deg,#00e0b8,#00b3ff);color:#04121a;
+    transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,224,184,.5)}
+  #langScreen .lang-btn .flag{font-size:42px}
+  #langScreen .lang-btn .name{font-size:16px;letter-spacing:1px}
+  #langScreen .lang-btn .native{font-size:12px;opacity:.7;font-weight:600}
+
   #startScreen{position:fixed;inset:0;background:radial-gradient(ellipse at center,#16203a 0%,#050710 70%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;
     text-align:center;padding:20px;transition:opacity .3s;overflow:auto}
@@ -341,23 +367,42 @@
 <body>
   <div id="app"></div>
 
+  <!-- LANGUAGE SELECTION SCREEN -->
+  <div id="langScreen">
+    <div class="flag-row">🌍 🌏</div>
+    <h1 id="langTitle">Привет! Выбери язык / Hello! Choose language</h1>
+    <div class="sub" id="langSub">Выбери язык интерфейса / Choose interface language</div>
+    <div class="lang-buttons">
+      <button class="lang-btn" data-lang="ru">
+        <div class="flag">🇷🇺</div>
+        <div class="name">РУССКИЙ</div>
+        <div class="native">Russian</div>
+      </button>
+      <button class="lang-btn" data-lang="en">
+        <div class="flag">🇬🇧</div>
+        <div class="name">ENGLISH</div>
+        <div class="native">Английский</div>
+      </button>
+    </div>
+  </div>
+
   <div id="hud">
     <div class="panel" id="moneyPanel">
-      <div class="label">Баланс</div>
+      <div class="label" id="lbl-money">Баланс</div>
       <div class="value" id="money">2000 ₽</div>
     </div>
     <div class="panel" id="bluePanel">
-      <div class="label">💎 Синяя валюта</div>
+      <div class="label" id="lbl-blue">💎 Синяя валюта</div>
       <div class="value" id="blueCurrency">0</div>
     </div>
     <div class="panel" id="ratingPanel">
-      <div class="label">Рейтинг магазина</div>
+      <div class="label" id="lbl-rating">Рейтинг магазина</div>
       <div class="value" id="rating">50</div>
       <div class="stars" id="stars">★★★☆☆</div>
       <div style="font-size:9px;color:#a855f7;margin-top:3px;font-weight:700" id="topChance">🎮 TOP: 5%</div>
     </div>
     <div class="panel" id="orderPanel">
-      <div class="label">Заказ</div>
+      <div class="label" id="lbl-order">Заказ</div>
       <div class="order" id="orderText">—</div>
       <div class="reward" id="orderReward"></div>
       <div class="who" id="orderWho"></div>
@@ -367,12 +412,12 @@
   <div id="inventory"></div>
 
   <div id="tableUI">
-    <div class="table-title">Верстак · Сборка</div>
+    <div class="table-title" id="lbl-table">Верстак · Сборка</div>
   </div>
 
-  <button id="giveBtn">🎁 ВЫДАТЬ ПК КЛИЕНТУ</button>
-  <button id="atmBtn">🏧 Открыть Банкомат</button>
-  <button id="exBtn">💎 Обменник</button>
+  <button id="giveBtn">🎁 <span id="lbl-give">ВЫДАТЬ ПК КЛИЕНТУ</span></button>
+  <button id="atmBtn">🏧 <span id="lbl-atm">Открыть Банкомат</span></button>
+  <button id="exBtn">💎 <span id="lbl-ex">Обменник</span></button>
   <div id="crosshair"></div>
   <div id="prompt"></div>
   <div id="dialogBubble">
@@ -383,14 +428,14 @@
   <div id="dayPanel">
     <div class="icon" id="dayIcon">☀️</div>
     <div class="info">
-      <div class="day-num">День <b id="dayNum">1</b></div>
+      <div class="day-num"><span id="lbl-day">День</span> <b id="dayNum">1</b></div>
       <div class="time-left" id="timeLeft">2:00</div>
     </div>
   </div>
 
   <div id="nightOverlay"></div>
-  <div id="nightHint">🌙 Наступила ночь. Нажми на спальный мешок и спи</div>
-  <button id="sleepBtn">💤 СПАТЬ</button>
+  <div id="nightHint">🌙 <span id="lbl-night">Наступила ночь. Нажми на спальный мешок и спи</span></div>
+  <button id="sleepBtn">💤 <span id="lbl-sleep">СПАТЬ</span></button>
 
   <div id="sleepOverlay">
     <div class="dayText" id="sleepDayText">День 1</div>
@@ -399,52 +444,52 @@
 
   <div id="atmModal">
     <div class="atm-content">
-      <h2>🏧 БАНКОМАТ</h2>
-      <div class="atm-sub">Курс обмена: <b>500 ₽ = 1 💎</b></div>
+      <h2>🏧 <span id="atm-title">БАНКОМАТ</span></h2>
+      <div class="atm-sub"><span id="atm-sub-1">Курс обмена:</span> <b>500 ₽ = 1 💎</b></div>
       <div class="atm-balance">
-        <div>Рубли<b id="atmMoney">0 ₽</b></div>
-        <div>Синие 💎<b id="atmBlue">0</b></div>
+        <div><span id="atm-lbl-rub">Рубли</span><b id="atmMoney">0 ₽</b></div>
+        <div><span id="atm-lbl-blue">Синие 💎</span><b id="atmBlue">0</b></div>
       </div>
       <div class="atm-buttons" id="atmButtons">
-        <button data-amount="500">Обменять 500 ₽ → 1 💎</button>
-        <button data-amount="2500">Обменять 2 500 ₽ → 5 💎</button>
-        <button data-amount="5000">Обменять 5 000 ₽ → 10 💎</button>
-        <button data-amount="10000">Обменять 10 000 ₽ → 20 💎</button>
+        <button data-amount="500"><span class="atm-btn-txt" data-ru="Обменять 500 ₽ → 1 💎" data-en="Exchange 500 ₽ → 1 💎">Обменять 500 ₽ → 1 💎</span></button>
+        <button data-amount="2500"><span class="atm-btn-txt" data-ru="Обменять 2 500 ₽ → 5 💎" data-en="Exchange 2,500 ₽ → 5 💎">Обменять 2 500 ₽ → 5 💎</span></button>
+        <button data-amount="5000"><span class="atm-btn-txt" data-ru="Обменять 5 000 ₽ → 10 💎" data-en="Exchange 5,000 ₽ → 10 💎">Обменять 5 000 ₽ → 10 💎</span></button>
+        <button data-amount="10000"><span class="atm-btn-txt" data-ru="Обменять 10 000 ₽ → 20 💎" data-en="Exchange 10,000 ₽ → 20 💎">Обменять 10 000 ₽ → 20 💎</span></button>
       </div>
-      <button id="atmClose">Закрыть</button>
+      <button id="atmClose"><span data-ru="Закрыть" data-en="Close">Закрыть</span></button>
     </div>
   </div>
 
   <div id="exModal">
     <div class="atm-content">
-      <h2>💎 ОБМЕННИК</h2>
-      <div class="atm-sub">Курс обмена: <b>10 💎 = 495 ₽</b></div>
+      <h2>💎 <span id="ex-title">ОБМЕННИК</span></h2>
+      <div class="atm-sub"><span id="ex-sub-1">Курс обмена:</span> <b>10 💎 = 495 ₽</b></div>
       <div class="atm-balance">
-        <div>Синие 💎<b id="exBlue">0</b></div>
-        <div>Рубли<b id="exMoney">0 ₽</b></div>
+        <div><span id="ex-lbl-blue">Синие 💎</span><b id="exBlue">0</b></div>
+        <div><span id="ex-lbl-rub">Рубли</span><b id="exMoney">0 ₽</b></div>
       </div>
       <div class="atm-buttons" id="exButtons">
-        <button data-amount="10">Обменять 10 💎 → 495 ₽</button>
-        <button data-amount="50">Обменять 50 💎 → 2 475 ₽</button>
-        <button data-amount="100">Обменять 100 💎 → 4 950 ₽</button>
-        <button data-amount="200">Обменять 200 💎 → 9 900 ₽</button>
+        <button data-amount="10"><span class="ex-btn-txt" data-ru="Обменять 10 💎 → 495 ₽" data-en="Exchange 10 💎 → 495 ₽">Обменять 10 💎 → 495 ₽</span></button>
+        <button data-amount="50"><span class="ex-btn-txt" data-ru="Обменять 50 💎 → 2 475 ₽" data-en="Exchange 50 💎 → 2,475 ₽">Обменять 50 💎 → 2 475 ₽</span></button>
+        <button data-amount="100"><span class="ex-btn-txt" data-ru="Обменять 100 💎 → 4 950 ₽" data-en="Exchange 100 💎 → 4,950 ₽">Обменять 100 💎 → 4 950 ₽</span></button>
+        <button data-amount="200"><span class="ex-btn-txt" data-ru="Обменять 200 💎 → 9 900 ₽" data-en="Exchange 200 💎 → 9,900 ₽">Обменять 200 💎 → 9 900 ₽</span></button>
       </div>
-      <button id="exClose">Закрыть</button>
+      <button id="exClose"><span data-ru="Закрыть" data-en="Close">Закрыть</span></button>
     </div>
   </div>
 
   <div id="startScreen">
     <h1>PC SHOP TYCOON</h1>
-    <p>Управляй магазином сборки ПК. Принимай заказы, покупай детали, собирай компьютеры и выдавай их клиентам.</p>
+    <p id="start-desc">Управляй магазином сборки ПК. Принимай заказы, покупай детали, собирай компьютеры и выдавай их клиентам.</p>
     <div class="controls desktop-hint">
-      <div><b>W</b> <b>A</b> <b>S</b> <b>D</b> — движение · <b>Shift</b> — бег</div>
-      <div><b>Мышь</b> — обзор · <b>ЛКМ</b> — купить / действие · <b>ПКМ</b> — убрать</div>
-      <div><b>ESC</b> — пауза</div>
+      <div id="start-hint-1"><b>W</b> <b>A</b> <b>S</b> <b>D</b> — движение · <b>Shift</b> — бег</div>
+      <div id="start-hint-2"><b>Мышь</b> — обзор · <b>ЛКМ</b> — купить / действие · <b>ПКМ</b> — убрать</div>
+      <div id="start-hint-3"><b>ESC</b> — пауза</div>
     </div>
     <div class="controls mobile-hint">
-      <div><b>Джойстик слева</b> — движение</div>
-      <div><b>Свайп справа</b> — обзор</div>
-      <div><b>Тап</b> по полке — купить · У верстака — кнопки сборки</div>
+      <div id="start-mob-1"><b>Джойстик слева</b> — движение</div>
+      <div id="start-mob-2"><b>Свайп справа</b> — обзор</div>
+      <div id="start-mob-3"><b>Тап</b> по полке — купить · У верстака — кнопки сборки</div>
     </div>
     <button id="startBtn" type="button">НАЧАТЬ ИГРУ</button>
   </div>
@@ -457,23 +502,167 @@
   import * as THREE from 'three';
 
   // ============================================================
+  // ЯЗЫКИ / LANGUAGES
+  // ============================================================
+  const LANG_KEY = 'pc-shop-lang';
+  let lang = localStorage.getItem(LANG_KEY) || null;
+
+  const I18N = {
+    ru: {
+      startTitle: 'НАЧАТЬ ИГРУ',
+      startDesc: 'Управляй магазином сборки ПК. Принимай заказы, покупай детали, собирай компьютеры и выдавай их клиентам.',
+      startHint1: '<b>W</b> <b>A</b> <b>S</b> <b>D</b> — движение · <b>Shift</b> — бег',
+      startHint2: '<b>Мышь</b> — обзор · <b>ЛКМ</b> — купить / действие · <b>ПКМ</b> — убрать',
+      startHint3: '<b>ESC</b> — пауза',
+      startMob1: '<b>Джойстик слева</b> — движение',
+      startMob2: '<b>Свайп справа</b> — обзор',
+      startMob3: '<b>Тап</b> по полке — купить · У верстака — кнопки сборки',
+      lblMoney: 'Баланс',
+      lblBlue: '💎 Синяя валюта',
+      lblRating: 'Рейтинг магазина',
+      lblOrder: 'Заказ',
+      lblTable: 'Верстак · Сборка',
+      lblGive: 'ВЫДАТЬ ПК КЛИЕНТУ',
+      lblAtm: 'Открыть Банкомат',
+      lblEx: 'Обменник',
+      lblDay: 'День',
+      lblNight: 'Наступила ночь. Нажми на спальный мешок и спи',
+      lblSleep: 'СПАТЬ',
+      atmTitle: 'БАНКОМАТ',
+      atmSub: 'Курс обмена:',
+      atmRub: 'Рубли',
+      atmBlue: 'Синие 💎',
+      exTitle: 'ОБМЕННИК',
+      exSub: 'Курс обмена:',
+      close: 'Закрыть',
+      waitingClient: 'Ожидание клиента...',
+      orderReward: 'Бюджет-ориентир:',
+      orderRewardMega: 'Оплата:',
+      perPart: '₽/деталь',
+      clientLabel: 'Клиент:',
+      sleepFalling: 'Засыпаем...',
+      sleepWaking: 'Просыпаемся...',
+      sleepDay: 'День',
+      noOrder: 'Нет активного заказа. Дождись клиента.',
+      slotBusy: 'Слот занят. Убери деталь.',
+      needMoney: 'Нужно',
+      slotEmpty: 'Слот пуст. Купи деталь на полке.',
+      placed: 'Установлено:',
+      noPart: 'Нет детали в инвентаре. Купи на полке.',
+      allParts: 'Собери все 5 деталей',
+      pcReady: 'ПК собран! Иди к клиенту',
+      youHave: 'Уже есть',
+      bought: 'Куплено:',
+      sleepOnlyNight: 'Спать можно только ночью',
+      clientNotArrived: 'Клиент ещё не подошёл',
+      noOrderYet: 'Нет заказа',
+      deliverAll: 'Собери все 5 деталей на верстаке',
+      wrongParts: 'Не те комплектующие. Нужны:',
+      orderDone: 'Заказ выполнен!',
+      rating: 'Рейтинг',
+      sleepBagHint: 'ЛКМ чтобы спать',
+      sleepBagDay: 'спать можно ночью',
+      ratingTop: 'ТОП',
+      itemName: 'Наименование',
+      tierBase: 'Базовая',
+      tierStd: 'Стандарт',
+      tierGame: 'Игровая',
+      tierPro: 'Премиум',
+      tierTop: 'Топ',
+      tierMega: 'Супер Топ',
+      buy: 'купить',
+      take: 'ВЗЯТЬ ПК',
+    },
+    en: {
+      startTitle: 'START GAME',
+      startDesc: 'Manage a PC building shop. Take orders, buy parts, build computers and deliver them to customers.',
+      startHint1: '<b>W</b> <b>A</b> <b>S</b> <b>D</b> — move · <b>Shift</b> — run',
+      startHint2: '<b>Mouse</b> — look · <b>LMB</b> — buy / action · <b>RMB</b> — remove',
+      startHint3: '<b>ESC</b> — pause',
+      startMob1: '<b>Left joystick</b> — move',
+      startMob2: '<b>Swipe right</b> — look',
+      startMob3: '<b>Tap</b> shelf — buy · At bench — build buttons',
+      lblMoney: 'Balance',
+      lblBlue: '💎 Blue currency',
+      lblRating: 'Shop rating',
+      lblOrder: 'Order',
+      lblTable: 'Workbench · Build',
+      lblGive: 'GIVE PC TO CUSTOMER',
+      lblAtm: 'Open ATM',
+      lblEx: 'Exchange',
+      lblDay: 'Day',
+      lblNight: 'Night has come. Click on the sleeping bag and sleep',
+      lblSleep: 'SLEEP',
+      atmTitle: 'ATM',
+      atmSub: 'Exchange rate:',
+      atmRub: 'Rubles',
+      atmBlue: 'Blue 💎',
+      exTitle: 'EXCHANGE',
+      exSub: 'Exchange rate:',
+      close: 'Close',
+      waitingClient: 'Waiting for a customer...',
+      orderReward: 'Budget guide:',
+      orderRewardMega: 'Payment:',
+      perPart: '₽/part',
+      clientLabel: 'Customer:',
+      sleepFalling: 'Falling asleep...',
+      sleepWaking: 'Waking up...',
+      sleepDay: 'Day',
+      noOrder: 'No active order. Wait for a customer.',
+      slotBusy: 'Slot busy. Remove part first.',
+      needMoney: 'You need',
+      slotEmpty: 'Slot empty. Buy a part from the shelf.',
+      placed: 'Installed:',
+      noPart: 'No part in inventory. Buy from the shelf.',
+      wrongParts: 'Wrong components. Needed:',
+      deliverAll: 'Build all 5 parts on the workbench',
+      noOrderYet: 'No order',
+      clientNotArrived: 'Customer has not arrived yet',
+      allParts: 'Build all 5 parts',
+      pcReady: 'PC built! Go to the customer',
+      youHave: 'Already have',
+      bought: 'Bought:',
+      sleepOnlyNight: 'You can only sleep at night',
+      orderDone: 'Order completed!',
+      rating: 'Rating',
+      sleepBagHint: 'LMB to sleep',
+      sleepBagDay: 'can only sleep at night',
+      ratingTop: 'TOP',
+      itemName: 'Item',
+      tierBase: 'Basic',
+      tierStd: 'Standard',
+      tierGame: 'Gaming',
+      tierPro: 'Premium',
+      tierTop: 'Top',
+      tierMega: 'Super Top',
+      buy: 'buy',
+      take: 'TAKE PC',
+    }
+  };
+
+  function t(key){ return I18N[lang][key] || I18N.ru[key] || key; }
+
+  // ============================================================
   // КОНФИГ
   // ============================================================
   const COMPONENTS = [
-    { id:'mb',  name:'Материнка',  icon:'🔌', size:[.6,.06,.45] },
-    { id:'cpu', name:'Процессор',  icon:'🔲', size:[.26,.06,.26] },
-    { id:'ram', name:'ОЗУ',        icon:'🧠', size:[.5,.1,.11] },
-    { id:'gpu', name:'Видеокарта', icon:'🎮', size:[.6,.2,.32] },
-    { id:'psu', name:'Питание',    icon:'⚡', size:[.35,.28,.35] },
+    { id:'mb',  name:'Материнка',  nameEn:'Motherboard', icon:'🔌', size:[.6,.06,.45] },
+    { id:'cpu', name:'Процессор',  nameEn:'CPU',         icon:'🔲', size:[.26,.06,.26] },
+    { id:'ram', name:'ОЗУ',        nameEn:'RAM',         icon:'🧠', size:[.5,.1,.11] },
+    { id:'gpu', name:'Видеокарта', nameEn:'GPU',         icon:'🎮', size:[.6,.2,.32] },
+    { id:'psu', name:'Питание',    nameEn:'PSU',         icon:'⚡', size:[.35,.28,.35] },
   ];
+  function compName(c){ return lang === 'en' ? c.nameEn : c.name; }
+
   const TIERS = [
-    { name:'Базовая',   short:'BASE', color:0x8fa0b8, hex:'#8fa0b8', cost:100,  buyer:'странник' },
-    { name:'Стандарт',  short:'STD',  color:0x3a9bff, hex:'#3a9bff', cost:250,  buyer:'работяга' },
-    { name:'Игровая',   short:'GAME', color:0x00e0b8, hex:'#00e0b8', cost:500,  buyer:'школьник с родителями' },
-    { name:'Премиум',   short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
-    { name:'Топ',       short:'TOP',  color:0xa855f7, hex:'#a855f7', cost:2000, buyer:'Donk (киберспортсмен)' },
-    { name:'Супер Топ', short:'MEGA', color:0x00d4ff, hex:'#00d4ff', cost:0,    buyer:'💎 Миллионер' },
+    { name:'Базовая',   nameEn:'Basic',     short:'BASE', color:0x8fa0b8, hex:'#8fa0b8', cost:100,  buyer:'странник' },
+    { name:'Стандарт',  nameEn:'Standard',  short:'STD',  color:0x3a9bff, hex:'#3a9bff', cost:250,  buyer:'работяга' },
+    { name:'Игровая',   nameEn:'Gaming',    short:'GAME', color:0x00e0b8, hex:'#00e0b8', cost:500,  buyer:'школьник с родителями' },
+    { name:'Премиум',   nameEn:'Premium',   short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
+    { name:'Топ',       nameEn:'Top',       short:'TOP',  color:0xa855f7, hex:'#a855f7', cost:2000, buyer:'Donk (киберспортсмен)' },
+    { name:'Супер Топ', nameEn:'Super Top', short:'MEGA', color:0x00d4ff, hex:'#00d4ff', cost:0,    buyer:'💎 Миллионер' },
   ];
+  function tierName(tier){ return lang === 'en' ? TIERS[tier].nameEn : TIERS[tier].name; }
 
   const BLUE_PRICES = { cpu: 10, mb: 15, ram: 20, psu: 30, gpu: 50 };
   const MEGA_TOTAL_BLUE = 125;
@@ -481,7 +670,7 @@
   const MEGA_REWARD_MONEY = 5000;
 
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v15';
+  const SAVE_KEY = 'pc-shop-3d-v16';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -1091,7 +1280,7 @@
       ctx.font = 'bold 44px sans-serif';
       ctx.shadowBlur = 25;
       ctx.fillStyle = '#9babcf';
-      ctx.fillText('ИДЕАЛЬНАЯ СБОРКА', w/2, h/2 + 110);
+      ctx.fillText(lang === 'en' ? 'PERFECT BUILD' : 'ИДЕАЛЬНАЯ СБОРКА', w/2, h/2 + 110);
       ctx.fillStyle = '#ff4d6a';
       ctx.shadowColor = '#ff4d6a'; ctx.shadowBlur = 20;
       ctx.beginPath(); ctx.arc(60, 60, 14, 0, Math.PI*2); ctx.fill();
@@ -1101,7 +1290,7 @@
       ctx.textAlign = 'right';
       ctx.fillStyle = '#00e0b8';
       ctx.font = 'bold 32px sans-serif';
-      ctx.fillText('● ОТКРЫТО', w-40, 72);
+      ctx.fillText(lang === 'en' ? '● OPEN' : '● ОТКРЫТО', w-40, 72);
     });
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(width-0.08, height-0.08),
       new THREE.MeshBasicMaterial({map:screenTex}));
@@ -1128,7 +1317,7 @@
       ctx.font = 'bold 90px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('₽', w/2, h/2 - 10);
       ctx.font = 'bold 22px sans-serif';
-      ctx.fillText('К ОПЛАТЕ', w/2, h/2 + 50);
+      ctx.fillText(lang === 'en' ? 'TO PAY' : 'К ОПЛАТЕ', w/2, h/2 + 50);
     });
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.12),
       new THREE.MeshBasicMaterial({map:screenTex}));
@@ -1343,7 +1532,7 @@
       ctx.fillText('PC BANK', w/2, h/2 - 20);
       ctx.shadowBlur = 0;
       ctx.font = 'bold 40px sans-serif'; ctx.fillStyle = '#9bbfd0';
-      ctx.fillText('ОБМЕН ВАЛЮТЫ  •  24/7', w/2, h/2 + 70);
+      ctx.fillText(lang === 'en' ? 'CURRENCY EXCHANGE  •  24/7' : 'ОБМЕН ВАЛЮТЫ  •  24/7', w/2, h/2 + 70);
     });
     const bankSign = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.3), new THREE.MeshBasicMaterial({map: bankSignTex, transparent: true}));
     bankSign.position.set(0, 2.9, 0.36); g.add(bankSign);
@@ -1362,7 +1551,7 @@
       ctx.fillStyle = '#3a9bff'; ctx.fillText('PC BANK', 40, 45);
       ctx.textAlign = 'right'; ctx.fillStyle = '#00ff88'; ctx.fillText('● ONLINE', w - 40, 45);
       ctx.font = 'bold 68px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
-      ctx.fillText('ОБМЕН ВАЛЮТЫ', w/2, 180);
+      ctx.fillText(lang === 'en' ? 'CURRENCY EXCHANGE' : 'ОБМЕН ВАЛЮТЫ', w/2, 180);
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(60, 250, w - 120, 170);
       ctx.strokeStyle = '#3a9bff'; ctx.lineWidth = 4; ctx.strokeRect(60, 250, w - 120, 170);
       ctx.font = 'bold 100px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#ffc93c';
@@ -1377,8 +1566,8 @@
       ctx.font = 'bold 60px sans-serif'; ctx.fillText('💎', w - 90, 335);
       ctx.shadowBlur = 0;
       ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5a7ba0';
-      ctx.fillText('Поднесите карту или нажмите кнопку', w/2, 480);
-      const labels = ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
+      ctx.fillText(lang === 'en' ? 'Insert card or press a button' : 'Поднесите карту или нажмите кнопку', w/2, 480);
+      const labels = lang === 'en' ? ['EXCHANGE', 'BALANCE', 'EXIT'] : ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
       for(let i = 0; i < 3; i++){
         const bx = 80 + i * 290;
         ctx.fillStyle = 'rgba(58,155,255,0.18)'; ctx.fillRect(bx, 540, 260, 100);
@@ -1551,7 +1740,7 @@
       ctx.fillStyle = '#00d4ff'; ctx.fillText('💎 PC EXCHANGE', 40, 45);
       ctx.textAlign = 'right'; ctx.fillStyle = '#00ff88'; ctx.fillText('● ONLINE', w-40, 45);
       ctx.font = 'bold 68px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
-      ctx.fillText('ОБМЕН ВАЛЮТЫ', w/2, 180);
+      ctx.fillText(lang === 'en' ? 'CURRENCY EXCHANGE' : 'ОБМЕН ВАЛЮТЫ', w/2, 180);
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(60, 250, w-120, 170);
       ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 4; ctx.strokeRect(60, 250, w-120, 170);
       ctx.font = 'bold 100px sans-serif'; ctx.textAlign = 'left';
@@ -1569,8 +1758,8 @@
       ctx.shadowBlur = 0;
       ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center';
       ctx.fillStyle = '#5a7ba0';
-      ctx.fillText('Обмен синих монет на рубли', w/2, 480);
-      const labels = ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
+      ctx.fillText(lang === 'en' ? 'Exchange blue coins for rubles' : 'Обмен синих монет на рубли', w/2, 480);
+      const labels = lang === 'en' ? ['EXCHANGE', 'BALANCE', 'EXIT'] : ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
       for(let i = 0; i < 3; i++){
         const bx = 80 + i * 290;
         ctx.fillStyle = 'rgba(0,212,255,0.18)'; ctx.fillRect(bx, 540, 260, 100);
@@ -1997,13 +2186,6 @@
           new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
         lock.position.set(-.34*S + dx*S, .52*S, .06*S); g.add(lock);
       }
-    } else if(accessory === 'bottle'){
-      const botMat = new THREE.MeshStandardMaterial({color:0x2a4a2a, transparent:true, opacity:.75, roughness:.2});
-      const bot = new THREE.Mesh(new THREE.CylinderGeometry(.05*S,.055*S,.28*S,8), botMat);
-      bot.position.set(-.36*S,.55*S,.06*S); g.add(bot);
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(.022*S,.022*S,.05*S,6),
-        new THREE.MeshStandardMaterial({color:0x888888, metalness:.8}));
-      cap.position.set(-.36*S,.72*S,.06*S); g.add(cap);
     } else if(accessory === 'can'){
       const canMat = new THREE.MeshStandardMaterial({color:0xd83030, metalness:.85, roughness:.25});
       const can = new THREE.Mesh(new THREE.CylinderGeometry(.052*S,.052*S,.16*S,16), canMat);
@@ -2046,20 +2228,14 @@
     return g;
   }
 
-  function makeHomeless(){ // Странник — чистый, без лохмотьев
+  function makeHomeless(){
     const g = new THREE.Group();
     const h = makeHuman({
-      shirt: 0x4a5a7a,
-      pants: 0x3a3028,
-      skin: 0xddb088,
-      hair: 0x3a2a1a,
-      shoes: 0x2a2018,
+      shirt: 0x4a5a7a, pants: 0x3a3028, skin: 0xddb088,
+      hair: 0x3a2a1a, shoes: 0x2a2018,
       hat: { type:'beanie', color: 0x2a3a5a },
-      mustache: false,
-      beard: false,
-      dirty: false,
-      accessory: 'can',
-      height: 0.95,
+      mustache: false, beard: false, dirty: false,
+      accessory: 'can', height: 0.95,
     });
     g.add(h);
     return g;
@@ -2071,8 +2247,7 @@
       shirt: 0xf39c12, pants: 0x2c3e50, skin: 0xffdbac,
       hair: 0x3a2410,
       hat: { type:'cap', color: 0xe67e22 },
-      mustache: true,
-      accessory: 'briefcase', height: 1.0,
+      mustache: true, accessory: 'briefcase', height: 1.0,
     });
     g.add(h);
     return g;
@@ -2357,7 +2532,7 @@
       scene.add(mesh);
       componentMeshes.push(mesh);
 
-      const label = makeLabel(comp.name, TIERS[t].name, TIERS[t].cost + ' ₽', TIERS[t].hex);
+      const label = makeLabel(compName(comp), tierName(t), TIERS[t].cost + ' ₽', TIERS[t].hex);
       label.position.set(SHELF_X, y + .3, z);
       label.userData = { kind:'shelf-label', componentId:comp.id, tier:t };
       scene.add(label);
@@ -2431,7 +2606,7 @@
       scene.add(mesh);
       componentMeshes.push(mesh);
 
-      const label = makeLabel(comp.name, TIERS[4].name, TIERS[4].cost + ' ₽', TIERS[4].hex);
+      const label = makeLabel(compName(comp), tierName(4), TIERS[4].cost + ' ₽', TIERS[4].hex);
       label.position.set(TOPSHELF_X, shelfY + 0.35, TOPSHELF_Z + 0.3);
       label.scale.set(0.85, 0.42, 1);
       label.userData = { kind:'shelf-label', componentId:comp.id, tier:4 };
@@ -2440,7 +2615,7 @@
     }
   })();
 
-  // СУПЕР ТОП ВИТРИНА (за 💎)
+  // СУПЕР ТОП ВИТРИНА
   (()=>{
     const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.05, 2.3),
       new THREE.MeshStandardMaterial({
@@ -2485,12 +2660,12 @@
       ctx.font='bold 130px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 55;
       ctx.fillStyle = '#00d4ff';
-      ctx.fillText('СУПЕР ТОП', w/2, h/2 - 15);
+      ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', w/2, h/2 - 15);
       ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.45;
-      ctx.fillText('СУПЕР ТОП', w/2, h/2 - 15);
+      ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', w/2, h/2 - 15);
       ctx.globalAlpha = 1;
       ctx.font='bold 38px sans-serif'; ctx.fillStyle = '#00d4ff';
-      ctx.fillText('💎 ТОЛЬКО ЗА СИНИЕ МОНЕТЫ 💎', w/2, h/2 + 75);
+      ctx.fillText(lang === 'en' ? '💎 BLUE COINS ONLY 💎' : '💎 ТОЛЬКО ЗА СИНИЕ МОНЕТЫ 💎', w/2, h/2 + 75);
     });
     const topSign = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.0),
       new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
@@ -2543,10 +2718,10 @@
       ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 6; ctx.stroke();
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 52px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(comp.name, 256, 78);
+      ctx.fillText(compName(comp), 256, 78);
       ctx.fillStyle = '#00d4ff';
       ctx.font = 'bold 56px sans-serif';
-      ctx.fillText('СУПЕР ТОП', 256, 155);
+      ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', 256, 155);
       ctx.fillStyle = '#00d4ff';
       ctx.font = 'bold 76px sans-serif';
       ctx.fillText('💎 ' + bluePrice, 256, 232);
@@ -2708,87 +2883,174 @@
   let typeTimer = null;
 
   const GREETINGS = {
-    0: [
-      { who:'Странник', text:'Эй, братан, мне бы комп, а? Ну там... погамать...' },
-      { who:'Странник', text:'Слышь, у меня интернет есть! Почти... комп нужен!' },
-      { who:'Странник', text:'Э, начальник! Дай комп... я отдам... когда-нибудь...' },
-      { who:'Чудак',    text:'Слушай, брат... я тут подумал... а давай комп, а?' },
-      { who:'Прохожий', text:'Мне бы простенький... в танки играть. Ну и в эти...' },
-    ],
-    1: [
-      { who:'Работяга', text:'Здорово. Комп нужен рабочий. Без наворотов, но чтобы работал.' },
-      { who:'Работяга', text:'Добрый день. Сыну старому надо — документы печатать.' },
-      { who:'Работяга', text:'Мне бы понадёжнее. Работать буду, не играть.' },
-    ],
-    2: [
-      { who:'Школьник', text:'ЙОУ! Нужен игровой ПК! Чтобы КС и Майн шли на ультрах!' },
-      { who:'Школьник', text:'Бро, нужна тема для стрима! С подсветкой, чтобы все завидовали!' },
-      { who:'Мама',     text:'Сынок, только не очень дорогой, хорошо?' },
-      { who:'Папа',     text:'И чтобы уроки делал! Иначе заберу, ясно?' },
-    ],
-    3: [
-      { who:'Богач',    text:'Мне нужен компьютер. Самый лучший. Цена не имеет значения.' },
-      { who:'Богач',    text:'Я не разбираюсь в этом. Просто соберите что-то... дорогое.' },
-      { who:'Охранник', text:'Шеф, тут... э... компьютерный магазин. Как вы и просили.' },
-    ],
-    4: [
-      { who:'Donk', text:'Йо! Мне нужен ТОП! Я на турнир через неделю!' },
-      { who:'Donk', text:'Бро! Максимум ФПС! С этим я всех порву!' },
-      { who:'Donk', text:'Мне ТОП-сборку! Хочу 500 ФПС в CS!' },
-    ],
-    5: [
-      { who:'💎 Миллионер', text:'Соберите мне СУПЕР ТОП. Плачу только синими монетами.' },
-      { who:'💎 Миллионер', text:'Деньги? Мне они неинтересны. Только 💎, ясно?' },
-      { who:'💎 Миллионер', text:'Я хочу эксклюзив. Самую дорогую сборку. Оплата в 💎.' },
-      { who:'💎 Миллионер', text:'Мой ассистент заплатит синими монетами. Соберите лучшее.' },
-      { who:'Охранник',     text:'Шеф, тут только за синие монеты. Как вы и хотели.' },
-    ],
+    ru: {
+      0: [
+        { who:'Странник', text:'Эй, братан, мне бы комп, а? Ну там... погамать...' },
+        { who:'Странник', text:'Слышь, у меня интернет есть! Почти... комп нужен!' },
+        { who:'Странник', text:'Э, начальник! Дай комп... я отдам... когда-нибудь...' },
+        { who:'Чудак',    text:'Слушай, брат... я тут подумал... а давай комп, а?' },
+        { who:'Прохожий', text:'Мне бы простенький... в танки играть. Ну и в эти...' },
+      ],
+      1: [
+        { who:'Работяга', text:'Здорово. Комп нужен рабочий. Без наворотов, но чтобы работал.' },
+        { who:'Работяга', text:'Добрый день. Сыну старому надо — документы печатать.' },
+        { who:'Работяга', text:'Мне бы понадёжнее. Работать буду, не играть.' },
+      ],
+      2: [
+        { who:'Школьник', text:'ЙОУ! Нужен игровой ПК! Чтобы КС и Майн шли на ультрах!' },
+        { who:'Школьник', text:'Бро, нужна тема для стрима! С подсветкой, чтобы все завидовали!' },
+        { who:'Мама',     text:'Сынок, только не очень дорогой, хорошо?' },
+        { who:'Папа',     text:'И чтобы уроки делал! Иначе заберу, ясно?' },
+      ],
+      3: [
+        { who:'Богач',    text:'Мне нужен компьютер. Самый лучший. Цена не имеет значения.' },
+        { who:'Богач',    text:'Я не разбираюсь в этом. Просто соберите что-то... дорогое.' },
+        { who:'Охранник', text:'Шеф, тут... э... компьютерный магазин. Как вы и просили.' },
+      ],
+      4: [
+        { who:'Donk', text:'Йо! Мне нужен ТОП! Я на турнир через неделю!' },
+        { who:'Donk', text:'Бро! Максимум ФПС! С этим я всех порву!' },
+        { who:'Donk', text:'Мне ТОП-сборку! Хочу 500 ФПС в CS!' },
+      ],
+      5: [
+        { who:'💎 Миллионер', text:'Соберите мне СУПЕР ТОП. Плачу только синими монетами.' },
+        { who:'💎 Миллионер', text:'Деньги? Мне они неинтересны. Только 💎, ясно?' },
+        { who:'💎 Миллионер', text:'Я хочу эксклюзив. Самую дорогую сборку. Оплата в 💎.' },
+        { who:'💎 Миллионер', text:'Мой ассистент заплатит синими монетами. Соберите лучшее.' },
+        { who:'Охранник',     text:'Шеф, тут только за синие монеты. Как вы и хотели.' },
+      ],
+    },
+    en: {
+      0: [
+        { who:'Wanderer', text:'Hey bro, I could use a PC, huh? Just... to game on...' },
+        { who:'Wanderer', text:'Listen, I have internet! Almost... I need a PC!' },
+        { who:'Wanderer', text:'Hey boss! Give me a PC... I will pay... someday...' },
+        { who:'Oddball',  text:'Listen bro... I was thinking... how about a PC, huh?' },
+        { who:'Passerby', text:'I just need a simple one... for tank games. And those...' },
+      ],
+      1: [
+        { who:'Worker', text:'Hey. I need a work PC. Nothing fancy, but it has to work.' },
+        { who:'Worker', text:'Good day. My kid needs one — to print documents.' },
+        { who:'Worker', text:'I need something reliable. For work, not games.' },
+      ],
+      2: [
+        { who:'Schoolkid', text:'YOO! I need a gaming PC! To run CS and Minecraft on ultra!' },
+        { who:'Schoolkid', text:'Bro, I need a setup for streaming! With RGB so everyone envies me!' },
+        { who:'Mom',       text:'Son, just not too expensive, okay?' },
+        { who:'Dad',       text:'And he better do his homework! Or I take it back, got it?' },
+      ],
+      3: [
+        { who:'Rich guy', text:'I need a computer. The best one. Price is no object.' },
+        { who:'Rich guy', text:'I do not understand this. Just build something... expensive.' },
+        { who:'Bodyguard', text:'Boss, it is... uh... a computer shop. Just like you asked.' },
+      ],
+      4: [
+        { who:'Donk', text:'Yo! I need a TOP build! I have a tournament in a week!' },
+        { who:'Donk', text:'Bro! Max FPS! With this I will crush everyone!' },
+        { who:'Donk', text:'I need a TOP build! I want 500 FPS in CS!' },
+      ],
+      5: [
+        { who:'💎 Millionaire', text:'Build me a SUPER TOP. I pay only in blue coins.' },
+        { who:'💎 Millionaire', text:'Money? I am not interested. Only 💎, got it?' },
+        { who:'💎 Millionaire', text:'I want exclusive. The most expensive build. Payment in 💎.' },
+        { who:'💎 Millionaire', text:'My assistant will pay in blue coins. Build the best.' },
+        { who:'Bodyguard',       text:'Boss, only blue coins here. Just as you wanted.' },
+      ],
+    },
   };
 
   const REACTIONS = {
-    perfect: {
-      0: [
-        { who:'Странник', text:'Вот это... по-нашему! Спасибо, брат!' },
-        { who:'Чудак',    text:'Ооо... вот это вещь! Уважаю!' },
-        { who:'Прохожий', text:'Я всегда знал, что ты хороший человек!' },
-      ],
-      1: [{ who:'Работяга', text:'О, то что надо. Спасибо, мужик.' }],
-      2: [{ who:'Школьник', text:'ВОТ ЭТО ТЕМА! Мам, смотри, какой!' }],
-      3: [{ who:'Богач', text:'Приемлемо. Охрана, оплатите.' }],
-      4: [{ who:'Donk', text:'ЙЕЕЕ! ЭТО МОНСТР! Спасибо, бро! Победа наша!' }],
-      5: [
-        { who:'💎 Миллионер', text:'Отлично! Вот вам синие монеты. С лихвой.' },
-        { who:'💎 Миллионер', text:'Приемлемо. Держите 250 💎. Я щедрый.' },
-        { who:'💎 Миллионер', text:'То что нужно. Оплата в 💎, как договаривались.' },
-      ],
+    ru: {
+      perfect: {
+        0: [
+          { who:'Странник', text:'Вот это... по-нашему! Спасибо, брат!' },
+          { who:'Чудак',    text:'Ооо... вот это вещь! Уважаю!' },
+          { who:'Прохожий', text:'Я всегда знал, что ты хороший человек!' },
+        ],
+        1: [{ who:'Работяга', text:'О, то что надо. Спасибо, мужик.' }],
+        2: [{ who:'Школьник', text:'ВОТ ЭТО ТЕМА! Мам, смотри, какой!' }],
+        3: [{ who:'Богач', text:'Приемлемо. Охрана, оплатите.' }],
+        4: [{ who:'Donk', text:'ЙЕЕЕ! ЭТО МОНСТР! Спасибо, бро! Победа наша!' }],
+        5: [
+          { who:'💎 Миллионер', text:'Отлично! Вот вам синие монеты. С лихвой.' },
+          { who:'💎 Миллионер', text:'Приемлемо. Держите 250 💎. Я щедрый.' },
+          { who:'💎 Миллионер', text:'То что нужно. Оплата в 💎, как договаривались.' },
+        ],
+      },
+      cheap: {
+        0: [
+          { who:'Странник', text:'Э... это чё... это не тянет... воняет...' },
+          { who:'Чудак',    text:'Ты чё, меня обмануть хочешь?' },
+        ],
+        1: [{ who:'Работяга', text:'Слушай, это старьё. Я просил нормальное.' }],
+        2: [{ who:'Школьник', text:'Эээ... это не потянет КС... :(' }],
+        3: [{ who:'Богач', text:'Это... что это? Я просил лучшее, а не это.' }],
+        4: [{ who:'Donk', text:'ЧТО?! Это не тянет даже в Мортал! Позор!' }],
+        5: [
+          { who:'💎 Миллионер', text:'Что за дешёвка? Мне такое не нужно. Я плачу за лучшее!' },
+          { who:'💎 Миллионер', text:'Это НЕ СУПЕР ТОП! Я разочарован. Охрана, уходим.' },
+        ],
+      },
+      expensive: {
+        0: [
+          { who:'Странник', text:'Ты чё... обалдел? Я тебе не олигарх!' },
+          { who:'Чудак',    text:'Эээ... у меня столько нету... ты дурак, что ли?' },
+        ],
+        1: [{ who:'Работяга', text:'Слышь, ты чего цены задираешь? Мне такое не по карману.' }],
+        2: [{ who:'Мама', text:'Мы не настолько богаты! Заберите это.' }],
+        3: [{ who:'Богач', text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' }],
+        4: [{ who:'Donk', text:'Зачем так перекачал? Мне это не нужно!' }],
+        5: [
+          { who:'💎 Миллионер', text:'Это перебор даже для меня. Уберите.' },
+          { who:'💎 Миллионер', text:'Я не идиот. За такое платить не буду.' },
+        ],
+      },
     },
-    cheap: {
-      0: [
-        { who:'Странник', text:'Э... это чё... это не тянет... воняет...' },
-        { who:'Чудак',    text:'Ты чё, меня обмануть хочешь?' },
-      ],
-      1: [{ who:'Работяга', text:'Слушай, это старьё. Я просил нормальное.' }],
-      2: [{ who:'Школьник', text:'Эээ... это не потянет КС... :(' }],
-      3: [{ who:'Богач', text:'Это... что это? Я просил лучшее, а не это.' }],
-      4: [{ who:'Donk', text:'ЧТО?! Это не тянет даже в Мортал! Позор!' }],
-      5: [
-        { who:'💎 Миллионер', text:'Что за дешёвка? Мне такое не нужно. Я плачу за лучшее!' },
-        { who:'💎 Миллионер', text:'Это НЕ СУПЕР ТОП! Я разочарован. Охрана, уходим.' },
-      ],
-    },
-    expensive: {
-      0: [
-        { who:'Странник', text:'Ты чё... обалдел? Я тебе не олигарх!' },
-        { who:'Чудак',    text:'Эээ... у меня столько нету... ты дурак, что ли?' },
-      ],
-      1: [{ who:'Работяга', text:'Слышь, ты чего цены задираешь? Мне такое не по карману.' }],
-      2: [{ who:'Мама', text:'Мы не настолько богаты! Заберите это.' }],
-      3: [{ who:'Богач', text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' }],
-      4: [{ who:'Donk', text:'Зачем так перекачал? Мне это не нужно!' }],
-      5: [
-        { who:'💎 Миллионер', text:'Это перебор даже для меня. Уберите.' },
-        { who:'💎 Миллионер', text:'Я не идиот. За такое платить не буду.' },
-      ],
+    en: {
+      perfect: {
+        0: [
+          { who:'Wanderer', text:'Now that is... awesome! Thanks, bro!' },
+          { who:'Oddball',  text:'Ohhh... this is the real deal! Respect!' },
+          { who:'Passerby', text:'I always knew you were a good man!' },
+        ],
+        1: [{ who:'Worker', text:'Oh, just what I needed. Thanks, man.' }],
+        2: [{ who:'Schoolkid', text:'THIS IS EPIC! Mom, look at it!' }],
+        3: [{ who:'Rich guy', text:'Acceptable. Guards, pay him.' }],
+        4: [{ who:'Donk', text:'YEEES! This thing is a MONSTER! Thanks, bro! Victory is ours!' }],
+        5: [
+          { who:'💎 Millionaire', text:'Excellent! Here are your blue coins. With extra.' },
+          { who:'💎 Millionaire', text:'Acceptable. Take 250 💎. I am generous.' },
+          { who:'💎 Millionaire', text:'Just what I wanted. Payment in 💎, as agreed.' },
+        ],
+      },
+      cheap: {
+        0: [
+          { who:'Wanderer', text:'Uh... what is this... it stinks...' },
+          { who:'Oddball',  text:'Are you trying to scam me?' },
+        ],
+        1: [{ who:'Worker', text:'Listen, this is junk. I asked for something normal.' }],
+        2: [{ who:'Schoolkid', text:'Ugh... this will not run CS... :(' }],
+        3: [{ who:'Rich guy', text:'This... what is this? I asked for the best, not this.' }],
+        4: [{ who:'Donk', text:'WHAT?! This will not even run Mortal! Shame!' }],
+        5: [
+          { who:'💎 Millionaire', text:'What a cheap thing? I do not need that. I pay for the best!' },
+          { who:'💎 Millionaire', text:'This is NOT SUPER TOP! I am disappointed. Guards, we are leaving.' },
+        ],
+      },
+      expensive: {
+        0: [
+          { who:'Wanderer', text:'Are you... crazy? I am not a tycoon!' },
+          { who:'Oddball',  text:'Uh... I do not have that much... are you dumb?' },
+        ],
+        1: [{ who:'Worker', text:'Hey, why are you jacking up prices? I cannot afford that.' }],
+        2: [{ who:'Mom', text:'We are not that rich! Take this back.' }],
+        3: [{ who:'Rich guy', text:'I asked for the best, not the most expensive. Big difference.' }],
+        4: [{ who:'Donk', text:'Why so overkill? I do not need this!' }],
+        5: [
+          { who:'💎 Millionaire', text:'This is too much even for me. Take it away.' },
+          { who:'💎 Millionaire', text:'I am not an idiot. I will not pay for that.' },
+        ],
+      },
     },
   };
 
@@ -2849,7 +3111,7 @@
     dayNumEl.textContent = dayState.day;
     if(dayState.isNight){
       dayIconEl.textContent = '🌙';
-      timeLeftEl.textContent = 'НОЧЬ';
+      timeLeftEl.textContent = lang === 'en' ? 'NIGHT' : 'НОЧЬ';
       dayPanelEl.classList.add('night');
     } else {
       dayIconEl.textContent = '☀️';
@@ -2893,7 +3155,7 @@
   }
 
   function onSleepingBagClicked(){
-    if(!dayState.isNight){ toast('Спать можно только ночью', true); return; }
+    if(!dayState.isNight){ toast(t('sleepOnlyNight'), true); return; }
     if(dayState.isSleeping) return;
     sleepBtnEl.classList.add('show');
   }
@@ -2933,8 +3195,8 @@
     await sleep(30);
     sleepOverlayEl.classList.add('visible');
     await sleep(1500);
-    sleepDayTextEl.textContent = `День ${dayState.day}`;
-    sleepSubTextEl.textContent = 'Засыпаем...';
+    sleepDayTextEl.textContent = t('sleepDay') + ' ' + dayState.day;
+    sleepSubTextEl.textContent = t('sleepFalling');
     sleepDayTextEl.classList.add('visible');
     sleepSubTextEl.classList.add('visible');
     await sleep(1400);
@@ -2942,8 +3204,8 @@
     sleepSubTextEl.classList.remove('visible');
     await sleep(700);
     dayState.day += 1;
-    sleepDayTextEl.textContent = `День ${dayState.day}`;
-    sleepSubTextEl.textContent = 'Просыпаемся...';
+    sleepDayTextEl.textContent = t('sleepDay') + ' ' + dayState.day;
+    sleepSubTextEl.textContent = t('sleepWaking');
     sleepDayTextEl.classList.add('visible');
     sleepSubTextEl.classList.add('visible');
     await sleep(1500);
@@ -3005,7 +3267,10 @@
       const blue = Math.floor(amount / 500);
       state.blue += blue;
       sfxCoin();
-      toast(`Обменяно ${amount} ₽ → ${blue} 💎`, false, 'blue');
+      const msg = lang === 'en'
+        ? `Exchanged ${amount} ₽ → ${blue} 💎`
+        : `Обменяно ${amount} ₽ → ${blue} 💎`;
+      toast(msg, false, 'blue');
       updateATMUI();
       updateAll();
       save();
@@ -3058,7 +3323,10 @@
       const money = Math.floor(amount / 10) * 495;
       state.money += money;
       sfxCoin();
-      toast(`Обменяно ${amount} 💎 → ${money} ₽`, false, 'cyan');
+      const msg = lang === 'en'
+        ? `Exchanged ${amount} 💎 → ${money} ₽`
+        : `Обменяно ${amount} 💎 → ${money} ₽`;
+      toast(msg, false, 'cyan');
       updateExUI();
       updateAll();
       save();
@@ -3149,7 +3417,7 @@
       c.mesh.rotation.y = Math.PI;
       if(!c.greeted && pos.z < ROOM - 2){
         c.greeted = true;
-        const g = pickRandom(GREETINGS[c.tier]);
+        const g = pickRandom(GREETINGS[lang][c.tier]);
         showDialog(g.who, g.text, 5500);
       }
     } else {
@@ -3163,7 +3431,7 @@
   // ============================================================
   function buyComponent(componentId, tier){
     if(state.inventory[componentId] !== undefined){
-      toast('Уже есть ' + getComp(componentId).name + '.', true); return;
+      toast(t('youHave') + ' ' + compName(getComp(componentId)) + '.', true); return;
     }
 
     let cost = 0;
@@ -3172,26 +3440,26 @@
     if(tier === 5){
       cost = BLUE_PRICES[componentId];
       curName = '💎';
-      if(state.blue < cost){ toast('Нужно ' + cost + ' 💎', true); sfxFail(); return; }
+      if(state.blue < cost){ toast(t('needMoney') + ' ' + cost + ' 💎', true); sfxFail(); return; }
       state.blue -= cost;
     } else {
       cost = TIERS[tier].cost;
       curName = '₽';
-      if(state.money < cost){ toast('Нужно ' + cost + ' ₽', true); sfxFail(); return; }
+      if(state.money < cost){ toast(t('needMoney') + ' ' + cost + ' ₽', true); sfxFail(); return; }
       state.money -= cost;
     }
 
     state.inventory[componentId] = tier;
     sfxBuy();
-    toast('Куплено: ' + getComp(componentId).name + ' · ' + TIERS[tier].name + ' (−' + cost + ' ' + curName + ')', false, tier === 5 ? 'cyan' : '');
+    toast(t('bought') + ' ' + compName(getComp(componentId)) + ' · ' + tierName(tier) + ' (−' + cost + ' ' + curName + ')', false, tier === 5 ? 'cyan' : '');
     updateAll();
     save();
   }
 
   function placeComponent(componentId){
-    if(state.builtPC[componentId] !== undefined){ toast('Уже установлено', true); return; }
+    if(state.builtPC[componentId] !== undefined){ toast(t('slotBusy'), true); return; }
     if(state.inventory[componentId] === undefined){
-      toast('Нет детали в инвентаре. Купи на полке.', true); sfxFail(); return;
+      toast(t('noPart'), true); sfxFail(); return;
     }
     state.builtPC[componentId] = state.inventory[componentId];
     delete state.inventory[componentId];
@@ -3199,12 +3467,12 @@
     refreshBenchVisuals();
     updateAll();
     save();
-    toast('Установлено: ' + getComp(componentId).name);
+    toast(t('placed') + ' ' + compName(getComp(componentId)));
   }
 
   function takePC(){
     if(Object.keys(state.builtPC).length < COMPONENTS.length){
-      toast('Собери все 5 деталей', true); return;
+      toast(t('allParts'), true); return;
     }
     let sum = 0;
     for(const c of COMPONENTS) sum += state.builtPC[c.id];
@@ -3215,7 +3483,7 @@
     updateAll();
     save();
     sfxCoin();
-    toast('ПК собран! Иди к клиенту', false, 'gold');
+    toast(t('pcReady'), false, 'gold');
   }
 
   function givePCToCustomer(){
@@ -3238,13 +3506,13 @@
       state.blue += blueDelta;
       state.money += Math.floor(MEGA_REWARD_MONEY * (reactionKey === 'perfect' ? 1 : 0.5));
       state.megaOrders = (state.megaOrders || 0) + 1;
-      toast((good ? '✅' : '❌') + ' Рейтинг ' + (ratingDelta > 0 ? '+' : '') + ratingDelta + ' · +' + blueDelta + ' 💎', !good, good ? 'cyan' : '');
+      toast((good ? '✅' : '❌') + ' ' + t('rating') + ' ' + (ratingDelta > 0 ? '+' : '') + ratingDelta + ' · +' + blueDelta + ' 💎', !good, good ? 'cyan' : '');
     } else {
       const rewardMul = reactionKey === 'perfect' ? 1.3 : reactionKey === 'cheap' ? 0.7 : 0.9;
       const reward = Math.floor(TIERS[expected].cost * 5 * 2 * rewardMul);
       state.money += reward;
       const deltaStr = (ratingDelta > 0 ? '+' : '') + ratingDelta;
-      toast((good ? '✅' : '❌') + ' Рейтинг ' + deltaStr + ' · +' + reward + ' ₽', !good);
+      toast((good ? '✅' : '❌') + ' ' + t('rating') + ' ' + deltaStr + ' · +' + reward + ' ₽', !good);
     }
 
     state.rating = Math.max(0, Math.min(100, state.rating + ratingDelta));
@@ -3253,7 +3521,7 @@
 
     if(good){ sfxWin(); sfxCoin(); } else { sfxFail(); }
 
-    const reaction = pickRandom(REACTIONS[reactionKey][expected]);
+    const reaction = pickRandom(REACTIONS[lang][reactionKey][expected]);
     showDialog(reaction.who, reaction.text, 4500);
 
     state.holdingPC = null;
@@ -3271,10 +3539,10 @@
         const endZ = ROOM + 3;
         const dur = 1800;
         function walkOut(now){
-          const t = Math.min((now - startTime) / dur, 1);
-          leavingCustomerRef.mesh.position.z = startZ + (endZ - startZ) * t;
+          const t2 = Math.min((now - startTime) / dur, 1);
+          leavingCustomerRef.mesh.position.z = startZ + (endZ - startZ) * t2;
           leavingCustomerRef.mesh.rotation.z = Math.sin(now * .02) * .05;
-          if(t < 1){ requestAnimationFrame(walkOut); }
+          if(t2 < 1){ requestAnimationFrame(walkOut); }
           else {
             scene.remove(leavingCustomerRef.mesh);
             leavingCustomerRef = null;
@@ -3321,14 +3589,14 @@
   const tableBtns = {};
   for(const c of COMPONENTS){
     const btn = document.createElement('button');
-    btn.innerHTML = `<span>🔧 ${c.name}</span><span class="tier-dot-mini" style="display:none"></span>`;
+    btn.innerHTML = `<span>🔧 <span class="btn-name">${compName(c)}</span></span><span class="tier-dot-mini" style="display:none"></span>`;
     btn.addEventListener('click', () => placeComponent(c.id));
     tableUIEl.appendChild(btn);
     tableBtns[c.id] = btn;
   }
   const takeBtn = document.createElement('button');
   takeBtn.className = 'take';
-  takeBtn.textContent = '📦 ВЗЯТЬ ПК';
+  takeBtn.textContent = '📦 ' + t('take');
   takeBtn.addEventListener('click', takePC);
   tableUIEl.appendChild(takeBtn);
 
@@ -3352,7 +3620,7 @@
     const mc = state.rating >= 60 ? Math.round(Math.max(0.03, Math.min(0.18, (state.rating - 60) / 250)) * 100) : 0;
     const tcEl = document.getElementById('topChance');
     if(tcEl){
-      tcEl.innerHTML = '🎮 TOP: ' + tc + '% &nbsp; 💎 MEGA: ' + mc + '%';
+      tcEl.innerHTML = '🎮 ' + t('ratingTop') + ': ' + tc + '% &nbsp; 💎 MEGA: ' + mc + '%';
     }
   }
   function updateInventory(){
@@ -3368,15 +3636,15 @@
   function updateOrderHUD(){
     if(!state.order){ orderPanelEl.classList.remove('show'); return; }
     orderPanelEl.classList.add('show');
-    const t = state.order.tier;
-    orderTextEl.textContent = TIERS[t].name + ' ПК';
-    orderTextEl.style.color = TIERS[t].hex;
-    if(t === 5){
-      orderRewardEl.textContent = 'Оплата: ' + MEGA_REWARD_BLUE + ' 💎';
+    const tier = state.order.tier;
+    orderTextEl.textContent = tierName(tier) + (lang === 'en' ? ' PC' : ' ПК');
+    orderTextEl.style.color = TIERS[tier].hex;
+    if(tier === 5){
+      orderRewardEl.textContent = t('orderRewardMega') + ' ' + MEGA_REWARD_BLUE + ' 💎';
     } else {
-      orderRewardEl.textContent = 'Бюджет-ориентир: ' + TIERS[t].cost + ' ₽/деталь';
+      orderRewardEl.textContent = t('orderReward') + ' ' + TIERS[tier].cost + ' ₽';
     }
-    orderWhoEl.textContent = 'Клиент: ' + TIERS[t].buyer;
+    orderWhoEl.textContent = t('clientLabel') + ' ' + TIERS[tier].buyer;
   }
   function updateTableUI(){
     const p = camera.position;
@@ -3391,20 +3659,21 @@
       btn.disabled = !placed && !owned;
       btn.classList.toggle('done', placed);
       const dot = btn.querySelector('.tier-dot-mini');
+      const nameSpan = btn.querySelector('.btn-name');
       if(placed){
         dot.style.display='block'; dot.style.background = TIERS[state.builtPC[c.id]].hex;
-        btn.querySelector('span').textContent = '✓ ' + c.name;
+        nameSpan.textContent = '✓ ' + compName(c);
       } else if(owned){
         dot.style.display='block'; dot.style.background = TIERS[state.inventory[c.id]].hex;
-        btn.querySelector('span').textContent = '📥 ' + c.name;
+        nameSpan.textContent = '📥 ' + compName(c);
       } else {
         dot.style.display='none';
-        btn.querySelector('span').textContent = '✗ ' + c.name;
+        nameSpan.textContent = '✗ ' + compName(c);
       }
     }
     const allPlaced = COMPONENTS.every(c => state.builtPC[c.id] !== undefined);
     takeBtn.disabled = !allPlaced;
-    takeBtn.textContent = allPlaced ? '📦 ВЗЯТЬ ПК' : '📦 ВЗЯТЬ ПК (' + Object.keys(state.builtPC).length + '/5)';
+    takeBtn.textContent = allPlaced ? '📦 ' + t('take') : '📦 ' + t('take') + ' (' + Object.keys(state.builtPC).length + '/5)';
   }
   function updateGiveBtn(){
     const c = state.customer;
@@ -3435,11 +3704,11 @@
   }
 
   function toast(text, isError=false, cls=''){
-    const t = document.createElement('div');
-    t.className = 'toast' + (isError ? ' error' : cls ? ' ' + cls : '');
-    t.textContent = text;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2000);
+    const tt = document.createElement('div');
+    tt.className = 'toast' + (isError ? ' error' : cls ? ' ' + cls : '');
+    tt.textContent = text;
+    document.body.appendChild(tt);
+    setTimeout(() => tt.remove(), 2000);
   }
 
   // ============================================================
@@ -3730,12 +3999,12 @@
         if(data.kind === 'shelf-component' || data.kind === 'shelf-label'){
           const comp = getComp(data.componentId);
           if(data.tier === 5){
-            text = `${comp.name} · СУПЕР ТОП · 💎 ${BLUE_PRICES[data.componentId]} · ЛКМ купить`;
+            text = `${compName(comp)} · ${lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП'} · 💎 ${BLUE_PRICES[data.componentId]} · ${t('buy')}`;
           } else {
-            text = `${comp.name} · ${TIERS[data.tier].name} · ${TIERS[data.tier].cost} ₽ · ЛКМ купить`;
+            text = `${compName(comp)} · ${tierName(data.tier)} · ${TIERS[data.tier].cost} ₽ · ${t('buy')}`;
           }
         } else if(data.kind === 'sleeping-bag'){
-          text = dayState.isNight ? '💤 Спальный мешок — ЛКМ чтобы спать' : '💤 Спальный мешок (спать можно ночью)';
+          text = dayState.isNight ? '💤 ' + t('sleepBagHint') : '💤 ' + t('sleepBagDay');
         }
       }
     }
@@ -3804,6 +4073,64 @@
   }
 
   // ============================================================
+  // ПЕРЕВОД ИНТЕРФЕЙСА
+  // ============================================================
+  function applyLanguage(){
+    document.documentElement.lang = lang;
+    $('lbl-money').textContent = t('lblMoney');
+    $('lbl-blue').textContent = t('lblBlue');
+    $('lbl-rating').textContent = t('lblRating');
+    $('lbl-order').textContent = t('lblOrder');
+    $('lbl-table').textContent = t('lblTable');
+    $('lbl-give').textContent = t('lblGive');
+    $('lbl-atm').textContent = t('lblAtm');
+    $('lbl-ex').textContent = t('lblEx');
+    $('lbl-day').textContent = t('lblDay');
+    $('lbl-night').textContent = t('lblNight');
+    $('lbl-sleep').textContent = t('lblSleep');
+    $('atm-title').textContent = t('atmTitle');
+    $('atm-sub-1').textContent = t('atmSub');
+    $('atm-lbl-rub').textContent = t('atmRub');
+    $('atm-lbl-blue').textContent = t('atmBlue');
+    $('ex-title').textContent = t('exTitle');
+    $('ex-sub-1').textContent = t('exSub');
+    $('ex-lbl-blue').textContent = t('atmBlue');
+    $('ex-lbl-rub').textContent = t('atmRub');
+    document.querySelectorAll('[data-ru][data-en]').forEach(el => {
+      el.textContent = lang === 'en' ? el.dataset.en : el.dataset.ru;
+    });
+    $('start-desc').textContent = t('startDesc');
+    $('start-hint-1').innerHTML = t('startHint1');
+    $('start-hint-2').innerHTML = t('startHint2');
+    $('start-hint-3').innerHTML = t('startHint3');
+    $('start-mob-1').innerHTML = t('startMob1');
+    $('start-mob-2').innerHTML = t('startMob2');
+    $('start-mob-3').innerHTML = t('startMob3');
+    $('startBtn').textContent = t('startTitle');
+    if(!state.order) orderTextEl.textContent = t('waitingClient');
+    updateAll();
+    updateDayHUD();
+  }
+
+  // ============================================================
+  // ЭКРАН ВЫБОРА ЯЗЫКА
+  // ============================================================
+  const langScreenEl = $('langScreen');
+  const startScreenEl = $('startScreen');
+
+  function chooseLanguage(code){
+    lang = code;
+    localStorage.setItem(LANG_KEY, code);
+    applyLanguage();
+    langScreenEl.classList.add('hidden');
+    startScreenEl.classList.remove('hidden');
+  }
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => chooseLanguage(btn.dataset.lang));
+  });
+
+  // ============================================================
   // ГЛАВНЫЙ ЦИКЛ
   // ============================================================
   let last = performance.now();
@@ -3832,8 +4159,25 @@
     requestAnimationFrame(loop);
   }
 
+  // ============================================================
+  // ИНИЦИАЛИЗАЦИЯ
+  // ============================================================
   load();
   refreshBenchVisuals();
+
+  // Если язык уже выбран ранее — пропускаем экран
+  if(lang && I18N[lang]){
+    applyLanguage();
+    langScreenEl.classList.add('hidden');
+    startScreenEl.classList.remove('hidden');
+  } else {
+    // Показываем экран выбора языка, стартовый экран скрыт
+    lang = 'ru'; // временно, чтобы applyLanguage не падал
+    applyLanguage();
+    langScreenEl.classList.remove('hidden');
+    startScreenEl.classList.add('hidden');
+  }
+
   updateAll();
   updateDayHUD();
   if(dayState.isNight){
