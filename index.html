@@ -158,6 +158,75 @@
     flex-direction:column;align-items:center;text-align:center}
   body.is-mobile #tableUI .table-title{flex:1 0 100%;font-size:10px}
   body.is-mobile #giveBtn{bottom:90px;padding:14px 24px;font-size:16px}
+
+  /* ===== ДЕНЬ / НОЧЬ ===== */
+  #dayPanel{
+    position:fixed;top:80px;left:14px;z-index:10;
+    background:rgba(10,14,23,.82);border:1px solid rgba(0,224,184,.35);
+    border-radius:12px;padding:8px 14px;
+    display:flex;align-items:center;gap:10px;
+    backdrop-filter:blur(8px);transition:border-color .5s;
+  }
+  #dayPanel.night{border-color:rgba(138,106,224,.55);}
+  #dayPanel .icon{font-size:26px;line-height:1;transition:transform .3s;}
+  #dayPanel .info{text-align:left;}
+  #dayPanel .day-num{font-size:10px;color:#7b8bb0;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+  #dayPanel .day-num b{color:#00e0b8;font-weight:900;font-size:12px;}
+  #dayPanel .time-left{font-size:16px;font-weight:800;color:#ffc93c;line-height:1.1;font-variant-numeric:tabular-nums;}
+  #dayPanel.night .time-left{color:#b8a8e8;}
+
+  #nightOverlay{
+    position:fixed;inset:0;pointer-events:none;z-index:9;
+    background:radial-gradient(ellipse at top,rgba(20,15,60,.65) 0%,rgba(0,0,15,.9) 80%);
+    opacity:0;transition:opacity 2s ease;
+  }
+  #nightOverlay.show{opacity:1;}
+
+  #nightHint{
+    position:fixed;top:130px;left:50%;transform:translateX(-50%);
+    background:rgba(25,18,55,.95);border:2px solid #8a6ae0;
+    border-radius:14px;padding:12px 24px;
+    color:#e0d0ff;font-size:15px;font-weight:700;z-index:13;
+    display:none;text-align:center;max-width:90vw;
+    box-shadow:0 8px 24px rgba(138,106,224,.5);
+  }
+  #nightHint.show{display:block;animation:nightPulse 2s infinite;}
+  @keyframes nightPulse{
+    0%,100%{box-shadow:0 8px 24px rgba(138,106,224,.4);}
+    50%{box-shadow:0 8px 32px rgba(138,106,224,.85);}
+  }
+
+  #sleepBtn{
+    position:fixed;bottom:130px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#6a7bd0,#4a5bb0);
+    color:#fff;border:none;border-radius:14px;padding:16px 36px;
+    font-size:18px;font-weight:800;cursor:pointer;z-index:12;
+    display:none;box-shadow:0 8px 24px rgba(106,123,208,.6);
+    font-family:inherit;touch-action:manipulation;
+  }
+  #sleepBtn.show{display:block;animation:pulse 1.5s infinite;}
+
+  #sleepOverlay{
+    position:fixed;inset:0;background:#000;z-index:200;
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;opacity:0;transition:opacity 1.4s ease;
+    pointer-events:none;
+  }
+  #sleepOverlay.show{display:flex;pointer-events:auto;}
+  #sleepOverlay.visible{opacity:1;}
+  #sleepOverlay .dayText{
+    font-size:clamp(48px,11vw,110px);font-weight:900;
+    background:linear-gradient(135deg,#00e0b8,#00b3ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    letter-spacing:-2px;opacity:0;transition:opacity 1s ease,transform 1s ease;
+    transform:scale(.9);text-align:center;padding:0 20px;
+  }
+  #sleepOverlay .dayText.visible{opacity:1;transform:scale(1);}
+  #sleepOverlay .subText{
+    margin-top:24px;font-size:18px;color:#7b8bb0;
+    opacity:0;transition:opacity 1s ease;letter-spacing:1px;
+  }
+  #sleepOverlay .subText.visible{opacity:1;}
 </style>
 </head>
 <body>
@@ -193,6 +262,23 @@
   <div id="dialogBubble">
     <div class="speaker">— <b id="dialogSpeaker">Клиент</b> —</div>
     <div class="text"><span id="dialogText"></span><span class="cursor" id="dialogCursor" style="display:none"></span></div>
+  </div>
+
+  <div id="dayPanel">
+    <div class="icon" id="dayIcon">☀️</div>
+    <div class="info">
+      <div class="day-num">День <b id="dayNum">1</b></div>
+      <div class="time-left" id="timeLeft">2:00</div>
+    </div>
+  </div>
+
+  <div id="nightOverlay"></div>
+  <div id="nightHint">🌙 Наступила ночь. Нажми на спальный мешок и спи</div>
+  <button id="sleepBtn">💤 СПАТЬ</button>
+
+  <div id="sleepOverlay">
+    <div class="dayText" id="sleepDayText">День 1</div>
+    <div class="subText" id="sleepSubText">Засыпаем...</div>
   </div>
 
   <div id="startScreen">
@@ -235,7 +321,7 @@
     { name:'Премиум',  short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
   ];
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v7';
+  const SAVE_KEY = 'pc-shop-3d-v8';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -267,6 +353,17 @@
   };
   const doorState = { open: 0, target: 0 };
   let leavingCustomerRef = null;
+
+  // ============================================================
+  // СОСТОЯНИЕ ДНЯ И НОЧИ
+  // ============================================================
+  const DAY_DURATION = 120; // 2 минуты
+  const dayState = {
+    day: 1,
+    timeLeft: DAY_DURATION,
+    isNight: false,
+    isSleeping: false,
+  };
 
   // ============================================================
   // АУДИО
@@ -388,7 +485,6 @@
   camera.position.set(0, PLAYER_HEIGHT, 6.5);
   camera.rotation.order = 'YXZ';
 
-  // === РЕНДЕРЕР С АДАПТИВНЫМ РАЗРЕШЕНИЕМ ===
   const renderer = new THREE.WebGLRenderer({
     antialias: false,
     powerPreference: 'high-performance',
@@ -409,7 +505,6 @@
   document.getElementById('app').appendChild(renderer.domElement);
   addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-  // Адаптивное разрешение
   let frameCount = 0;
   let fpsTimer = performance.now();
   let adaptiveCooldown = 0;
@@ -433,7 +528,7 @@
   }
 
   // ============================================================
-  // ОСВЕЩЕНИЕ — ОПТИМИЗИРОВАНО
+  // ОСВЕЩЕНИЕ
   // ============================================================
   scene.add(new THREE.AmbientLight(0xb8c8e8, isMobile ? 1.6 : 1.0));
   scene.add(new THREE.HemisphereLight(0xc8e0ff, 0x1a2030, isMobile ? 1.0 : 0.7));
@@ -505,9 +600,7 @@
   })();
   addWall(-ROOM,0,Math.PI/2); addWall(ROOM,0,-Math.PI/2);
 
-  // ============================================================
-  // РАЗДВИЖНЫЕ ДВЕРИ
-  // ============================================================
+  // === ДВЕРИ ===
   const doorMat = new THREE.MeshStandardMaterial({
     color:0x1a3050, metalness:.5, roughness:.4,
     emissive:0x005544, emissiveIntensity:.25,
@@ -555,9 +648,7 @@
     scene.add(doorLight);
   }
 
-  // ============================================================
-  // СТОЙКА
-  // ============================================================
+  // === СТОЙКА ===
   const counterMat = new THREE.MeshStandardMaterial({ map:woodTex, roughness:.7 });
   const counterBody = new THREE.Mesh(new THREE.BoxGeometry(7,1.2,1.4), counterMat);
   counterBody.position.set(0,.6,COUNTER_Z); counterBody.castShadow=!isMobile; counterBody.receiveShadow=!isMobile;
@@ -786,7 +877,6 @@
     return g;
   }
 
-  // КРАСИВОЕ напольное растение — оптимизировано под мобилку
   function createBigPlant(x, z){
     const g = new THREE.Group();
 
@@ -907,6 +997,52 @@
   deskLamp.position.set(-2.4, COUNTER_TOP_Y, COUNTER_Z);
   deskLamp.rotation.y = -Math.PI/2;
   scene.add(deskLamp);
+
+  // ============================================================
+  // СПАЛЬНЫЙ МЕШОК
+  // ============================================================
+  function createSleepingBag(x, z, rotation=0){
+    const g = new THREE.Group();
+    const bagMat = new THREE.MeshStandardMaterial({color:0x4a3060, roughness:.9});
+    const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.6, 14), bagMat);
+    roll.rotation.z = Math.PI/2;
+    roll.position.set(0, 0.32, 0);
+    roll.castShadow = !isMobile;
+    g.add(roll);
+    for(const dx of [-0.5, 0, 0.5]){
+      const strap = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.03, 8, 16),
+        new THREE.MeshStandardMaterial({color:0xa87a3a, roughness:.8}));
+      strap.rotation.y = Math.PI/2;
+      strap.position.set(dx, 0.32, 0);
+      g.add(strap);
+    }
+    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.36),
+      new THREE.MeshStandardMaterial({color:0xe8e8f0, roughness:.95}));
+    pillow.position.set(0.95, 0.07, 0);
+    pillow.castShadow = !isMobile;
+    g.add(pillow);
+    const mat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.03, 0.9),
+      new THREE.MeshStandardMaterial({color:0x2a1a3a, roughness:1}));
+    mat.position.set(0.3, 0.015, 0);
+    mat.receiveShadow = !isMobile;
+    g.add(mat);
+
+    const zzzMat = new THREE.MeshBasicMaterial({color:0xb8a8e8, transparent:true, opacity:.85});
+    for(let i=0;i<3;i++){
+      const zz = new THREE.Mesh(new THREE.SphereGeometry(0.05 + i*0.01, 8, 8), zzzMat);
+      zz.position.set(0.6 + i*0.18, 0.9 + i*0.18, 0);
+      g.add(zz);
+    }
+
+    g.userData = { kind:'sleeping-bag' };
+    g.traverse(o => { if(o.isMesh) o.userData.kind = 'sleeping-bag'; });
+    g.position.set(x, 0, z);
+    g.rotation.y = rotation;
+    return g;
+  }
+
+  const sleepingBag = createSleepingBag(-9, 8, Math.PI * 0.15);
+  scene.add(sleepingBag);
 
   // ============================================================
   // ДЕТАЛИ
@@ -1644,6 +1780,160 @@
   }
 
   // ============================================================
+  // ДЕНЬ / НОЧЬ / СОН
+  // ============================================================
+  const dayPanelEl = document.getElementById('dayPanel');
+  const dayIconEl = document.getElementById('dayIcon');
+  const dayNumEl = document.getElementById('dayNum');
+  const timeLeftEl = document.getElementById('timeLeft');
+  const nightOverlayEl = document.getElementById('nightOverlay');
+  const nightHintEl = document.getElementById('nightHint');
+  const sleepBtnEl = document.getElementById('sleepBtn');
+  const sleepOverlayEl = document.getElementById('sleepOverlay');
+  const sleepDayTextEl = document.getElementById('sleepDayText');
+  const sleepSubTextEl = document.getElementById('sleepSubText');
+
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2,'0')}`;
+  }
+
+  function updateDayHUD(){
+    dayNumEl.textContent = dayState.day;
+    if(dayState.isNight){
+      dayIconEl.textContent = '🌙';
+      timeLeftEl.textContent = 'НОЧЬ';
+      dayPanelEl.classList.add('night');
+    } else {
+      dayIconEl.textContent = '☀️';
+      timeLeftEl.textContent = fmtTime(dayState.timeLeft);
+      dayPanelEl.classList.remove('night');
+    }
+  }
+
+  function startNight(){
+    if(dayState.isNight) return;
+    dayState.isNight = true;
+    updateDayHUD();
+    scene.background.setHex(0x050510);
+    scene.fog.color.setHex(0x050510);
+    scene.fog.near = 8;
+    scene.fog.far = 28;
+    nightOverlayEl.classList.add('show');
+    nightHintEl.classList.add('show');
+    try{ beep(300, .3, 'sine', .05); setTimeout(()=>beep(200, .4, 'sine', .04), 200); }catch(e){}
+  }
+
+  function startDay(){
+    dayState.isNight = false;
+    dayState.timeLeft = DAY_DURATION;
+    updateDayHUD();
+    scene.background.setHex(0x0a1020);
+    scene.fog.color.setHex(0x0a1020);
+    scene.fog.near = 22;
+    scene.fog.far = 50;
+    nightOverlayEl.classList.remove('show');
+    nightHintEl.classList.remove('show');
+    sleepBtnEl.classList.remove('show');
+  }
+
+  function updateDay(dt){
+    if(dayState.isNight || dayState.isSleeping) return;
+    dayState.timeLeft -= dt;
+    if(dayState.timeLeft <= 0){
+      dayState.timeLeft = 0;
+      startNight();
+    }
+    updateDayHUD();
+  }
+
+  function onSleepingBagClicked(){
+    if(!dayState.isNight){
+      toast('Спать можно только ночью', true);
+      return;
+    }
+    if(dayState.isSleeping) return;
+    sleepBtnEl.classList.add('show');
+  }
+
+  function playWakeUpSound(){
+    try{
+      ensureAudio(); if(!audioCtx) return;
+      const o1 = audioCtx.createOscillator(), g1 = audioCtx.createGain();
+      o1.type = 'sine';
+      o1.frequency.setValueAtTime(160, audioCtx.currentTime);
+      o1.frequency.linearRampToValueAtTime(120, audioCtx.currentTime + 0.55);
+      g1.gain.value = 0.09;
+      g1.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.7);
+      o1.connect(g1); g1.connect(audioCtx.destination);
+      o1.start(); o1.stop(audioCtx.currentTime + 0.7);
+      setTimeout(() => {
+        const o2 = audioCtx.createOscillator(), g2 = audioCtx.createGain();
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(280, audioCtx.currentTime);
+        o2.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.25);
+        g2.gain.value = 0.11;
+        g2.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+        o2.connect(g2); g2.connect(audioCtx.destination);
+        o2.start(); o2.stop(audioCtx.currentTime + 0.4);
+      }, 520);
+    }catch(e){}
+  }
+
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  async function doSleep(){
+    if(!dayState.isNight || dayState.isSleeping) return;
+    dayState.isSleeping = true;
+    sleepBtnEl.classList.remove('show');
+    nightHintEl.classList.remove('show');
+
+    // 1. Плавное затемнение
+    sleepOverlayEl.classList.add('show');
+    await sleep(30);
+    sleepOverlayEl.classList.add('visible');
+    await sleep(1500);
+
+    // 2. Показываем текущий день
+    sleepDayTextEl.textContent = `День ${dayState.day}`;
+    sleepSubTextEl.textContent = 'Засыпаем...';
+    sleepDayTextEl.classList.add('visible');
+    sleepSubTextEl.classList.add('visible');
+    await sleep(1400);
+
+    // 3. Плавно скрываем текст
+    sleepDayTextEl.classList.remove('visible');
+    sleepSubTextEl.classList.remove('visible');
+    await sleep(700);
+
+    // 4. Меняем день и показываем новый
+    dayState.day += 1;
+    sleepDayTextEl.textContent = `День ${dayState.day}`;
+    sleepSubTextEl.textContent = 'Просыпаемся...';
+    sleepDayTextEl.classList.add('visible');
+    sleepSubTextEl.classList.add('visible');
+    await sleep(1500);
+
+    // 5. Скрываем текст и убираем черный экран
+    sleepDayTextEl.classList.remove('visible');
+    sleepSubTextEl.classList.remove('visible');
+    await sleep(400);
+    sleepOverlayEl.classList.remove('visible');
+    await sleep(1500);
+    sleepOverlayEl.classList.remove('show');
+
+    // 6. Начинаем новый день
+    dayState.isSleeping = false;
+    startDay();
+    save();
+    playWakeUpSound();
+  }
+
+  sleepBtnEl.addEventListener('click', doSleep);
+
+  // ============================================================
   // ДВЕРИ
   // ============================================================
   let doorSoundPlayed = false;
@@ -1973,11 +2263,12 @@
       ndcY = -(screenY / innerHeight) * 2 + 1;
     }
     raycaster.setFromCamera({x:ndcX,y:ndcY}, camera);
-    raycaster.far = isMobileTap ? 7 : 5;
+    raycaster.far = isMobileTap ? 8 : 6;
 
     const targets = [];
     for(const m of componentMeshes) targets.push(m);
     for(const l of labelSprites) targets.push(l);
+    targets.push(sleepingBag);
     const hits = raycaster.intersectObjects(targets, true);
     if(!hits.length) return;
 
@@ -1985,8 +2276,11 @@
     while(obj && !obj.userData.kind && !obj.userData.parentData) obj = obj.parent;
     const data = obj?.userData?.kind ? obj.userData : (obj?.userData?.parentData || null);
     if(!data) return;
+
     if(data.kind === 'shelf-component' || data.kind === 'shelf-label'){
       buyComponent(data.componentId, data.tier);
+    } else if(data.kind === 'sleeping-bag'){
+      onSleepingBagClicked();
     }
   }
 
@@ -2024,6 +2318,7 @@
     if(!playing || isMobile) return;
     if(e.target.closest && e.target.closest('#tableUI')) return;
     if(e.target.closest && e.target.closest('#giveBtn')) return;
+    if(e.target.closest && e.target.closest('#sleepBtn')) return;
     if(pointerLocked){ if(e.button === 0) tryClick(0,0,false); return; }
     if(!pointerLockFailed){ canvas.requestPointerLock(); return; }
     dragging = true; mouseMoved = false; lastMX = e.clientX; lastMY = e.clientY;
@@ -2093,7 +2388,7 @@
           const dt = performance.now() - lt.startTime;
           if(!lt.moved && dt < 400){
             const el = document.elementFromPoint(lt.startX, lt.startY);
-            if(!el || (el.tagName !== 'BUTTON' && !el.closest?.('#tableUI') && !el.closest?.('#giveBtn'))){
+            if(!el || (el.tagName !== 'BUTTON' && !el.closest?.('#tableUI') && !el.closest?.('#giveBtn') && !el.closest?.('#sleepBtn'))){
               tryClick(lt.startX, lt.startY, true);
             }
           }
@@ -2126,6 +2421,7 @@
 
   function updateMovement(dt){
     if(!playing) return;
+    if(dayState.isSleeping) return;
     let mx = 0, mz = 0;
     mx += (keys.KeyD?1:0) - (keys.KeyA?1:0);
     mz += (keys.KeyW?1:0) - (keys.KeyS?1:0);
@@ -2154,19 +2450,24 @@
   function updatePrompt(){
     if(!playing){ if(lastPrompt){ promptEl.classList.remove('show'); lastPrompt=''; } return; }
     raycaster.setFromCamera({x:0,y:0}, camera);
-    raycaster.far = 5;
+    raycaster.far = 6;
     const targets = [];
     for(const m of componentMeshes) targets.push(m);
     for(const l of labelSprites) targets.push(l);
+    targets.push(sleepingBag);
     const hits = raycaster.intersectObjects(targets, true);
     let text = '';
     if(hits.length){
       let obj = hits[0].object;
       while(obj && !obj.userData.kind && !obj.userData.parentData) obj = obj.parent;
       const data = obj?.userData?.kind ? obj.userData : (obj?.userData?.parentData || null);
-      if(data && (data.kind === 'shelf-component' || data.kind === 'shelf-label')){
-        const comp = getComp(data.componentId);
-        text = `${comp.name} · ${TIERS[data.tier].name} · ${TIERS[data.tier].cost} ₽ · ЛКМ купить`;
+      if(data){
+        if(data.kind === 'shelf-component' || data.kind === 'shelf-label'){
+          const comp = getComp(data.componentId);
+          text = `${comp.name} · ${TIERS[data.tier].name} · ${TIERS[data.tier].cost} ₽ · ЛКМ купить`;
+        } else if(data.kind === 'sleeping-bag'){
+          text = dayState.isNight ? '💤 Спальный мешок — ЛКМ чтобы спать' : '💤 Спальный мешок (спать можно ночью)';
+        }
       }
     }
     if(text !== lastPrompt){
@@ -2197,6 +2498,7 @@
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         money: state.money, rating: state.rating,
         ordersDone: state.ordersDone, perfectOrders: state.perfectOrders,
+        day: dayState.day,
       }));
     }catch(e){}
   }
@@ -2209,11 +2511,12 @@
       if(typeof d.rating === 'number') state.rating = d.rating;
       if(typeof d.ordersDone === 'number') state.ordersDone = d.ordersDone;
       if(typeof d.perfectOrders === 'number') state.perfectOrders = d.perfectOrders;
+      if(typeof d.day === 'number' && d.day > 0) dayState.day = d.day;
     }catch(e){}
   }
 
   // ============================================================
-  // ГЛАВНЫЙ ЦИКЛ — с троттлингом UI
+  // ГЛАВНЫЙ ЦИКЛ
   // ============================================================
   let last = performance.now();
   let lastUITick = 0;
@@ -2221,13 +2524,12 @@
     const dt = Math.min((now-last)/1000, .05);
     last = now;
 
-    // Игровая логика — каждый кадр
     updateMovement(dt);
     updateCameraRotation();
     updateCustomerMovement(dt);
     updateDoors(dt);
+    updateDay(dt);
 
-    // UI и raycast — только 10 раз в секунду
     if(now - lastUITick > 100){
       lastUITick = now;
       updatePrompt();
@@ -2235,7 +2537,6 @@
       updateGiveBtn();
     }
 
-    // Адаптивное разрешение
     checkAdaptive(now);
 
     renderer.render(scene, camera);
@@ -2245,6 +2546,7 @@
   load();
   refreshBenchVisuals();
   updateAll();
+  updateDayHUD();
   spawnCustomer();
   setInterval(save, 5000);
   addEventListener('beforeunload', save);
