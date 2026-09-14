@@ -76,6 +76,13 @@
     font-family:inherit;touch-action:manipulation}
   #atmBtn.show{display:block;animation:pulse 1.5s infinite}
 
+  #exBtn{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#00d4ff,#00b3ff);color:#04121a;
+    border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:800;
+    cursor:pointer;z-index:12;display:none;box-shadow:0 8px 24px rgba(0,212,255,.5);
+    font-family:inherit;touch-action:manipulation}
+  #exBtn.show{display:block;animation:pulse 1.5s infinite}
+
   #crosshair{position:fixed;top:50%;left:50%;width:8px;height:8px;margin:-4px 0 0 -4px;
     border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 8px rgba(0,224,184,.8);
     pointer-events:none;z-index:11}
@@ -145,6 +152,7 @@
   .toast.error{background:#ff4d6a;color:#fff}
   .toast.gold{background:linear-gradient(135deg,#ffc93c,#ff9500);color:#2a1500}
   .toast.blue{background:linear-gradient(135deg,#3a9bff,#00b3ff);color:#04121a}
+  .toast.cyan{background:linear-gradient(135deg,#00d4ff,#00b3ff);color:#04121a}
   @keyframes toastAnim{
     0%{opacity:0;transform:translate(-50%,-10px)}
     15%{opacity:1;transform:translate(-50%,0)}
@@ -170,8 +178,8 @@
   body.is-mobile #tableUI .table-title{flex:1 0 100%;font-size:10px}
   body.is-mobile #giveBtn{bottom:90px;padding:14px 24px;font-size:16px}
   body.is-mobile #atmBtn{bottom:150px;padding:12px 20px;font-size:14px}
+  body.is-mobile #exBtn{bottom:150px;padding:12px 20px;font-size:14px}
 
-  /* ===== ДЕНЬ / НОЧЬ ===== */
   #dayPanel{
     position:fixed;top:134px;left:14px;z-index:10;
     background:rgba(10,14,23,.82);border:1px solid rgba(0,224,184,.35);
@@ -240,7 +248,6 @@
   }
   #sleepOverlay .subText.visible{opacity:1;}
 
-  /* ===== БАНКОМАТ ===== */
   #atmModal{
     position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:150;
     display:none;align-items:center;justify-content:center;padding:20px;
@@ -285,6 +292,50 @@
     font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;width:100%;
     transition:all .15s}
   #atmClose:hover{background:#ff4d6a;color:#fff}
+
+  #exModal{
+    position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:150;
+    display:none;align-items:center;justify-content:center;padding:20px;
+    pointer-events:auto;
+  }
+  #exModal.show{display:flex;}
+  #exModal .atm-content{
+    background:linear-gradient(135deg,#001428,#0a1a3a);
+    border:3px solid #00d4ff;border-radius:20px;padding:24px;
+    max-width:420px;width:100%;
+    box-shadow:0 20px 60px rgba(0,212,255,.5), inset 0 0 40px rgba(0,212,255,.08);
+    text-align:center;color:#e6ecff;
+    animation:atmPop .25s ease-out;
+  }
+  #exModal h2{margin-bottom:8px;font-size:24px;color:#00d4ff;
+    text-shadow:0 0 12px rgba(0,212,255,.6);letter-spacing:1px}
+  #exModal .atm-sub{color:#7b8bb0;margin-bottom:16px;font-size:14px}
+  #exModal .atm-sub b{color:#00d4ff}
+  #exModal .atm-balance{display:flex;justify-content:space-around;gap:10px;
+    background:rgba(0,0,0,.5);border-radius:12px;padding:12px;margin-bottom:16px;
+    border:1px solid rgba(0,212,255,.3)}
+  #exModal .atm-balance > div{font-size:12px;color:#7b8bb0;
+    text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  #exModal .atm-balance > div b{display:block;font-size:22px;margin-top:4px;color:#fff;letter-spacing:0}
+  #exModal .atm-balance > div:nth-child(1) b{color:#00d4ff}
+  #exModal .atm-balance > div:nth-child(2) b{color:#ffc93c}
+  #exModal .atm-buttons{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+  #exModal .atm-buttons button{
+    background:linear-gradient(135deg,#0a3050,#001420);
+    color:#e6ecff;border:1px solid #00d4ff;border-radius:12px;padding:12px;
+    font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+    transition:all .15s}
+  #exModal .atm-buttons button:not(:disabled):hover{
+    background:linear-gradient(135deg,#00d4ff,#00b3ff);
+    color:#04121a;transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(0,212,255,.4)}
+  #exModal .atm-buttons button:disabled{opacity:.35;cursor:not-allowed}
+  #exClose{
+    background:linear-gradient(135deg,#6a2a3a,#3a0a1a);color:#ff8899;
+    border:1px solid #ff4d6a;border-radius:12px;padding:12px 24px;
+    font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;width:100%;
+    transition:all .15s}
+  #exClose:hover{background:#ff4d6a;color:#fff}
 </style>
 </head>
 <body>
@@ -321,6 +372,7 @@
 
   <button id="giveBtn">🎁 ВЫДАТЬ ПК КЛИЕНТУ</button>
   <button id="atmBtn">🏧 Открыть Банкомат</button>
+  <button id="exBtn">💎 Обменник</button>
   <div id="crosshair"></div>
   <div id="prompt"></div>
   <div id="dialogBubble">
@@ -363,6 +415,24 @@
     </div>
   </div>
 
+  <div id="exModal">
+    <div class="atm-content">
+      <h2>💎 ОБМЕННИК</h2>
+      <div class="atm-sub">Курс обмена: <b>10 💎 = 495 ₽</b></div>
+      <div class="atm-balance">
+        <div>Синие 💎<b id="exBlue">0</b></div>
+        <div>Рубли<b id="exMoney">0 ₽</b></div>
+      </div>
+      <div class="atm-buttons" id="exButtons">
+        <button data-amount="10">Обменять 10 💎 → 495 ₽</button>
+        <button data-amount="50">Обменять 50 💎 → 2 475 ₽</button>
+        <button data-amount="100">Обменять 100 💎 → 4 950 ₽</button>
+        <button data-amount="200">Обменять 200 💎 → 9 900 ₽</button>
+      </div>
+      <button id="exClose">Закрыть</button>
+    </div>
+  </div>
+
   <div id="startScreen">
     <h1>PC SHOP TYCOON</h1>
     <p>Управляй магазином сборки ПК. Принимай заказы, покупай детали, собирай компьютеры и выдавай их клиентам.</p>
@@ -397,14 +467,22 @@
     { id:'psu', name:'Питание',    icon:'⚡', size:[.35,.28,.35] },
   ];
   const TIERS = [
-    { name:'Базовая',  short:'BASE', color:0x8fa0b8, hex:'#8fa0b8', cost:100,  buyer:'бомж' },
-    { name:'Стандарт', short:'STD',  color:0x3a9bff, hex:'#3a9bff', cost:250,  buyer:'работяга' },
-    { name:'Игровая',  short:'GAME', color:0x00e0b8, hex:'#00e0b8', cost:500,  buyer:'школьник с родителями' },
-    { name:'Премиум',  short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
-    { name:'Топ',      short:'TOP',  color:0xa855f7, hex:'#a855f7', cost:2000, buyer:'Donk (киберспортсмен)' },
+    { name:'Базовая',   short:'BASE', color:0x8fa0b8, hex:'#8fa0b8', cost:100,  buyer:'бомж' },
+    { name:'Стандарт',  short:'STD',  color:0x3a9bff, hex:'#3a9bff', cost:250,  buyer:'работяга' },
+    { name:'Игровая',   short:'GAME', color:0x00e0b8, hex:'#00e0b8', cost:500,  buyer:'школьник с родителями' },
+    { name:'Премиум',   short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
+    { name:'Топ',       short:'TOP',  color:0xa855f7, hex:'#a855f7', cost:2000, buyer:'Donk (киберспортсмен)' },
+    { name:'Супер Топ', short:'MEGA', color:0x00d4ff, hex:'#00d4ff', cost:0,    buyer:'💎 Миллионер' },
   ];
+
+  // Цены в СИНИХ монетах для витрины "Супер Топ"
+  const BLUE_PRICES = { cpu: 10, mb: 15, ram: 20, psu: 30, gpu: 50 };
+  const MEGA_TOTAL_BLUE = 125;
+  const MEGA_REWARD_BLUE = 250;
+  const MEGA_REWARD_MONEY = 5000;
+
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v11';
+  const SAVE_KEY = 'pc-shop-3d-v12';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -420,8 +498,14 @@
   const TOPSHELF_Z = -ROOM + 0.22;
   const TOPSHELF_SHELF_Y = [0.45, 1.0, 1.55, 2.1, 2.65];
 
+  const MEGASHELF_X = 11.5;
+  const MEGASHELF_Z = -7.5;
+  const MEGASHELF_Y = [0.45, 1.0, 1.55, 2.1, 2.65];
+
   const ATM_X = ROOM - 0.35;
   const ATM_Z = 8;
+  const EXCHANGE_X = ROOM - 0.35;
+  const EXCHANGE_Z = 4;
 
   const isMobile = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
                    || (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 1100);
@@ -441,10 +525,12 @@
     customer: null,
     ordersDone: 0,
     perfectOrders: 0,
+    megaOrders: 0,
   };
   const doorState = { open: 0, target: 0 };
   let leavingCustomerRef = null;
   let atmOpen = false;
+  let exOpen = false;
 
   const DAY_DURATION = 120;
   const dayState = {
@@ -617,9 +703,7 @@
     }
   }
 
-  // ============================================================
-  // ОСВЕЩЕНИЕ
-  // ============================================================
+  // === ОСВЕЩЕНИЕ ===
   scene.add(new THREE.AmbientLight(0xb8c8e8, isMobile ? 1.6 : 1.0));
   scene.add(new THREE.HemisphereLight(0xc8e0ff, 0x1a2030, isMobile ? 1.0 : 0.7));
 
@@ -754,7 +838,7 @@
   signLight.position.set(0,3,-ROOM+1.2); scene.add(signLight);
 
   // ============================================================
-  // ЧАСЫ НА СТЕНЕ (одни)
+  // ЧАСЫ
   // ============================================================
   function createWallClock(x, y, z, rotationY = 0){
     const g = new THREE.Group();
@@ -1214,218 +1298,115 @@
   scene.add(deskLamp);
 
   // ============================================================
-  // НОВЫЙ БАНКОМАТ
+  // БАНКОМАТ
   // ============================================================
   function createATM(){
     const g = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e2430, metalness: .8, roughness: .35 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x08080f, metalness: .5, roughness: .65 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: 0x3a9bff, emissive: 0x3a9bff, emissiveIntensity: .55, metalness: .7, roughness: .3 });
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x5a5f6e, metalness: .9, roughness: .25 });
 
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x1e2430, metalness: .8, roughness: .35,
-    });
-    const darkMat = new THREE.MeshStandardMaterial({
-      color: 0x08080f, metalness: .5, roughness: .65,
-    });
-    const accentMat = new THREE.MeshStandardMaterial({
-      color: 0x3a9bff, emissive: 0x3a9bff, emissiveIntensity: .55,
-      metalness: .7, roughness: .3,
-    });
-    const steelMat = new THREE.MeshStandardMaterial({
-      color: 0x5a5f6e, metalness: .9, roughness: .25,
-    });
-
-    // Нижний корпус
-    const lowerBody = new THREE.Mesh(
-      new THREE.BoxGeometry(1.35, 1.15, 0.75),
-      bodyMat
-    );
+    const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.15, 0.75), bodyMat);
     lowerBody.position.y = 0.575;
-    lowerBody.castShadow = !isMobile;
-    lowerBody.receiveShadow = !isMobile;
+    lowerBody.castShadow = !isMobile; lowerBody.receiveShadow = !isMobile;
     g.add(lowerBody);
 
-    // Подставка
-    const plinth = new THREE.Mesh(
-      new THREE.BoxGeometry(1.4, 0.1, 0.8),
-      darkMat
-    );
-    plinth.position.y = 0.05;
-    g.add(plinth);
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.8), darkMat);
+    plinth.position.y = 0.05; g.add(plinth);
 
-    // Верхний корпус
-    const upperBody = new THREE.Mesh(
-      new THREE.BoxGeometry(1.35, 1.5, 0.7),
-      bodyMat
-    );
+    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.5, 0.7), bodyMat);
     upperBody.position.set(0, 1.95, -0.025);
     upperBody.rotation.x = -0.06;
     upperBody.castShadow = !isMobile;
     g.add(upperBody);
 
-    // Полоса-разделитель
-    const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(1.42, 0.05, 0.78),
-      steelMat
-    );
-    divider.position.set(0, 1.18, 0);
-    g.add(divider);
+    const divider = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.05, 0.78), steelMat);
+    divider.position.set(0, 1.18, 0); g.add(divider);
 
-    // Козырёк
-    const canopy = new THREE.Mesh(
-      new THREE.BoxGeometry(1.45, 0.12, 0.95),
-      bodyMat
-    );
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.95), bodyMat);
     canopy.position.set(0, 2.72, 0.08);
     canopy.castShadow = !isMobile;
     g.add(canopy);
 
-    // Синяя полоса под козырьком
-    const canopyGlow = new THREE.Mesh(
-      new THREE.BoxGeometry(1.4, 0.04, 0.9),
-      accentMat
-    );
-    canopyGlow.position.set(0, 2.66, 0.08);
-    g.add(canopyGlow);
+    const canopyGlow = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.9), accentMat);
+    canopyGlow.position.set(0, 2.66, 0.08); g.add(canopyGlow);
 
-    // Вывеска
     const bankSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#0a1428'; ctx.fillRect(0,0,w,h);
       const grad = ctx.createLinearGradient(0, 0, w, 0);
-      grad.addColorStop(0, '#3a9bff');
-      grad.addColorStop(1, '#00e0b8');
+      grad.addColorStop(0, '#3a9bff'); grad.addColorStop(1, '#00e0b8');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, h - 22, w, 22);
-      ctx.fillRect(0, 0, w, 12);
-      ctx.shadowColor = '#3a9bff';
-      ctx.shadowBlur = 40;
-      ctx.font = 'bold 120px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.fillRect(0, h-22, w, 22); ctx.fillRect(0, 0, w, 12);
+      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 40;
+      ctx.font = 'bold 120px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = '#3a9bff';
       ctx.fillText('PC BANK', w/2, h/2 - 20);
       ctx.shadowBlur = 0;
-      ctx.font = 'bold 40px sans-serif';
-      ctx.fillStyle = '#9bbfd0';
+      ctx.font = 'bold 40px sans-serif'; ctx.fillStyle = '#9bbfd0';
       ctx.fillText('ОБМЕН ВАЛЮТЫ  •  24/7', w/2, h/2 + 70);
     });
-    const bankSign = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.15, 0.3),
-      new THREE.MeshBasicMaterial({map: bankSignTex, transparent: true})
-    );
-    bankSign.position.set(0, 2.9, 0.36);
-    g.add(bankSign);
+    const bankSign = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.3), new THREE.MeshBasicMaterial({map: bankSignTex, transparent: true}));
+    bankSign.position.set(0, 2.9, 0.36); g.add(bankSign);
 
     if(!isMobile){
       const signGlow = new THREE.PointLight(0x3a9bff, 0.9, 2.8, 2);
-      signGlow.position.set(0, 2.9, 0.8);
-      g.add(signGlow);
+      signGlow.position.set(0, 2.9, 0.8); g.add(signGlow);
     }
 
-    // Экран
     const screenTex = canvasTex(1024, 768, (ctx,w,h)=>{
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#0a1a3a');
-      grad.addColorStop(1, '#051024');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = 'rgba(58,155,255,0.18)';
-      ctx.fillRect(0, 0, w, 90);
-      ctx.font = 'bold 46px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#3a9bff';
-      ctx.fillText('PC BANK', 40, 45);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#00ff88';
-      ctx.fillText('● ONLINE', w - 40, 45);
-      ctx.font = 'bold 68px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff';
+      grad.addColorStop(0, '#0a1a3a'); grad.addColorStop(1, '#051024');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(58,155,255,0.18)'; ctx.fillRect(0, 0, w, 90);
+      ctx.font = 'bold 46px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#3a9bff'; ctx.fillText('PC BANK', 40, 45);
+      ctx.textAlign = 'right'; ctx.fillStyle = '#00ff88'; ctx.fillText('● ONLINE', w - 40, 45);
+      ctx.font = 'bold 68px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
       ctx.fillText('ОБМЕН ВАЛЮТЫ', w/2, 180);
-      ctx.fillStyle = 'rgba(0,0,0,0.55)';
-      ctx.fillRect(60, 250, w - 120, 170);
-      ctx.strokeStyle = '#3a9bff';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(60, 250, w - 120, 170);
-      ctx.font = 'bold 100px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#ffc93c';
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(60, 250, w - 120, 170);
+      ctx.strokeStyle = '#3a9bff'; ctx.lineWidth = 4; ctx.strokeRect(60, 250, w - 120, 170);
+      ctx.font = 'bold 100px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#ffc93c';
       ctx.fillText('500', 110, 335);
-      ctx.font = 'bold 60px sans-serif';
-      ctx.fillStyle = '#9bbfd0';
-      ctx.fillText('₽', 320, 335);
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 90px sans-serif';
-      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 60px sans-serif'; ctx.fillStyle = '#9bbfd0'; ctx.fillText('₽', 320, 335);
+      ctx.textAlign = 'center'; ctx.font = 'bold 90px sans-serif'; ctx.fillStyle = '#ffffff';
       ctx.fillText('=', w/2, 340);
       ctx.textAlign = 'right';
-      ctx.shadowColor = '#3a9bff';
-      ctx.shadowBlur = 40;
-      ctx.fillStyle = '#3a9bff';
-      ctx.font = 'bold 100px sans-serif';
+      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 40;
+      ctx.fillStyle = '#3a9bff'; ctx.font = 'bold 100px sans-serif';
       ctx.fillText('1', w - 180, 335);
-      ctx.font = 'bold 60px sans-serif';
-      ctx.fillText('💎', w - 90, 335);
+      ctx.font = 'bold 60px sans-serif'; ctx.fillText('💎', w - 90, 335);
       ctx.shadowBlur = 0;
-      ctx.font = 'bold 34px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#5a7ba0';
+      ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5a7ba0';
       ctx.fillText('Поднесите карту или нажмите кнопку', w/2, 480);
       const labels = ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
       for(let i = 0; i < 3; i++){
         const bx = 80 + i * 290;
-        ctx.fillStyle = 'rgba(58,155,255,0.18)';
-        ctx.fillRect(bx, 540, 260, 100);
-        ctx.strokeStyle = '#3a9bff';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(bx, 540, 260, 100);
-        ctx.fillStyle = '#3a9bff';
-        ctx.font = 'bold 40px sans-serif';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(58,155,255,0.18)'; ctx.fillRect(bx, 540, 260, 100);
+        ctx.strokeStyle = '#3a9bff'; ctx.lineWidth = 3; ctx.strokeRect(bx, 540, 260, 100);
+        ctx.fillStyle = '#3a9bff'; ctx.font = 'bold 40px sans-serif';
         ctx.fillText(labels[i], bx + 130, 595);
       }
       ctx.fillStyle = 'rgba(58,155,255,0.08)';
-      for(let y = 0; y < h; y += 4){
-        ctx.fillRect(0, y, w, 1);
-      }
+      for(let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
     });
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.8), new THREE.MeshBasicMaterial({map: screenTex}));
+    screen.position.set(0, 1.95, 0.34); screen.rotation.x = -0.06; g.add(screen);
 
-    const screen = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.05, 0.8),
-      new THREE.MeshBasicMaterial({map: screenTex})
-    );
-    screen.position.set(0, 1.95, 0.34);
-    screen.rotation.x = -0.06;
-    g.add(screen);
-
-    // Рамка экрана
-    const screenFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(1.18, 0.93, 0.04),
-      darkMat
-    );
-    screenFrame.position.set(0, 1.95, 0.31);
-    screenFrame.rotation.x = -0.06;
-    g.add(screenFrame);
+    const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.93, 0.04), darkMat);
+    screenFrame.position.set(0, 1.95, 0.31); screenFrame.rotation.x = -0.06; g.add(screenFrame);
 
     if(!isMobile){
       const screenLight = new THREE.PointLight(0x3a9bff, 1.3, 4.5, 2);
-      screenLight.position.set(0, 1.95, 1.0);
-      g.add(screenLight);
+      screenLight.position.set(0, 1.95, 1.0); g.add(screenLight);
     }
 
-    // Клавиатура
-    const keypadPanel = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, 0.6, 0.06),
-      new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4})
-    );
-    keypadPanel.position.set(0, 1.05, 0.33);
-    g.add(keypadPanel);
+    const keypadPanel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.06),
+      new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4}));
+    keypadPanel.position.set(0, 1.05, 0.33); g.add(keypadPanel);
 
-    const keypadFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(1.02, 0.67, 0.04),
-      steelMat
-    );
-    keypadFrame.position.set(0, 1.05, 0.31);
-    g.add(keypadFrame);
+    const keypadFrame = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.67, 0.04), steelMat);
+    keypadFrame.position.set(0, 1.05, 0.31); g.add(keypadFrame);
 
     for(let i = 0; i < 4; i++){
       for(let j = 0; j < 4; j++){
@@ -1434,150 +1415,79 @@
           color: isRed ? 0x8a1a1a : 0x2a3a5a,
           emissive: isRed ? 0xd83030 : 0x1a3a6a,
           emissiveIntensity: isRed ? 0.65 : 0.4,
-          metalness: .7,
-          roughness: .3,
+          metalness: .7, roughness: .3,
         });
-        const btn = new THREE.Mesh(
-          new THREE.BoxGeometry(0.15, 0.095, 0.04),
-          btnMat
-        );
-        btn.position.set(
-          -0.30 + j * 0.2,
-          1.24 - i * 0.13,
-          0.36
-        );
+        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.095, 0.04), btnMat);
+        btn.position.set(-0.30 + j * 0.2, 1.24 - i * 0.13, 0.36);
         g.add(btn);
       }
     }
 
-    // Слот для карты
-    const cardSlotOuter = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, 0.06, 0.07),
-      accentMat
-    );
-    cardSlotOuter.position.set(0.55, 1.55, 0.32);
-    g.add(cardSlotOuter);
-    const cardSlotInner = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.018, 0.05),
-      new THREE.MeshBasicMaterial({color: 0x000000})
-    );
-    cardSlotInner.position.set(0.55, 1.55, 0.35);
-    g.add(cardSlotInner);
+    const cardSlotOuter = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.07), accentMat);
+    cardSlotOuter.position.set(0.55, 1.55, 0.32); g.add(cardSlotOuter);
+    const cardSlotInner = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.018, 0.05),
+      new THREE.MeshBasicMaterial({color: 0x000000}));
+    cardSlotInner.position.set(0.55, 1.55, 0.35); g.add(cardSlotInner);
 
-    // Индикатор карты
-    const cardIndicator = new THREE.Mesh(
-      new THREE.SphereGeometry(0.022, 10, 8),
-      new THREE.MeshBasicMaterial({color: 0x00ff44})
-    );
-    cardIndicator.position.set(0.55, 1.44, 0.35);
-    cardIndicator.userData.isATMIndicator = true;
-    g.add(cardIndicator);
+    const cardIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8),
+      new THREE.MeshBasicMaterial({color: 0x00ff44}));
+    cardIndicator.position.set(0.55, 1.44, 0.35); g.add(cardIndicator);
 
-    // Купюрный слот
-    const cashSlotOuter = new THREE.Mesh(
-      new THREE.BoxGeometry(0.75, 0.11, 0.08),
-      accentMat
-    );
-    cashSlotOuter.position.set(0, 0.7, 0.33);
-    g.add(cashSlotOuter);
-    const cashSlotInner = new THREE.Mesh(
-      new THREE.BoxGeometry(0.66, 0.035, 0.06),
-      new THREE.MeshBasicMaterial({color: 0x000000})
-    );
-    cashSlotInner.position.set(0, 0.7, 0.35);
-    g.add(cashSlotInner);
+    const cashSlotOuter = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.11, 0.08), accentMat);
+    cashSlotOuter.position.set(0, 0.7, 0.33); g.add(cashSlotOuter);
+    const cashSlotInner = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.06),
+      new THREE.MeshBasicMaterial({color: 0x000000}));
+    cashSlotInner.position.set(0, 0.7, 0.35); g.add(cashSlotInner);
 
     if(!isMobile){
       const cashGlow = new THREE.PointLight(0xff6644, 0.4, 1.5, 2);
-      cashGlow.position.set(0, 0.7, 0.5);
-      g.add(cashGlow);
+      cashGlow.position.set(0, 0.7, 0.5); g.add(cashGlow);
     }
 
-    // Боковые панели
     const sideTex = canvasTex(512, 512, (ctx,w,h)=>{
-      ctx.fillStyle = '#0a1428';
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#0a1428'; ctx.fillRect(0, 0, w, h);
       for(let i = 0; i < 10; i++){
         ctx.fillStyle = `rgba(58,155,255,${0.05 + i * 0.01})`;
         ctx.fillRect(0, i * 50, w, 25);
       }
       ctx.save();
-      ctx.translate(w/2, h/2);
-      ctx.rotate(-Math.PI/2);
-      ctx.font = 'bold 80px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#3a9bff';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = '#3a9bff';
-      ctx.fillText('PC BANK', 0, 0);
+      ctx.translate(w/2, h/2); ctx.rotate(-Math.PI/2);
+      ctx.font = 'bold 80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30;
+      ctx.fillStyle = '#3a9bff'; ctx.fillText('PC BANK', 0, 0);
       ctx.restore();
-      ctx.font = 'bold 32px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#9bbfd0';
+      ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#9bbfd0';
       ctx.fillText('• ATM •', w/2, h - 40);
     });
 
-    const sideLabelLeft = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.6, 1.8),
-      new THREE.MeshBasicMaterial({map: sideTex, transparent: true})
-    );
-    sideLabelLeft.position.set(-0.68, 1.6, 0);
-    sideLabelLeft.rotation.y = -Math.PI / 2;
-    g.add(sideLabelLeft);
+    const sideLabelLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.8),
+      new THREE.MeshBasicMaterial({map: sideTex, transparent: true}));
+    sideLabelLeft.position.set(-0.68, 1.6, 0); sideLabelLeft.rotation.y = -Math.PI / 2; g.add(sideLabelLeft);
 
-    const sideLabelRight = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.6, 1.8),
-      new THREE.MeshBasicMaterial({map: sideTex, transparent: true})
-    );
-    sideLabelRight.position.set(0.68, 1.6, 0);
-    sideLabelRight.rotation.y = Math.PI / 2;
-    g.add(sideLabelRight);
+    const sideLabelRight = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.8),
+      new THREE.MeshBasicMaterial({map: sideTex, transparent: true}));
+    sideLabelRight.position.set(0.68, 1.6, 0); sideLabelRight.rotation.y = Math.PI / 2; g.add(sideLabelRight);
 
-    // Ручка
-    const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.026, 0.026, 0.55, 12),
-      steelMat
-    );
-    handle.rotation.z = Math.PI / 2;
-    handle.position.set(-0.72, 1.55, 0.1);
-    g.add(handle);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.55, 12), steelMat);
+    handle.rotation.z = Math.PI / 2; handle.position.set(-0.72, 1.55, 0.1); g.add(handle);
     for(const dy of [-0.28, 0.28]){
-      const mount = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.035, 0.04, 10),
-        steelMat
-      );
-      mount.rotation.z = Math.PI / 2;
-      mount.position.set(-0.7, 1.55 + dy, 0.1);
-      g.add(mount);
+      const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 10), steelMat);
+      mount.rotation.z = Math.PI / 2; mount.position.set(-0.7, 1.55 + dy, 0.1); g.add(mount);
     }
 
-    // Табличка ATM
     const atmLabelTex = canvasTex(512, 128, (ctx,w,h)=>{
-      ctx.fillStyle = '#0a1428';
-      ctx.fillRect(0, 0, w, h);
-      ctx.font = 'bold 90px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#3a9bff';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = '#3a9bff';
-      ctx.fillText('ATM', w/2, h/2);
+      ctx.fillStyle = '#0a1428'; ctx.fillRect(0, 0, w, h);
+      ctx.font = 'bold 90px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30;
+      ctx.fillStyle = '#3a9bff'; ctx.fillText('ATM', w/2, h/2);
     });
-    const atmLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.65, 0.16),
-      new THREE.MeshBasicMaterial({map: atmLabelTex, transparent: true})
-    );
-    atmLabel.position.set(0, 2.55, 0.36);
-    g.add(atmLabel);
+    const atmLabel = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.16),
+      new THREE.MeshBasicMaterial({map: atmLabelTex, transparent: true}));
+    atmLabel.position.set(0, 2.55, 0.36); g.add(atmLabel);
 
-    // Красный индикатор
-    const warnLight = new THREE.Mesh(
-      new THREE.SphereGeometry(0.018, 8, 8),
-      new THREE.MeshBasicMaterial({color: 0xff3344})
-    );
-    warnLight.position.set(-0.55, 2.55, 0.36);
-    g.add(warnLight);
+    const warnLight = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8),
+      new THREE.MeshBasicMaterial({color: 0xff3344}));
+    warnLight.position.set(-0.55, 2.55, 0.36); g.add(warnLight);
 
     return g;
   }
@@ -1586,6 +1496,148 @@
   atmMesh.position.set(ATM_X, 0, ATM_Z);
   atmMesh.rotation.y = Math.PI/2;
   scene.add(atmMesh);
+
+  // ============================================================
+  // ОБМЕННИК
+  // ============================================================
+  function createExchanger(){
+    const g = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({color: 0x0a1a3a, metalness: .8, roughness: .35});
+    const darkMat = new THREE.MeshStandardMaterial({color: 0x08080f, metalness: .5, roughness: .65});
+    const accentMat = new THREE.MeshStandardMaterial({color: 0x00d4ff, emissive: 0x00d4ff, emissiveIntensity: .6, metalness: .7, roughness: .3});
+    const steelMat = new THREE.MeshStandardMaterial({color: 0x5a5f6e, metalness: .9, roughness: .25});
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.65, 0.75), bodyMat);
+    body.position.y = 1.325; body.castShadow = !isMobile; body.receiveShadow = !isMobile;
+    g.add(body);
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.8), darkMat);
+    plinth.position.y = 0.05; g.add(plinth);
+
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.95), bodyMat);
+    canopy.position.set(0, 2.78, 0.08); canopy.castShadow = !isMobile;
+    g.add(canopy);
+
+    const canopyGlow = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.9), accentMat);
+    canopyGlow.position.set(0, 2.72, 0.08); g.add(canopyGlow);
+
+    const signTex = canvasTex(1024, 256, (ctx,w,h)=>{
+      ctx.fillStyle = '#001428'; ctx.fillRect(0,0,w,h);
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0, '#00d4ff'); grad.addColorStop(1, '#00b3ff');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, h-22, w, 22); ctx.fillRect(0, 0, w, 12);
+      ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 40;
+      ctx.font = 'bold 100px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#00d4ff';
+      ctx.fillText('💎 EXCHANGE', w/2, h/2 - 15);
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 36px sans-serif'; ctx.fillStyle = '#9bbfd0';
+      ctx.fillText('10 💎 = 495 ₽', w/2, h/2 + 70);
+    });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.3), new THREE.MeshBasicMaterial({map: signTex, transparent: true}));
+    sign.position.set(0, 2.95, 0.36); g.add(sign);
+
+    if(!isMobile){
+      const signGlow = new THREE.PointLight(0x00d4ff, 0.9, 2.8, 2);
+      signGlow.position.set(0, 2.9, 0.8); g.add(signGlow);
+    }
+
+    const screenTex = canvasTex(1024, 768, (ctx,w,h)=>{
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#001428'); grad.addColorStop(1, '#000810');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0,212,255,0.18)'; ctx.fillRect(0, 0, w, 90);
+      ctx.font = 'bold 46px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#00d4ff'; ctx.fillText('💎 PC EXCHANGE', 40, 45);
+      ctx.textAlign = 'right'; ctx.fillStyle = '#00ff88'; ctx.fillText('● ONLINE', w-40, 45);
+      ctx.font = 'bold 68px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
+      ctx.fillText('ОБМЕН ВАЛЮТЫ', w/2, 180);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(60, 250, w-120, 170);
+      ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 4; ctx.strokeRect(60, 250, w-120, 170);
+      ctx.font = 'bold 100px sans-serif'; ctx.textAlign = 'left';
+      ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 40;
+      ctx.fillStyle = '#00d4ff'; ctx.fillText('10', 130, 335);
+      ctx.font = 'bold 60px sans-serif'; ctx.fillText('💎', 260, 335);
+      ctx.shadowBlur = 0;
+      ctx.textAlign = 'center'; ctx.font = 'bold 90px sans-serif'; ctx.fillStyle = '#ffffff';
+      ctx.fillText('=', w/2, 340);
+      ctx.textAlign = 'right';
+      ctx.shadowColor = '#ffc93c'; ctx.shadowBlur = 40;
+      ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 100px sans-serif';
+      ctx.fillText('495', w-200, 335);
+      ctx.font = 'bold 60px sans-serif'; ctx.fillText('₽', w-90, 335);
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#5a7ba0';
+      ctx.fillText('Обмен синих монет на рубли', w/2, 480);
+      const labels = ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
+      for(let i = 0; i < 3; i++){
+        const bx = 80 + i * 290;
+        ctx.fillStyle = 'rgba(0,212,255,0.18)'; ctx.fillRect(bx, 540, 260, 100);
+        ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 3; ctx.strokeRect(bx, 540, 260, 100);
+        ctx.fillStyle = '#00d4ff'; ctx.font = 'bold 40px sans-serif';
+        ctx.fillText(labels[i], bx + 130, 595);
+      }
+      ctx.fillStyle = 'rgba(0,212,255,0.08)';
+      for(let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
+    });
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.8), new THREE.MeshBasicMaterial({map: screenTex}));
+    screen.position.set(0, 1.9, 0.34); g.add(screen);
+
+    const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.93, 0.04), darkMat);
+    screenFrame.position.set(0, 1.9, 0.31); g.add(screenFrame);
+
+    if(!isMobile){
+      const screenLight = new THREE.PointLight(0x00d4ff, 1.3, 4.5, 2);
+      screenLight.position.set(0, 1.9, 1.0); g.add(screenLight);
+    }
+
+    const keypadPanel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.55, 0.06),
+      new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4}));
+    keypadPanel.position.set(0, 1.0, 0.33); g.add(keypadPanel);
+    const keypadFrame = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.62, 0.04), steelMat);
+    keypadFrame.position.set(0, 1.0, 0.31); g.add(keypadFrame);
+    for(let i = 0; i < 3; i++){
+      for(let j = 0; j < 4; j++){
+        const isRed = (i === 2 && j === 3);
+        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.095, 0.04),
+          new THREE.MeshStandardMaterial({
+            color: isRed ? 0x8a1a1a : 0x0a2a4a,
+            emissive: isRed ? 0xd83030 : 0x00d4ff,
+            emissiveIntensity: isRed ? 0.65 : 0.4,
+            metalness: .7, roughness: .3,
+          }));
+        btn.position.set(-0.30 + j * 0.2, 1.15 - i * 0.13, 0.36);
+        g.add(btn);
+      }
+    }
+
+    const coinSlot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 20), accentMat);
+    coinSlot.rotation.x = Math.PI / 2;
+    coinSlot.position.set(0.55, 1.4, 0.33); g.add(coinSlot);
+    const coinSlotIn = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 20),
+      new THREE.MeshBasicMaterial({color: 0x000000}));
+    coinSlotIn.rotation.x = Math.PI / 2;
+    coinSlotIn.position.set(0.55, 1.4, 0.35); g.add(coinSlotIn);
+
+    const coinIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8),
+      new THREE.MeshBasicMaterial({color: 0x00ff44}));
+    coinIndicator.position.set(0.55, 1.28, 0.35); g.add(coinIndicator);
+
+    const cashSlot = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.11, 0.08), accentMat);
+    cashSlot.position.set(0, 0.6, 0.33); g.add(cashSlot);
+    const cashSlotIn = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.06),
+      new THREE.MeshBasicMaterial({color: 0x000000}));
+    cashSlotIn.position.set(0, 0.6, 0.35); g.add(cashSlotIn);
+
+    return g;
+  }
+
+  const exchangerMesh = createExchanger();
+  exchangerMesh.position.set(EXCHANGE_X, 0, EXCHANGE_Z);
+  exchangerMesh.rotation.y = Math.PI/2;
+  scene.add(exchangerMesh);
 
   // ============================================================
   // СПАЛЬНЫЙ МЕШОК
@@ -2054,159 +2106,130 @@
     return g;
   }
 
-  // DONK — киберспортсмен (в стиле Team Spirit)
+  // DONK
   function makeDonk(){
     const g = new THREE.Group();
-
-    // Молодой, светловолосый, невысокий
     const player = makeHuman({
-      shirt: 0xf4f4f4,          // белая футболка
-      pants: 0x1a1a2a,          // тёмные штаны
-      skin: 0xffdbac,
-      hair: 0xf0e0a0,           // платиновые/светлые волосы
-      height: 0.92,             // невысокий, молодой
+      shirt: 0xf4f4f4, pants: 0x1a1a2a, skin: 0xffdbac,
+      hair: 0xf0e0a0, height: 0.92,
     });
-
-    // Красная спортивная жилетка поверх футболки
     const jerseyMat = new THREE.MeshStandardMaterial({color:0xd83030, roughness:.85});
     const jersey = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.56, 0.3), jerseyMat);
-    jersey.position.set(0, 1.05, 0);
-    player.add(jersey);
-
-    // Белые полосы на жилетке
+    jersey.position.set(0, 1.05, 0); player.add(jersey);
     const stripeMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.7});
     for(const dx of [-0.14, 0.14]){
-      const stripe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.06, 0.56, 0.01),
-        stripeMat
-      );
-      stripe.position.set(dx, 1.05, 0.155);
-      player.add(stripe);
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.56, 0.01), stripeMat);
+      stripe.position.set(dx, 1.05, 0.155); player.add(stripe);
     }
-
-    // Номер «1» на спине
     const numTex = canvasTex(256, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
       ctx.font = 'bold 200px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#d83030';
-      ctx.fillText('1', w/2, h/2);
+      ctx.fillStyle = '#d83030'; ctx.fillText('1', w/2, h/2);
     });
-    const numPlate = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.25, 0.25),
-      new THREE.MeshBasicMaterial({map:numTex})
-    );
-    numPlate.position.set(0, 1.05, -0.16);
-    numPlate.rotation.y = Math.PI;
-    player.add(numPlate);
-
-    // Золотая нашивка на груди
-    const badge = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 0.11, 0.012),
-      new THREE.MeshStandardMaterial({
-        color:0xffc93c, metalness:.9, roughness:.15,
-        emissive:0xffc93c, emissiveIntensity:.5,
-      })
-    );
-    badge.position.set(-0.11, 1.18, 0.16);
-    player.add(badge);
-
-    // Игровые наушники вокруг шеи
-    const headsetMat = new THREE.MeshStandardMaterial({
-      color:0x1a1a1a, metalness:.6, roughness:.35,
-    });
-    const neckband = new THREE.Mesh(
-      new THREE.TorusGeometry(0.15, 0.024, 8, 20, Math.PI),
-      headsetMat
-    );
-    neckband.rotation.x = Math.PI / 2;
-    neckband.rotation.z = Math.PI;
-    neckband.position.y = 1.28;
-    player.add(neckband);
-
+    const numPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.25), new THREE.MeshBasicMaterial({map:numTex}));
+    numPlate.position.set(0, 1.05, -0.16); numPlate.rotation.y = Math.PI; player.add(numPlate);
+    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.012),
+      new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.15, emissive:0xffc93c, emissiveIntensity:.5}));
+    badge.position.set(-0.11, 1.18, 0.16); player.add(badge);
+    const headsetMat = new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.6, roughness:.35});
+    const neckband = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.024, 8, 20, Math.PI), headsetMat);
+    neckband.rotation.x = Math.PI / 2; neckband.rotation.z = Math.PI; neckband.position.y = 1.28; player.add(neckband);
     for(const dx of [-0.14, 0.14]){
-      const cup = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.07, 0.055, 14),
-        headsetMat
-      );
-      cup.rotation.x = Math.PI / 2;
-      cup.rotation.z = Math.PI / 2;
-      cup.position.set(dx, 1.28, 0.02);
-      player.add(cup);
-      const glow = new THREE.Mesh(
-        new THREE.TorusGeometry(0.062, 0.008, 6, 16),
-        new THREE.MeshBasicMaterial({color:0x00e0b8})
-      );
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.055, 14), headsetMat);
+      cup.rotation.x = Math.PI / 2; cup.rotation.z = Math.PI / 2;
+      cup.position.set(dx, 1.28, 0.02); player.add(cup);
+      const glow = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.008, 6, 16),
+        new THREE.MeshBasicMaterial({color:0x00e0b8}));
       glow.rotation.y = Math.PI / 2;
-      glow.position.set(dx + (dx > 0 ? 0.026 : -0.026), 1.28, 0.02);
-      player.add(glow);
+      glow.position.set(dx + (dx > 0 ? 0.026 : -0.026), 1.28, 0.02); player.add(glow);
     }
-
-    // Медаль
-    const ribbon = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 0.028, 0.015),
-      new THREE.MeshStandardMaterial({color:0xd83030, roughness:.7})
-    );
-    ribbon.position.set(0, 1.44, 0.19);
-    player.add(ribbon);
-    const medal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 0.014, 20),
-      new THREE.MeshStandardMaterial({
-        color:0xffc93c, metalness:.98, roughness:.1,
-        emissive:0xffc93c, emissiveIntensity:.55,
-      })
-    );
-    medal.rotation.x = Math.PI / 2;
-    medal.position.set(0, 1.32, 0.21);
-    player.add(medal);
-    const medalStar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.028, 0.006, 6, 5),
-      new THREE.MeshBasicMaterial({color:0xd83030})
-    );
-    medalStar.position.set(0, 1.32, 0.22);
-    player.add(medalStar);
-
-    // КУБОК в левой руке
+    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.028, 0.015),
+      new THREE.MeshStandardMaterial({color:0xd83030, roughness:.7}));
+    ribbon.position.set(0, 1.44, 0.19); player.add(ribbon);
+    const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.014, 20),
+      new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.1, emissive:0xffc93c, emissiveIntensity:.55}));
+    medal.rotation.x = Math.PI / 2; medal.position.set(0, 1.32, 0.21); player.add(medal);
     const trophy = new THREE.Group();
-    const trophyMat = new THREE.MeshStandardMaterial({
-      color:0xffc93c, metalness:.98, roughness:.1,
-      emissive:0xffc93c, emissiveIntensity:.4,
-    });
-    const tBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.04, 0.05, 12),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.5, roughness:.4})
-    );
-    tBase.position.y = -0.16;
-    trophy.add(tBase);
-    const tStem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.015, 0.02, 0.1, 10),
-      trophyMat
-    );
-    tStem.position.y = -0.09;
-    trophy.add(tStem);
-    const tCup = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.09, 0.055, 0.15, 16),
-      trophyMat
-    );
-    tCup.position.y = 0.04;
-    trophy.add(tCup);
-    const tH1 = new THREE.Mesh(
-      new THREE.TorusGeometry(0.05, 0.011, 6, 16, Math.PI),
-      trophyMat
-    );
-    tH1.rotation.z = -Math.PI / 2;
-    tH1.position.set(-0.11, 0.04, 0);
-    trophy.add(tH1);
-    const tH2 = new THREE.Mesh(
-      new THREE.TorusGeometry(0.05, 0.011, 6, 16, Math.PI),
-      trophyMat
-    );
-    tH2.rotation.z = Math.PI / 2;
-    tH2.position.set(0.11, 0.04, 0);
-    trophy.add(tH2);
+    const trophyMat = new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.1, emissive:0xffc93c, emissiveIntensity:.4});
+    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.05, 12),
+      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.5, roughness:.4}));
+    tBase.position.y = -0.16; trophy.add(tBase);
+    const tStem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.1, 10), trophyMat);
+    tStem.position.y = -0.09; trophy.add(tStem);
+    const tCup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.055, 0.15, 16), trophyMat);
+    tCup.position.y = 0.04; trophy.add(tCup);
+    trophy.position.set(-0.44, 0.92, 0.15); trophy.rotation.z = 0.2; player.add(trophy);
+    g.add(player);
+    return g;
+  }
 
-    trophy.position.set(-0.44, 0.92, 0.15);
-    trophy.rotation.z = 0.2;
-    player.add(trophy);
+  // МИЛЛИОНЕР — самый богатый клиент, носит золото и цилиндр
+  function makeMillionaire(){
+    const g = new THREE.Group();
+    // Золотой костюм
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700, metalness: .95, roughness: .15,
+      emissive: 0xffc93c, emissiveIntensity: .25,
+    });
+    const player = makeHuman({
+      shirt: 0xffd700, pants: 0x1a1a1a, skin: 0xffdbac,
+      hair: 0x1a1a1a, sunglasses: true,
+      tieColor: 0xffd700,
+      accessory: 'watch', height: 1.05,
+    });
+
+    // Цилиндр
+    const topHatMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0a0a, metalness: .7, roughness: .35,
+      emissive: 0xffd700, emissiveIntensity: .15,
+    });
+    const topCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.35, 20), topHatMat);
+    topCyl.position.y = 1.95; player.add(topCyl);
+    const topBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.025, 20), topHatMat);
+    topBrim.position.y = 1.78; player.add(topBrim);
+    // Золотая полоса на цилиндре
+    const topBand = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.02, 8, 24), goldMat);
+    topBand.rotation.x = Math.PI/2; topBand.position.y = 1.85; player.add(topBand);
+
+    // Золотая цепь на шее
+    const chain = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.018, 8, 24), goldMat);
+    chain.rotation.x = Math.PI/2; chain.position.y = 1.32; player.add(chain);
+    // Медальон (💎)
+    const pendant = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.055, 0),
+      new THREE.MeshStandardMaterial({color:0x00d4ff, emissive:0x00d4ff, emissiveIntensity:.8,
+        metalness:.9, roughness:.15})
+    );
+    pendant.position.set(0, 1.2, 0.2); player.add(pendant);
+
+    // Чемодан с деньгами в левой руке
+    const caseMat = new THREE.MeshStandardMaterial({color: 0x1a1a2a, roughness:.5, metalness:.4});
+    const moneyCase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.1), caseMat);
+    moneyCase.position.set(-0.34, 0.55, 0.05); player.add(moneyCase);
+    // Замки из золота
+    for(const dx of [-0.08, 0.08]){
+      const lock = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.02), goldMat);
+      lock.position.set(-0.34 + dx, 0.58, 0.1); player.add(lock);
+    }
+    // Ручка
+    const caseHandle = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12), goldMat);
+    caseHandle.rotation.y = Math.PI/2;
+    caseHandle.position.set(-0.34, 0.68, 0.05); player.add(caseHandle);
+
+    // Золотые часы
+    const watchMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700, metalness: 1.0, roughness: .08,
+      emissive: 0xffd700, emissiveIntensity: .5,
+    });
+    const watch = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.016, 8, 20), watchMat);
+    watch.rotation.x = Math.PI/2;
+    watch.position.set(0.26, 0.72, 0); player.add(watch);
+
+    // Позолоченные туфли
+    for(const dx of [-0.11, 0.11]){
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.26), goldMat);
+      shoe.position.set(dx, 0.045, 0.04); player.add(shoe);
+    }
 
     g.add(player);
     return g;
@@ -2223,33 +2246,38 @@
     } else if(tier === 2){
       g.add(makeSchoolkid());
       const mom = makeParent('f');
-      mom.position.set(-0.72, 0, -0.35); mom.rotation.y = 0.18;
-      g.add(mom);
+      mom.position.set(-0.72, 0, -0.35); mom.rotation.y = 0.18; g.add(mom);
       const dad = makeParent('m');
-      dad.position.set(0.72, 0, -0.35); dad.rotation.y = -0.18;
-      g.add(dad);
+      dad.position.set(0.72, 0, -0.35); dad.rotation.y = -0.18; g.add(dad);
     } else if(tier === 3){
       g.add(makeRichMan());
       const bg1 = makeBodyguard();
-      bg1.position.set(-0.88, 0, -0.4); bg1.rotation.y = 0.2;
-      g.add(bg1);
+      bg1.position.set(-0.88, 0, -0.4); bg1.rotation.y = 0.2; g.add(bg1);
       const bg2 = makeBodyguard();
-      bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2;
-      g.add(bg2);
-    } else {
+      bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2; g.add(bg2);
+    } else if(tier === 4){
       // TOP — Donk + фанат + охранник
       g.add(makeDonk());
       const fan = makeHuman({
         shirt: 0x2a2a3a, pants: 0x1a1a1a, skin: 0xf1c27d,
-        hair: 0x3a2410, height: 0.95,
-        accessory: 'backpack',
+        hair: 0x3a2410, height: 0.95, accessory: 'backpack',
       });
-      fan.position.set(0.9, 0, -0.5);
-      fan.rotation.y = -0.2;
-      g.add(fan);
+      fan.position.set(0.9, 0, -0.5); fan.rotation.y = -0.2; g.add(fan);
       const bg = makeBodyguard();
-      bg.position.set(-0.95, 0, -0.45); bg.rotation.y = 0.25;
-      g.add(bg);
+      bg.position.set(-0.95, 0, -0.45); bg.rotation.y = 0.25; g.add(bg);
+    } else {
+      // MEGA — Миллионер + 4 охранника по бокам
+      g.add(makeMillionaire());
+      const positions = [
+        [-1.1, 0.2, -0.5], [1.1, -0.2, -0.5],
+        [-1.4, 0.25, 0.3], [1.4, -0.25, 0.3],
+      ];
+      for(const [x, rotY, z] of positions){
+        const bg = makeBodyguard();
+        bg.position.set(x, 0, z);
+        bg.rotation.y = rotY;
+        g.add(bg);
+      }
     }
 
     g.traverse(o => {
@@ -2338,15 +2366,13 @@
     }
   }
 
-  // VIP-витрина "TOP PC" (tier 4)
+  // VIP-витрина "TOP PC"
   (()=>{
-    const panel = new THREE.Mesh(
-      new THREE.BoxGeometry(2.3, 3.05, 0.08),
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(2.3, 3.05, 0.08),
       new THREE.MeshStandardMaterial({
         color:0x1a0a30, metalness:.6, roughness:.5,
         emissive:0x5a00a8, emissiveIntensity:.35,
-      })
-    );
+      }));
     panel.position.set(TOPSHELF_X, 1.7, TOPSHELF_Z);
     panel.receiveShadow = !isMobile;
     scene.add(panel);
@@ -2356,35 +2382,25 @@
       emissive:0xa855f7, emissiveIntensity:.55,
     });
     const topBar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.15), frameMatP);
-    topBar.position.set(TOPSHELF_X, 3.24, TOPSHELF_Z + 0.05);
-    scene.add(topBar);
+    topBar.position.set(TOPSHELF_X, 3.24, TOPSHELF_Z + 0.05); scene.add(topBar);
     const botBar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.15), frameMatP);
-    botBar.position.set(TOPSHELF_X, 0.16, TOPSHELF_Z + 0.05);
-    scene.add(botBar);
+    botBar.position.set(TOPSHELF_X, 0.16, TOPSHELF_Z + 0.05); scene.add(botBar);
     for(const dx of [-1.2, 1.2]){
       const sideBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.15, 0.15), frameMatP);
-      sideBar.position.set(TOPSHELF_X + dx, 1.7, TOPSHELF_Z + 0.05);
-      scene.add(sideBar);
+      sideBar.position.set(TOPSHELF_X + dx, 1.7, TOPSHELF_Z + 0.05); scene.add(sideBar);
     }
 
     for(let i=0;i<5;i++){
       const y = TOPSHELF_SHELF_Y[i];
-      const shelf = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 0.05, 0.35),
-        new THREE.MeshStandardMaterial({color:0x2a1a3a, metalness:.7, roughness:.4})
-      );
-      shelf.position.set(TOPSHELF_X, y - 0.025, TOPSHELF_Z + 0.12);
-      scene.add(shelf);
-      const strip = new THREE.Mesh(
-        new THREE.BoxGeometry(2.0, 0.02, 0.02),
-        new THREE.MeshBasicMaterial({color:0xa855f7})
-      );
-      strip.position.set(TOPSHELF_X, y - 0.06, TOPSHELF_Z + 0.28);
-      scene.add(strip);
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 0.35),
+        new THREE.MeshStandardMaterial({color:0x2a1a3a, metalness:.7, roughness:.4}));
+      shelf.position.set(TOPSHELF_X, y - 0.025, TOPSHELF_Z + 0.12); scene.add(shelf);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.02, 0.02),
+        new THREE.MeshBasicMaterial({color:0xa855f7}));
+      strip.position.set(TOPSHELF_X, y - 0.06, TOPSHELF_Z + 0.28); scene.add(strip);
       if(!isMobile){
         const light = new THREE.PointLight(0xa855f7, 0.5, 2.5, 2);
-        light.position.set(TOPSHELF_X, y + 0.15, TOPSHELF_Z + 0.35);
-        scene.add(light);
+        light.position.set(TOPSHELF_X, y + 0.15, TOPSHELF_Z + 0.35); scene.add(light);
       }
     }
 
@@ -2394,20 +2410,16 @@
       ctx.strokeRect(12,12,w-24,h-24);
       ctx.font='bold 140px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 50;
-      ctx.fillStyle = '#a855f7';
-      ctx.fillText('TOP PC', w/2, h/2 - 15);
+      ctx.fillStyle = '#a855f7'; ctx.fillText('TOP PC', w/2, h/2 - 15);
       ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.45;
       ctx.fillText('TOP PC', w/2, h/2 - 15);
       ctx.globalAlpha = 1;
       ctx.font='bold 40px sans-serif'; ctx.fillStyle = '#ffc93c';
       ctx.fillText('★ ELITE SERIES ★', w/2, h/2 + 75);
     });
-    const topSign = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.0, 0.5),
-      new THREE.MeshBasicMaterial({map:topSignTex, transparent:true})
-    );
-    topSign.position.set(TOPSHELF_X, 3.6, TOPSHELF_Z + 0.06);
-    scene.add(topSign);
+    const topSign = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5),
+      new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
+    topSign.position.set(TOPSHELF_X, 3.6, TOPSHELF_Z + 0.06); scene.add(topSign);
 
     for(let i=0;i<COMPONENTS.length;i++){
       const comp = COMPONENTS[i];
@@ -2424,6 +2436,113 @@
       label.position.set(TOPSHELF_X, shelfY + 0.35, TOPSHELF_Z + 0.3);
       label.scale.set(0.85, 0.42, 1);
       label.userData = { kind:'shelf-label', componentId:comp.id, tier:4 };
+      scene.add(label);
+      labelSprites.push(label);
+    }
+  })();
+
+  // ============================================================
+  // СУПЕР ТОП ВИТРИНА (за 💎)
+  // ============================================================
+  (()=>{
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.05, 2.3),
+      new THREE.MeshStandardMaterial({
+        color: 0x0a1a2a, metalness: .6, roughness: .5,
+        emissive: 0x003a55, emissiveIntensity: .45,
+      }));
+    panel.position.set(MEGASHELF_X + 0.35, 1.7, MEGASHELF_Z);
+    panel.receiveShadow = !isMobile;
+    scene.add(panel);
+
+    const frameMatB = new THREE.MeshStandardMaterial({
+      color: 0x00d4ff, metalness: .9, roughness: .2,
+      emissive: 0x00d4ff, emissiveIntensity: .65,
+    });
+    const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 2.4), frameMatB);
+    topBar.position.set(MEGASHELF_X + 0.35, 3.24, MEGASHELF_Z); scene.add(topBar);
+    const botBar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 2.4), frameMatB);
+    botBar.position.set(MEGASHELF_X + 0.35, 0.16, MEGASHELF_Z); scene.add(botBar);
+    for(const dz of [-1.2, 1.2]){
+      const sideBar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.15, 0.08), frameMatB);
+      sideBar.position.set(MEGASHELF_X + 0.35, 1.7, MEGASHELF_Z + dz); scene.add(sideBar);
+    }
+
+    for(let i=0;i<5;i++){
+      const y = MEGASHELF_Y[i];
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 2.2),
+        new THREE.MeshStandardMaterial({color: 0x0a1a2a, metalness: .7, roughness: .4}));
+      shelf.position.set(MEGASHELF_X + 0.15, y - 0.025, MEGASHELF_Z); scene.add(shelf);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 2.0),
+        new THREE.MeshBasicMaterial({color: 0x00d4ff}));
+      strip.position.set(MEGASHELF_X - 0.05, y - 0.06, MEGASHELF_Z); scene.add(strip);
+      if(!isMobile){
+        const light = new THREE.PointLight(0x00d4ff, 0.55, 2.5, 2);
+        light.position.set(MEGASHELF_X - 0.15, y + 0.15, MEGASHELF_Z); scene.add(light);
+      }
+    }
+
+    const topSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
+      ctx.fillStyle = '#00142a'; ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 10;
+      ctx.strokeRect(12,12,w-24,h-24);
+      ctx.font='bold 130px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 55;
+      ctx.fillStyle = '#00d4ff';
+      ctx.fillText('СУПЕР ТОП', w/2, h/2 - 15);
+      ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.45;
+      ctx.fillText('СУПЕР ТОП', w/2, h/2 - 15);
+      ctx.globalAlpha = 1;
+      ctx.font='bold 38px sans-serif'; ctx.fillStyle = '#00d4ff';
+      ctx.fillText('💎 ТОЛЬКО ЗА СИНИЕ МОНЕТЫ 💎', w/2, h/2 + 75);
+    });
+    const topSign = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.0),
+      new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
+    topSign.position.set(MEGASHELF_X + 0.1, 3.6, MEGASHELF_Z);
+    topSign.rotation.y = Math.PI/2;
+    scene.add(topSign);
+
+    for(let i=0;i<COMPONENTS.length;i++){
+      const comp = COMPONENTS[i];
+      const shelfY = MEGASHELF_Y[i];
+      const detailY = shelfY + comp.size[1]/2 + 0.01;
+      const mesh = MODEL_FACTORIES[comp.id](5); // tier 5 = MEGA (cyan)
+      mesh.position.set(MEGASHELF_X - 0.05, detailY, MEGASHELF_Z);
+      mesh.rotation.y = Math.PI/2;
+      mesh.userData = { kind:'shelf-component', componentId:comp.id, tier:5 };
+      mesh.traverse(o => { if(o.isMesh) o.userData.parentData = mesh.userData; });
+      scene.add(mesh);
+      componentMeshes.push(mesh);
+
+      const bluePrice = BLUE_PRICES[comp.id];
+      // Метка с ценой в синих монетах
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(8,20,40,0.95)';
+      ctx.beginPath();
+      const r = 28;
+      ctx.moveTo(r,0); ctx.lineTo(512-r,0); ctx.arcTo(512,0,512,r,r);
+      ctx.lineTo(512,256-r); ctx.arcTo(512,256,512-r,256,r);
+      ctx.lineTo(r,256); ctx.arcTo(0,256,0,256-r,r);
+      ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 6; ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 52px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(comp.name, 256, 78);
+      ctx.fillStyle = '#00d4ff';
+      ctx.font = 'bold 56px sans-serif';
+      ctx.fillText('СУПЕР ТОП', 256, 155);
+      ctx.fillStyle = '#00d4ff';
+      ctx.font = 'bold 76px sans-serif';
+      ctx.fillText('💎 ' + bluePrice, 256, 232);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false });
+      const label = new THREE.Sprite(mat);
+      label.scale.set(1.1, .55, 1);
+      label.position.set(MEGASHELF_X - 0.3, shelfY + 0.35, MEGASHELF_Z);
+      label.userData = { kind:'shelf-label', componentId:comp.id, tier:5 };
       scene.add(label);
       labelSprites.push(label);
     }
@@ -2451,10 +2570,8 @@
   benchPlate.receiveShadow = !isMobile;
   scene.add(benchPlate);
 
-  const matRubber = new THREE.Mesh(
-    new THREE.BoxGeometry(1.1, .015, 7), 
-    new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:1})
-  );
+  const matRubber = new THREE.Mesh(new THREE.BoxGeometry(1.1, .015, 7),
+    new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:1}));
   matRubber.position.set(BENCH_X, 1.075, 0);
   scene.add(matRubber);
 
@@ -2477,132 +2594,47 @@
   for(let i=0;i<4;i++){
     const sd = new THREE.Group();
     const handleColor = screwdriverColors[i];
-    const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(.035, .04, .16, 12),
-      new THREE.MeshStandardMaterial({color:handleColor, roughness:.5, metalness:.2})
-    );
-    handle.rotation.z = Math.PI/2;
-    sd.add(handle);
-    const shaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(.012, .012, .22, 8),
-      new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15})
-    );
-    shaft.rotation.z = Math.PI/2;
-    shaft.position.x = .19;
-    sd.add(shaft);
-    const tip = new THREE.Mesh(
-      new THREE.CylinderGeometry(.014, .006, .04, 8),
-      new THREE.MeshStandardMaterial({color:0x888888, metalness:.95, roughness:.2})
-    );
-    tip.rotation.z = Math.PI/2;
-    tip.position.x = .32;
-    sd.add(tip);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(.035, .04, .16, 12),
+      new THREE.MeshStandardMaterial({color:handleColor, roughness:.5, metalness:.2}));
+    handle.rotation.z = Math.PI/2; sd.add(handle);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .22, 8),
+      new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15}));
+    shaft.rotation.z = Math.PI/2; shaft.position.x = .19; sd.add(shaft);
     sd.position.set(BENCH_X + 1.28, 2.1 - i * 0.22, -2.5);
-    sd.rotation.y = -Math.PI/2;
-    toolWall.add(sd);
+    sd.rotation.y = -Math.PI/2; toolWall.add(sd);
   }
 
   for(let i=0;i<3;i++){
     const wrench = new THREE.Group();
     const wMat = new THREE.MeshStandardMaterial({color:0xc8c8d0, metalness:.95, roughness:.2});
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(.05, .35, .012), wMat);
-    wrench.add(bar);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(.05, .35, .012), wMat); wrench.add(bar);
     const head1 = new THREE.Mesh(new THREE.TorusGeometry(.05, .012, 6, 16), wMat);
-    head1.position.y = .2;
-    wrench.add(head1);
+    head1.position.y = .2; wrench.add(head1);
     const head2 = new THREE.Mesh(new THREE.TorusGeometry(.05, .012, 6, 16), wMat);
-    head2.position.y = -.2;
-    wrench.add(head2);
-    for(const h of [head1, head2]){
-      const cut = new THREE.Mesh(new THREE.BoxGeometry(.02, .07, .02),
-        new THREE.MeshBasicMaterial({color:0x1a1f2a}));
-      cut.position.y = h === head1 ? .2 : -.2;
-      wrench.add(cut);
-    }
+    head2.position.y = -.2; wrench.add(head2);
     wrench.position.set(BENCH_X + 1.28, 2.1 - i * 0.25, 0.5 + i * 0.35);
     wrench.rotation.z = Math.PI/2 + (i - 1) * 0.15;
     wrench.rotation.y = -Math.PI/2;
     toolWall.add(wrench);
   }
 
-  const pliers = new THREE.Group();
-  const plMat = new THREE.MeshStandardMaterial({color:0xd83a3a, roughness:.6, metalness:.2});
-  const plMat2 = new THREE.MeshStandardMaterial({color:0xc0c0c8, metalness:.95, roughness:.2});
-  for(const dx of [-.025, .025]){
-    const handle = new THREE.Mesh(new THREE.BoxGeometry(.035, .16, .02), plMat);
-    handle.position.set(dx, -.1, 0);
-    pliers.add(handle);
-    const jaw = new THREE.Mesh(new THREE.BoxGeometry(.028, .14, .015), plMat2);
-    jaw.position.set(dx * 0.4, .08, 0);
-    pliers.add(jaw);
-  }
-  const pivot = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .025, 12),
-    new THREE.MeshStandardMaterial({color:0x666666, metalness:.9, roughness:.2}));
-  pivot.rotation.z = Math.PI/2;
-  pliers.add(pivot);
-  pliers.position.set(BENCH_X + 1.28, 2.1, 2.5);
-  pliers.rotation.y = -Math.PI/2;
-  toolWall.add(pliers);
-
-  const pasteTube = new THREE.Mesh(
-    new THREE.CylinderGeometry(.028, .028, .12, 12),
-    new THREE.MeshStandardMaterial({color:0xe8e8e8, roughness:.4, metalness:.1})
-  );
-  pasteTube.rotation.z = Math.PI/2;
-  pasteTube.position.set(BENCH_X + 1.28, 1.55, 2.9);
-  toolWall.add(pasteTube);
-  const pasteCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(.03, .03, .04, 12),
-    new THREE.MeshStandardMaterial({color:0x00e0b8, roughness:.5, emissive:0x00e0b8, emissiveIntensity:.3})
-  );
-  pasteCap.rotation.z = Math.PI/2;
-  pasteCap.position.set(BENCH_X + 1.28, 1.55, 2.76);
-  toolWall.add(pasteCap);
-
-  const solderRoll = new THREE.Mesh(
-    new THREE.CylinderGeometry(.07, .07, .06, 16),
-    new THREE.MeshStandardMaterial({color:0x505050, roughness:.4, metalness:.7})
-  );
-  solderRoll.rotation.z = Math.PI/2;
-  solderRoll.position.set(BENCH_X + 1.28, 1.55, -2.9);
-  toolWall.add(solderRoll);
-  const solderWire = new THREE.Mesh(
-    new THREE.TorusGeometry(.07, .008, 6, 20),
-    new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15})
-  );
-  solderWire.rotation.y = Math.PI/2;
-  solderWire.position.set(BENCH_X + 1.28, 1.55, -2.9);
-  toolWall.add(solderWire);
-
   scene.add(toolWall);
 
   const benchLampGroup = new THREE.Group();
-  const benchLampArm = new THREE.Mesh(
-    new THREE.CylinderGeometry(.02, .02, .5, 8),
-    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3})
-  );
-  benchLampArm.position.set(BENCH_X + 1.3, 3.2, 0);
-  benchLampGroup.add(benchLampArm);
-  const benchLampArm2 = new THREE.Mesh(
-    new THREE.CylinderGeometry(.02, .02, .5, 8),
-    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3})
-  );
+  const benchLampArm = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 8),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3}));
+  benchLampArm.position.set(BENCH_X + 1.3, 3.2, 0); benchLampGroup.add(benchLampArm);
+  const benchLampArm2 = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 8),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3}));
   benchLampArm2.rotation.z = Math.PI/2;
-  benchLampArm2.position.set(BENCH_X + 1.05, 3.45, 0);
-  benchLampGroup.add(benchLampArm2);
-  const benchLampHead = new THREE.Mesh(
-    new THREE.BoxGeometry(.4, .06, 1.4),
+  benchLampArm2.position.set(BENCH_X + 1.05, 3.45, 0); benchLampGroup.add(benchLampArm2);
+  const benchLampHead = new THREE.Mesh(new THREE.BoxGeometry(.4, .06, 1.4),
     new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.7, roughness:.35,
-      emissive:0x00e0b8, emissiveIntensity:.3})
-  );
-  benchLampHead.position.set(BENCH_X + 0.8, 3.45, 0);
-  benchLampGroup.add(benchLampHead);
-  const benchLampGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(.32, .02, 1.3),
-    new THREE.MeshBasicMaterial({color:0xddeeff})
-  );
-  benchLampGlow.position.set(BENCH_X + 0.8, 3.41, 0);
-  benchLampGroup.add(benchLampGlow);
+      emissive:0x00e0b8, emissiveIntensity:.3}));
+  benchLampHead.position.set(BENCH_X + 0.8, 3.45, 0); benchLampGroup.add(benchLampHead);
+  const benchLampGlow = new THREE.Mesh(new THREE.BoxGeometry(.32, .02, 1.3),
+    new THREE.MeshBasicMaterial({color:0xddeeff}));
+  benchLampGlow.position.set(BENCH_X + 0.8, 3.41, 0); benchLampGroup.add(benchLampGlow);
   if(!isMobile){
     const benchLampLight = new THREE.PointLight(0xddeeff, 1.4, 6, 2);
     benchLampLight.position.set(BENCH_X + 0.8, 3.3, 0);
@@ -2666,116 +2698,70 @@
       { who:'Бомж', text:'Эй, братан... *ик*... мне бы комп, а? Ну там... погамать...' },
       { who:'Бомж', text:'Слышь... *ик*... у меня интернет есть! Почти... комп нужен!' },
       { who:'Бомж', text:'Э, начальник! *ик*... дай комп... я отдам... когда-нибудь...' },
-      { who:'Бомж', text:'Слушай, брат... *ик*... я тут подумал... а давай комп, а?' },
-      { who:'Бомж', text:'Мне бы... *ик*... чтобы в танки играть... и в... *ик*... в эти...' },
     ],
     1: [
       { who:'Работяга', text:'Здорово. Комп нужен рабочий. Без наворотов, но чтобы работал.' },
       { who:'Работяга', text:'Добрый день. Сыну старому надо — документы печатать.' },
       { who:'Работяга', text:'Мне бы понадёжнее. Работать буду, не играть.' },
-      { who:'Работяга', text:'Привет. Есть что-нибудь простое, но чтобы лет 5 тянуло?' },
-      { who:'Работяга', text:'Здорово, мужик. Ты мне сборку попроще, я в этом не шарю.' },
     ],
     2: [
       { who:'Школьник', text:'ЙОУ! Нужен игровой ПК! Чтобы КС и Майн шли на ультрах!' },
       { who:'Школьник', text:'Бро, нужна тема для стрима! С подсветкой, чтобы все завидовали!' },
-      { who:'Школьник', text:'Хочу с RTX! И чтоб 240 ФПС! Ну пожалуйста!' },
-      { who:'Школьник', text:'Мам, скажи ему! Я хочу игровой! А не этот скучный!' },
       { who:'Мама',     text:'Сынок, только не очень дорогой, хорошо?' },
       { who:'Папа',     text:'И чтобы уроки делал! Иначе заберу, ясно?' },
-      { who:'Мама',     text:'Он всё лето копил. Сделайте что-нибудь хорошее, пожалуйста.' },
     ],
     3: [
       { who:'Богач',    text:'Мне нужен компьютер. Самый лучший. Цена не имеет значения.' },
       { who:'Богач',    text:'Я не разбираюсь в этом. Просто соберите что-то... дорогое.' },
-      { who:'Богач',    text:'У меня мало времени. Сделайте максимальную сборку.' },
-      { who:'Богач',    text:'Позвоните моему ассистенту. Мне нужен топовый конфиг.' },
-      { who:'Богач',    text:'Что у вас тут вообще есть? Показывайте самое дорогое.' },
       { who:'Охранник', text:'Шеф, тут... э... компьютерный магазин. Как вы и просили.' },
     ],
     4: [
       { who:'Donk', text:'Йо! Мне нужен ТОП! Я на турнир через неделю!' },
       { who:'Donk', text:'Бро! Максимум ФПС! С этим я всех порву!' },
-      { who:'Donk', text:'Давай самое лучшее! Я финал играю!' },
-      { who:'Donk', text:'Смотри — кубок мой. Теперь нужен комп под стать!' },
       { who:'Donk', text:'Мне ТОП-сборку! Хочу 500 ФПС в CS!' },
-      { who:'Donk', text:'Это мой шанс! Нужен комп мечты!' },
+    ],
+    5: [
+      { who:'💎 Миллионер', text:'Соберите мне СУПЕР ТОП. Плачу только синими монетами.' },
+      { who:'💎 Миллионер', text:'Деньги? Мне они неинтересны. Только 💎, ясно?' },
+      { who:'💎 Миллионер', text:'Я хочу эксклюзив. Самую дорогую сборку. Оплата в 💎.' },
+      { who:'💎 Миллионер', text:'Мой ассистент заплатит синими монетами. Соберите лучшее.' },
+      { who:'Охранник',     text:'Шеф, тут только за синие монеты. Как вы и хотели.' },
     ],
   };
 
   const REACTIONS = {
     perfect: {
-      0: [
-        { who:'Бомж', text:'Вот это... *ик*... по-нашему! Спасибо, брат!' },
-        { who:'Бомж', text:'Ооо... *ик*... вот это вещь! Уважаю!' },
-        { who:'Бомж', text:'*ик*... я всегда знал, что ты хороший человек!' },
-      ],
-      1: [
-        { who:'Работяга', text:'О, то что надо. Спасибо, мужик.' },
-        { who:'Работяга', text:'Отлично. Именно то, что просил. Уважаю.' },
-        { who:'Работяга', text:'Ну вот, другое дело. Спасибо.' },
-      ],
-      2: [
-        { who:'Школьник', text:'ЙОУ! КРУТО! Спасибо огромное!' },
-        { who:'Школьник', text:'ВОТ ЭТО ТЕМА! Мам, смотри, какой!' },
-        { who:'Школьник', text:'Спасибо!! Это лучший день в моей жизни!' },
-        { who:'Мама',     text:'Спасибо большое, сынок будет доволен!' },
-      ],
-      3: [
-        { who:'Богач',    text:'Приемлемо. Охрана, оплатите.' },
-        { who:'Богач',    text:'Хм. На удивление неплохо. Благодарю.' },
-        { who:'Богач',    text:'Наконец-то хоть кто-то сделал нормально.' },
-      ],
-      4: [
-        { who:'Donk', text:'ЙЕЕЕ! ЭТО МОНСТР! Спасибо, бро! Победа наша!' },
-        { who:'Donk', text:'ВОТ ЭТО ТОП! С этим я всех порву!' },
-        { who:'Donk', text:'Красава! Турнирная машина!' },
+      0: [{ who:'Бомж', text:'Вот это... *ик*... по-нашему! Спасибо, брат!' }],
+      1: [{ who:'Работяга', text:'О, то что надо. Спасибо, мужик.' }],
+      2: [{ who:'Школьник', text:'ВОТ ЭТО ТЕМА! Мам, смотри, какой!' }],
+      3: [{ who:'Богач', text:'Приемлемо. Охрана, оплатите.' }],
+      4: [{ who:'Donk', text:'ЙЕЕЕ! ЭТО МОНСТР! Спасибо, бро! Победа наша!' }],
+      5: [
+        { who:'💎 Миллионер', text:'Отлично! Вот вам синие монеты. С лихвой.' },
+        { who:'💎 Миллионер', text:'Приемлемо. Держите 250 💎. Я щедрый.' },
+        { who:'💎 Миллионер', text:'То что нужно. Оплата в 💎, как договаривались.' },
       ],
     },
     cheap: {
-      0: [
-        { who:'Бомж', text:'Э... это чё... *ик*... это не тянет... воняет...' },
-        { who:'Бомж', text:'Ты чё, *ик*... меня за лоха держишь?' },
-      ],
-      1: [
-        { who:'Работяга', text:'Слушай, это старьё. Я просил нормальное.' },
-        { who:'Работяга', text:'Это не потянет. Я хоть и не айтишник, но разбираюсь.' },
-      ],
-      2: [
-        { who:'Школьник', text:'Эээ... это не потянет КС... :(' },
-        { who:'Школьник', text:'Мам, он мне старьё подсунул!' },
-        { who:'Мама',     text:'Мы просили нормальную сборку, а не это.' },
-      ],
-      3: [
-        { who:'Богач',    text:'Это... что это? Я просил лучшее, а не это.' },
-        { who:'Богач',    text:'Мне это не подходит. Я разочарован.' },
-      ],
-      4: [
-        { who:'Donk', text:'ЧТО?! Это не тянет даже в Мортал! Позор!' },
-        { who:'Donk', text:'Ты меня подставил! Я это на турнир не понесу!' },
+      0: [{ who:'Бомж', text:'Э... это чё... *ик*... это не тянет... воняет...' }],
+      1: [{ who:'Работяга', text:'Слушай, это старьё. Я просил нормальное.' }],
+      2: [{ who:'Школьник', text:'Эээ... это не потянет КС... :(' }],
+      3: [{ who:'Богач', text:'Это... что это? Я просил лучшее, а не это.' }],
+      4: [{ who:'Donk', text:'ЧТО?! Это не тянет даже в Мортал! Позор!' }],
+      5: [
+        { who:'💎 Миллионер', text:'Что за дешёвка? Мне такое не нужно. Я плачу за лучшее!' },
+        { who:'💎 Миллионер', text:'Это НЕ СУПЕР ТОП! Я разочарован. Охрана, уходим.' },
       ],
     },
     expensive: {
-      0: [
-        { who:'Бомж', text:'Ты чё... *ик*... обалдел? Я тебе не олигарх!' },
-        { who:'Бомж', text:'Эээ... *ик*... у меня столько нету... ты дурак, что ли?' },
-      ],
-      1: [
-        { who:'Работяга', text:'Слышь, ты чего цены задираешь? Мне такое не по карману.' },
-        { who:'Работяга', text:'Это перебор. Я не за этим пришёл.' },
-      ],
-      2: [
-        { who:'Школьник', text:'Мам, он дорогое сделал!' },
-        { who:'Мама',     text:'Мы не настолько богаты! Заберите это.' },
-        { who:'Папа',     text:'Ты чего нас разводишь? Мы так не договаривались!' },
-      ],
-      3: [
-        { who:'Богач',    text:'Что за безвкусица? Слишком вычурно.' },
-        { who:'Богач',    text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' },
-      ],
-      4: [
-        { who:'Donk', text:'Зачем так перекачал? Мне это не нужно!' },
-        { who:'Donk', text:'Это лишнее. Я играю, а не майню!' },
+      0: [{ who:'Бомж', text:'Ты чё... *ик*... обалдел? Я тебе не олигарх!' }],
+      1: [{ who:'Работяга', text:'Слышь, ты чего цены задираешь? Мне такое не по карману.' }],
+      2: [{ who:'Мама', text:'Мы не настолько богаты! Заберите это.' }],
+      3: [{ who:'Богач', text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' }],
+      4: [{ who:'Donk', text:'Зачем так перекачал? Мне это не нужно!' }],
+      5: [
+        { who:'💎 Миллионер', text:'Это перебор даже для меня. Уберите.' },
+        { who:'💎 Миллионер', text:'Я не идиот. За такое платить не буду.' },
       ],
     },
   };
@@ -2799,9 +2785,7 @@
       }
       dialogTextEl.textContent = text.slice(0, i + 1);
       const ch = text[i];
-      if(ch !== ' ' && ch !== '*' && i % 3 === 0){
-        typeClick();
-      }
+      if(ch !== ' ' && ch !== '*' && i % 3 === 0) typeClick();
       i++;
       typeTimer = setTimeout(typeNext, TYPE_DELAY);
     }
@@ -2854,8 +2838,7 @@
     updateDayHUD();
     scene.background.setHex(0x050510);
     scene.fog.color.setHex(0x050510);
-    scene.fog.near = 8;
-    scene.fog.far = 28;
+    scene.fog.near = 8; scene.fog.far = 28;
     nightOverlayEl.classList.add('show');
     nightHintEl.classList.add('show');
     try{ beep(300, .3, 'sine', .05); setTimeout(()=>beep(200, .4, 'sine', .04), 200); }catch(e){}
@@ -2867,8 +2850,7 @@
     updateDayHUD();
     scene.background.setHex(0x0a1020);
     scene.fog.color.setHex(0x0a1020);
-    scene.fog.near = 22;
-    scene.fog.far = 50;
+    scene.fog.near = 22; scene.fog.far = 50;
     nightOverlayEl.classList.remove('show');
     nightHintEl.classList.remove('show');
     sleepBtnEl.classList.remove('show');
@@ -2885,10 +2867,7 @@
   }
 
   function onSleepingBagClicked(){
-    if(!dayState.isNight){
-      toast('Спать можно только ночью', true);
-      return;
-    }
+    if(!dayState.isNight){ toast('Спать можно только ночью', true); return; }
     if(dayState.isSleeping) return;
     sleepBtnEl.classList.add('show');
   }
@@ -2924,42 +2903,35 @@
     dayState.isSleeping = true;
     sleepBtnEl.classList.remove('show');
     nightHintEl.classList.remove('show');
-
     sleepOverlayEl.classList.add('show');
     await sleep(30);
     sleepOverlayEl.classList.add('visible');
     await sleep(1500);
-
     sleepDayTextEl.textContent = `День ${dayState.day}`;
     sleepSubTextEl.textContent = 'Засыпаем...';
     sleepDayTextEl.classList.add('visible');
     sleepSubTextEl.classList.add('visible');
     await sleep(1400);
-
     sleepDayTextEl.classList.remove('visible');
     sleepSubTextEl.classList.remove('visible');
     await sleep(700);
-
     dayState.day += 1;
     sleepDayTextEl.textContent = `День ${dayState.day}`;
     sleepSubTextEl.textContent = 'Просыпаемся...';
     sleepDayTextEl.classList.add('visible');
     sleepSubTextEl.classList.add('visible');
     await sleep(1500);
-
     sleepDayTextEl.classList.remove('visible');
     sleepSubTextEl.classList.remove('visible');
     await sleep(400);
     sleepOverlayEl.classList.remove('visible');
     await sleep(1500);
     sleepOverlayEl.classList.remove('show');
-
     dayState.isSleeping = false;
     startDay();
     save();
     playWakeUpSound();
   }
-
   sleepBtnEl.addEventListener('click', doSleep);
 
   // ============================================================
@@ -2974,15 +2946,13 @@
   function updateATMUI(){
     atmMoneyEl.textContent = Math.floor(state.money) + ' ₽';
     atmBlueEl.textContent = state.blue + ' 💎';
-    const buttons = atmModalEl.querySelectorAll('.atm-buttons button');
-    for(const btn of buttons){
-      const amount = parseInt(btn.dataset.amount);
-      btn.disabled = state.money < amount;
-    }
+    atmModalEl.querySelectorAll('.atm-buttons button').forEach(btn => {
+      btn.disabled = state.money < parseInt(btn.dataset.amount);
+    });
   }
 
   function openATM(){
-    if(atmOpen) return;
+    if(atmOpen || exOpen) return;
     atmOpen = true;
     atmModalEl.classList.add('show');
     updateATMUI();
@@ -3000,7 +2970,6 @@
 
   atmBtnEl.addEventListener('click', (e) => { e.stopPropagation(); openATM(); });
   atmCloseEl.addEventListener('click', (e) => { e.stopPropagation(); closeATM(); });
-
   atmModalEl.querySelectorAll('.atm-buttons button').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -3016,10 +2985,60 @@
       save();
     });
   });
+  atmModalEl.addEventListener('click', (e) => { if(e.target === atmModalEl) closeATM(); });
 
-  atmModalEl.addEventListener('click', (e) => {
-    if(e.target === atmModalEl) closeATM();
+  // ============================================================
+  // ОБМЕННИК — UI
+  // ============================================================
+  const exBtnEl = document.getElementById('exBtn');
+  const exModalEl = document.getElementById('exModal');
+  const exBlueEl = document.getElementById('exBlue');
+  const exMoneyEl = document.getElementById('exMoney');
+  const exCloseEl = document.getElementById('exClose');
+
+  function updateExUI(){
+    exBlueEl.textContent = state.blue + ' 💎';
+    exMoneyEl.textContent = Math.floor(state.money) + ' ₽';
+    exModalEl.querySelectorAll('.atm-buttons button').forEach(btn => {
+      btn.disabled = state.blue < parseInt(btn.dataset.amount);
+    });
+  }
+
+  function openEx(){
+    if(exOpen || atmOpen) return;
+    exOpen = true;
+    exModalEl.classList.add('show');
+    updateExUI();
+    sfxATM();
+    if(playing && !isMobile && document.pointerLockElement){
+      try{ document.exitPointerLock(); }catch(e){}
+    }
+  }
+  function closeEx(){
+    if(!exOpen) return;
+    exOpen = false;
+    exModalEl.classList.remove('show');
+    beep(500,.08,'sine',.05);
+  }
+
+  exBtnEl.addEventListener('click', (e) => { e.stopPropagation(); openEx(); });
+  exCloseEl.addEventListener('click', (e) => { e.stopPropagation(); closeEx(); });
+  exModalEl.querySelectorAll('.atm-buttons button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const amount = parseInt(btn.dataset.amount);
+      if(state.blue < amount){ sfxFail(); return; }
+      state.blue -= amount;
+      const money = Math.floor(amount / 10) * 495;
+      state.money += money;
+      sfxCoin();
+      toast(`Обменяно ${amount} 💎 → ${money} ₽`, false, 'cyan');
+      updateExUI();
+      updateAll();
+      save();
+    });
   });
+  exModalEl.addEventListener('click', (e) => { if(e.target === exModalEl) closeEx(); });
 
   // ============================================================
   // ДВЕРИ
@@ -3038,16 +3057,11 @@
     doorState.target = shouldOpen ? 1 : 0;
     const prevOpen = doorState.open;
     doorState.open += (doorState.target - doorState.open) * Math.min(dt * 5, 1);
-
     doorLeft.position.x = -0.8 - doorState.open * 1.45;
     doorRight.position.x = 0.8 + doorState.open * 1.45;
-
     if(!doorSoundPlayed && Math.abs(doorState.open - prevOpen) > 0.01){
-      if(doorState.target === 1 && doorState.open < 0.1){
-        sfxDoor(); doorSoundPlayed = true;
-      } else if(doorState.target === 0 && doorState.open > 0.9){
-        sfxDoor(); doorSoundPlayed = true;
-      }
+      if(doorState.target === 1 && doorState.open < 0.1){ sfxDoor(); doorSoundPlayed = true; }
+      else if(doorState.target === 0 && doorState.open > 0.9){ sfxDoor(); doorSoundPlayed = true; }
     }
     if(doorState.target === 1 && doorState.open > 0.5) doorSoundPlayed = false;
     if(doorState.target === 0 && doorState.open < 0.5) doorSoundPlayed = false;
@@ -3066,15 +3080,18 @@
       const r = Math.random();
       const rating = state.rating;
       const topChance = Math.max(0.05, Math.min(0.25, (rating - 40) / 240));
+      const megaChance = rating >= 60 ? Math.max(0.03, Math.min(0.18, (rating - 60) / 250)) : 0;
       const bonus = Math.max(0, (rating - 50) / 100);
 
-      if(r < topChance){
-        tier = 4;
-      } else if(r < topChance + 0.20 - bonus*0.1){
+      if(r < megaChance){
+        tier = 5; // 💎 Миллионер
+      } else if(r < megaChance + topChance){
+        tier = 4; // Donk
+      } else if(r < megaChance + topChance + 0.20 - bonus*0.1){
         tier = 3;
-      } else if(r < topChance + 0.50 - bonus*0.15){
+      } else if(r < megaChance + topChance + 0.50 - bonus*0.15){
         tier = 2;
-      } else if(r < topChance + 0.80 - bonus*0.15){
+      } else if(r < megaChance + topChance + 0.80 - bonus*0.15){
         tier = 1;
       } else {
         tier = 0;
@@ -3104,7 +3121,6 @@
         c.mesh.rotation.z = Math.sin(performance.now()*.012) * .04;
       }
       c.mesh.rotation.y = Math.PI;
-
       if(!c.greeted && pos.z < ROOM - 2){
         c.greeted = true;
         const g = pickRandom(GREETINGS[c.tier]);
@@ -3123,12 +3139,27 @@
     if(state.inventory[componentId] !== undefined){
       toast('Уже есть ' + getComp(componentId).name + '.', true); return;
     }
-    const cost = TIERS[tier].cost;
-    if(state.money < cost){ toast('Нужно ' + cost + ' ₽', true); sfxFail(); return; }
-    state.money -= cost;
+
+    let cost = 0;
+    let curName = '₽';
+    let cur = null;
+
+    if(tier === 5){
+      cost = BLUE_PRICES[componentId];
+      curName = '💎';
+      cur = 'blue';
+      if(state.blue < cost){ toast('Нужно ' + cost + ' 💎', true); sfxFail(); return; }
+      state.blue -= cost;
+    } else {
+      cost = TIERS[tier].cost;
+      curName = '₽';
+      if(state.money < cost){ toast('Нужно ' + cost + ' ₽', true); sfxFail(); return; }
+      state.money -= cost;
+    }
+
     state.inventory[componentId] = tier;
     sfxBuy();
-    toast('Куплено: ' + getComp(componentId).name + ' · ' + TIERS[tier].name + ' (−' + cost + ' ₽)');
+    toast('Куплено: ' + getComp(componentId).name + ' · ' + TIERS[tier].name + ' (−' + cost + ' ' + curName + ')', false, tier === 5 ? 'cyan' : '');
     updateAll();
     save();
   }
@@ -3171,24 +3202,29 @@
     const diff = actual - expected;
 
     let ratingDelta = 0;
-    let rewardMul = 1;
     let reactionKey = '';
     let good = true;
 
-    if(Math.abs(diff) <= 0.4){
-      ratingDelta = +4; rewardMul = 1.3;
-      reactionKey = 'perfect'; good = true;
-    } else if(diff < -0.4){
-      ratingDelta = -3; rewardMul = 0.7;
-      reactionKey = 'cheap'; good = false;
+    if(Math.abs(diff) <= 0.4){ ratingDelta = +4; reactionKey = 'perfect'; good = true; }
+    else if(diff < -0.4){ ratingDelta = -3; reactionKey = 'cheap'; good = false; }
+    else { ratingDelta = -6; reactionKey = 'expensive'; good = false; }
+
+    // === НАГРАДА ===
+    if(expected === 5){
+      // Миллионер — платит в 💎
+      const blueDelta = Math.floor(MEGA_REWARD_BLUE * (reactionKey === 'perfect' ? 1 : reactionKey === 'cheap' ? 0.5 : 0.7));
+      state.blue += blueDelta;
+      state.money += Math.floor(MEGA_REWARD_MONEY * (reactionKey === 'perfect' ? 1 : 0.5));
+      state.megaOrders = (state.megaOrders || 0) + 1;
+      toast((good ? '✅' : '❌') + ' Рейтинг ' + (ratingDelta > 0 ? '+' : '') + ratingDelta + ' · +' + blueDelta + ' 💎', !good, good ? 'cyan' : '');
     } else {
-      ratingDelta = -6; rewardMul = 0.9;
-      reactionKey = 'expensive'; good = false;
+      const rewardMul = reactionKey === 'perfect' ? 1.3 : reactionKey === 'cheap' ? 0.7 : 0.9;
+      const reward = Math.floor(TIERS[expected].cost * 5 * 2 * rewardMul);
+      state.money += reward;
+      const deltaStr = (ratingDelta > 0 ? '+' : '') + ratingDelta;
+      toast((good ? '✅' : '❌') + ' Рейтинг ' + deltaStr + ' · +' + reward + ' ₽', !good);
     }
 
-    const baseReward = TIERS[expected].cost * 5 * 2;
-    const reward = Math.floor(baseReward * rewardMul);
-    state.money += reward;
     state.rating = Math.max(0, Math.min(100, state.rating + ratingDelta));
     state.ordersDone++;
     if(reactionKey === 'perfect') state.perfectOrders++;
@@ -3197,9 +3233,6 @@
 
     const reaction = pickRandom(REACTIONS[reactionKey][expected]);
     showDialog(reaction.who, reaction.text, 4500);
-
-    const deltaStr = (ratingDelta>0?'+':'') + ratingDelta;
-    toast((good ? '✅' : '❌') + ' Рейтинг ' + deltaStr + ' · +' + reward + ' ₽', !good);
 
     state.holdingPC = null;
     leavingCustomerRef = state.customer;
@@ -3294,10 +3327,10 @@
     const col = state.rating >= 70 ? '#00e0b8' : state.rating >= 40 ? '#ffc93c' : '#ff4d6a';
     ratingEl.style.color = col;
     const tc = Math.round(Math.max(0.05, Math.min(0.25, (state.rating - 40) / 240)) * 100);
+    const mc = state.rating >= 60 ? Math.round(Math.max(0.03, Math.min(0.18, (state.rating - 60) / 250)) * 100) : 0;
     const tcEl = document.getElementById('topChance');
     if(tcEl){
-      tcEl.textContent = '🎮 TOP: ' + tc + '%';
-      tcEl.style.opacity = tc >= 15 ? 1 : 0.55;
+      tcEl.innerHTML = '🎮 TOP: ' + tc + '% &nbsp; 💎 MEGA: ' + mc + '%';
     }
   }
   function updateInventory(){
@@ -3316,7 +3349,11 @@
     const t = state.order.tier;
     orderTextEl.textContent = TIERS[t].name + ' ПК';
     orderTextEl.style.color = TIERS[t].hex;
-    orderRewardEl.textContent = 'Бюджет-ориентир: ' + TIERS[t].cost + ' ₽/деталь';
+    if(t === 5){
+      orderRewardEl.textContent = 'Оплата: ' + MEGA_REWARD_BLUE + ' 💎';
+    } else {
+      orderRewardEl.textContent = 'Бюджет-ориентир: ' + TIERS[t].cost + ' ₽/деталь';
+    }
     orderWhoEl.textContent = 'Клиент: ' + TIERS[t].buyer;
   }
   function updateTableUI(){
@@ -3353,10 +3390,14 @@
     giveBtnEl.classList.toggle('show', show);
   }
   function updateATMBtn(){
-    if(atmOpen){ atmBtnEl.classList.remove('show'); return; }
+    if(atmOpen || exOpen){ atmBtnEl.classList.remove('show'); exBtnEl.classList.remove('show'); return; }
     const p = camera.position;
-    const dist = Math.hypot(p.x - ATM_X, p.z - ATM_Z);
-    atmBtnEl.classList.toggle('show', dist < 2.8);
+    const dAtm = Math.hypot(p.x - ATM_X, p.z - ATM_Z);
+    const dEx = Math.hypot(p.x - EXCHANGE_X, p.z - EXCHANGE_Z);
+    const showAtm = dAtm < 2.8 && dAtm < dEx;
+    const showEx = dEx < 2.8 && !showAtm;
+    atmBtnEl.classList.toggle('show', showAtm);
+    exBtnEl.classList.toggle('show', showEx);
   }
   function updateAll(){
     updateMoney();
@@ -3368,6 +3409,7 @@
     updateGiveBtn();
     updateATMBtn();
     if(atmOpen) updateATMUI();
+    if(exOpen) updateExUI();
   }
 
   function toast(text, isError=false, cls=''){
@@ -3384,7 +3426,7 @@
   const raycaster = new THREE.Raycaster();
 
   function tryClick(screenX, screenY, isMobileTap){
-    if(!playing || atmOpen) return;
+    if(!playing || atmOpen || exOpen) return;
     let ndcX = 0, ndcY = 0;
     if(isMobileTap){
       ndcX = (screenX / innerWidth) * 2 - 1;
@@ -3429,28 +3471,22 @@
       leavingCustomerRef.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); });
     }
     if(_blockers.length === 0) return true;
-
     targetObj.getWorldPosition(_tmpTargetPos);
     const camPos = camera.position;
     _tmpDir.subVectors(_tmpTargetPos, camPos);
     const distance = _tmpDir.length();
     if(distance < 0.01) return true;
     _tmpDir.normalize();
-
     raycaster.set(camPos, _tmpDir);
     raycaster.far = distance;
     const hits = raycaster.intersectObjects(_blockers, false);
-    if(hits.length > 0 && hits[0].distance < distance - 0.15){
-      return false;
-    }
+    if(hits.length > 0 && hits[0].distance < distance - 0.15) return false;
     return true;
   }
 
   function updateLabelVisibility(){
-    if(!state.customer && !leavingCustomerRef) {
-      for(const label of labelSprites){
-        if(!label.visible) label.visible = true;
-      }
+    if(!state.customer && !leavingCustomerRef){
+      for(const label of labelSprites){ if(!label.visible) label.visible = true; }
       return;
     }
     for(const label of labelSprites){
@@ -3476,7 +3512,7 @@
   document.addEventListener('pointerlockerror', () => { pointerLockFailed = true; });
 
   document.addEventListener('mousemove', e => {
-    if(!playing || isMobile || atmOpen) return;
+    if(!playing || isMobile || atmOpen || exOpen) return;
     if(pointerLocked) applyLook(e.movementX, e.movementY, LOOK_SENS_DESKTOP);
     else if(dragging){
       const dx = e.clientX - lastMX, dy = e.clientY - lastMY;
@@ -3490,18 +3526,19 @@
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   canvas.addEventListener('mousedown', e => {
-    if(!playing || isMobile || atmOpen) return;
-    if(e.target.closest && e.target.closest('#tableUI')) return;
-    if(e.target.closest && e.target.closest('#giveBtn')) return;
-    if(e.target.closest && e.target.closest('#sleepBtn')) return;
-    if(e.target.closest && e.target.closest('#atmBtn')) return;
-    if(e.target.closest && e.target.closest('#atmModal')) return;
+    if(!playing || isMobile || atmOpen || exOpen) return;
+    if(e.target.closest && (
+      e.target.closest('#tableUI') || e.target.closest('#giveBtn') ||
+      e.target.closest('#sleepBtn') || e.target.closest('#atmBtn') ||
+      e.target.closest('#exBtn') || e.target.closest('#atmModal') ||
+      e.target.closest('#exModal')
+    )) return;
     if(pointerLocked){ if(e.button === 0) tryClick(0,0,false); return; }
     if(!pointerLockFailed){ canvas.requestPointerLock(); return; }
     dragging = true; mouseMoved = false; lastMX = e.clientX; lastMY = e.clientY;
   });
   canvas.addEventListener('mouseup', e => {
-    if(!playing || isMobile || atmOpen) return;
+    if(!playing || isMobile || atmOpen || exOpen) return;
     if(!pointerLocked && dragging){
       dragging = false;
       if(!mouseMoved && e.button === 0) tryClick(0,0,false);
@@ -3515,7 +3552,7 @@
   const lookTouches = new Map();
 
   function onTouchStart(e){
-    if(!playing || atmOpen) return;
+    if(!playing || atmOpen || exOpen) return;
     e.preventDefault();
     const W = innerWidth, H = innerHeight;
     for(const t of e.changedTouches){
@@ -3533,7 +3570,7 @@
     }
   }
   function onTouchMove(e){
-    if(!playing || atmOpen) return;
+    if(!playing || atmOpen || exOpen) return;
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier === joyTouchId){
@@ -3554,7 +3591,7 @@
     }
   }
   function onTouchEnd(e){
-    if(!playing || atmOpen) return;
+    if(!playing || atmOpen || exOpen) return;
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier === joyTouchId){
@@ -3565,7 +3602,9 @@
           const dt = performance.now() - lt.startTime;
           if(!lt.moved && dt < 400){
             const el = document.elementFromPoint(lt.startX, lt.startY);
-            if(!el || (el.tagName !== 'BUTTON' && !el.closest?.('#tableUI') && !el.closest?.('#giveBtn') && !el.closest?.('#sleepBtn') && !el.closest?.('#atmBtn') && !el.closest?.('#atmModal'))){
+            if(!el || (el.tagName !== 'BUTTON' && !el.closest?.('#tableUI') && !el.closest?.('#giveBtn')
+              && !el.closest?.('#sleepBtn') && !el.closest?.('#atmBtn')
+              && !el.closest?.('#exBtn') && !el.closest?.('#atmModal') && !el.closest?.('#exModal'))){
               tryClick(lt.startX, lt.startY, true);
             }
           }
@@ -3598,7 +3637,7 @@
 
   function updateMovement(dt){
     if(!playing) return;
-    if(dayState.isSleeping || atmOpen) return;
+    if(dayState.isSleeping || atmOpen || exOpen) return;
     let mx = 0, mz = 0;
     mx += (keys.KeyD?1:0) - (keys.KeyA?1:0);
     mz += (keys.KeyW?1:0) - (keys.KeyS?1:0);
@@ -3622,21 +3661,17 @@
       else camera.position.z = COUNTER_Z + 1.4;
     }
 
-    // === КОЛЛИЗИЯ СО ВСЕМИ ЛЮДЬМИ В ГРУППЕ ===
+    // КОЛЛИЗИЯ со всеми в группе
     const customerGroups = [];
     if(state.customer && state.customer.mesh) customerGroups.push(state.customer.mesh);
     if(leavingCustomerRef && leavingCustomerRef.mesh) customerGroups.push(leavingCustomerRef.mesh);
-
     for(const cm of customerGroups){
       const rotY = cm.rotation.y;
-      const cosR = Math.cos(rotY);
-      const sinR = Math.sin(rotY);
+      const cosR = Math.cos(rotY), sinR = Math.sin(rotY);
       for(const child of cm.children){
         if(!child.position) continue;
-        // Локальная позиция → мировая (с учётом поворота группы)
         const wx = cm.position.x + child.position.x * cosR + child.position.z * sinR;
         const wz = cm.position.z - child.position.x * sinR + child.position.z * cosR;
-
         const dx = camera.position.x - wx;
         const dz = camera.position.z - wz;
         const distSq = dx*dx + dz*dz;
@@ -3651,22 +3686,18 @@
     }
     camera.position.x = Math.max(-lim, Math.min(lim, camera.position.x));
     camera.position.z = Math.max(-lim, Math.min(lim, camera.position.z));
-
     camera.position.y = PLAYER_HEIGHT;
   }
 
   let lastPrompt = '';
   function updatePrompt(){
-    if(!playing || atmOpen){ if(lastPrompt){ promptEl.classList.remove('show'); lastPrompt=''; } return; }
+    if(!playing || atmOpen || exOpen){ if(lastPrompt){ promptEl.classList.remove('show'); lastPrompt=''; } return; }
     updateLabelVisibility();
-
     raycaster.setFromCamera({x:0,y:0}, camera);
     raycaster.far = 6;
     const targets = [];
     for(const m of componentMeshes) targets.push(m);
-    for(const l of labelSprites){
-      if(l.visible) targets.push(l);
-    }
+    for(const l of labelSprites){ if(l.visible) targets.push(l); }
     targets.push(sleepingBag);
     const hits = raycaster.intersectObjects(targets, true);
     let text = '';
@@ -3677,7 +3708,11 @@
       if(data){
         if(data.kind === 'shelf-component' || data.kind === 'shelf-label'){
           const comp = getComp(data.componentId);
-          text = `${comp.name} · ${TIERS[data.tier].name} · ${TIERS[data.tier].cost} ₽ · ЛКМ купить`;
+          if(data.tier === 5){
+            text = `${comp.name} · СУПЕР ТОП · 💎 ${BLUE_PRICES[data.componentId]} · ЛКМ купить`;
+          } else {
+            text = `${comp.name} · ${TIERS[data.tier].name} · ${TIERS[data.tier].cost} ₽ · ЛКМ купить`;
+          }
         } else if(data.kind === 'sleeping-bag'){
           text = dayState.isNight ? '💤 Спальный мешок — ЛКМ чтобы спать' : '💤 Спальный мешок (спать можно ночью)';
         }
@@ -3714,6 +3749,7 @@
         rating: state.rating,
         ordersDone: state.ordersDone,
         perfectOrders: state.perfectOrders,
+        megaOrders: state.megaOrders,
         inventory: state.inventory,
         builtPC: state.builtPC,
         holdingPC: state.holdingPC,
@@ -3734,6 +3770,7 @@
       if(typeof d.rating === 'number') state.rating = d.rating;
       if(typeof d.ordersDone === 'number') state.ordersDone = d.ordersDone;
       if(typeof d.perfectOrders === 'number') state.perfectOrders = d.perfectOrders;
+      if(typeof d.megaOrders === 'number') state.megaOrders = d.megaOrders;
       if(d.inventory && typeof d.inventory === 'object') state.inventory = d.inventory;
       if(d.builtPC && typeof d.builtPC === 'object') state.builtPC = d.builtPC;
       if(d.holdingPC && typeof d.holdingPC === 'object') state.holdingPC = d.holdingPC;
@@ -3742,7 +3779,6 @@
         dayState.timeLeft = d.timeLeft;
       }
       if(typeof d.isNight === 'boolean') dayState.isNight = d.isNight;
-      // orderTier НЕ восстанавливаем — новый клиент получит свой tier при спавне
     }catch(e){}
   }
 
@@ -3771,7 +3807,6 @@
     }
 
     checkAdaptive(now);
-
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
@@ -3783,8 +3818,7 @@
   if(dayState.isNight){
     scene.background.setHex(0x050510);
     scene.fog.color.setHex(0x050510);
-    scene.fog.near = 8;
-    scene.fog.far = 28;
+    scene.fog.near = 8; scene.fog.far = 28;
     nightOverlayEl.classList.add('show');
     nightHintEl.classList.add('show');
   }
