@@ -303,6 +303,7 @@
       <div class="label">Рейтинг магазина</div>
       <div class="value" id="rating">50</div>
       <div class="stars" id="stars">★★★☆☆</div>
+      <div style="font-size:9px;color:#a855f7;margin-top:3px;font-weight:700" id="topChance">🎮 TOP: 5%</div>
     </div>
     <div class="panel" id="orderPanel">
       <div class="label">Заказ</div>
@@ -400,10 +401,10 @@
     { name:'Стандарт', short:'STD',  color:0x3a9bff, hex:'#3a9bff', cost:250,  buyer:'работяга' },
     { name:'Игровая',  short:'GAME', color:0x00e0b8, hex:'#00e0b8', cost:500,  buyer:'школьник с родителями' },
     { name:'Премиум',  short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
-    { name:'Топ',      short:'TOP',  color:0xa855f7, hex:'#a855f7', cost:2000, buyer:'киберспортсмен' },
+    { name:'Топ',      short:'TOP',  color:0xa855f7, hex:'#a855f7', cost:2000, buyer:'Donk (киберспортсмен)' },
   ];
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v10';
+  const SAVE_KEY = 'pc-shop-3d-v11';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -415,12 +416,10 @@
   const SHELF_TIER_Y = [.75, 1.5, 2.25, 3.0];
   const DOOR_Z = ROOM - 0.06;
 
-  // VIP-витрина "TOP PC"
   const TOPSHELF_X = 4.4;
   const TOPSHELF_Z = -ROOM + 0.22;
   const TOPSHELF_SHELF_Y = [0.45, 1.0, 1.55, 2.1, 2.65];
 
-  // Банкомат
   const ATM_X = ROOM - 0.35;
   const ATM_Z = 8;
 
@@ -447,7 +446,6 @@
   let leavingCustomerRef = null;
   let atmOpen = false;
 
-  // День / ночь
   const DAY_DURATION = 120;
   const dayState = {
     day: 1,
@@ -756,11 +754,10 @@
   signLight.position.set(0,3,-ROOM+1.2); scene.add(signLight);
 
   // ============================================================
-  // ЧАСЫ НА СТЕНЕ (только одни, возле ТВ PC SHOP)
+  // ЧАСЫ НА СТЕНЕ (одни)
   // ============================================================
   function createWallClock(x, y, z, rotationY = 0){
     const g = new THREE.Group();
-
     const caseMat = new THREE.MeshStandardMaterial({
       color:0x2a2a3a, metalness:.7, roughness:.35,
       emissive:0x00a888, emissiveIntensity:.15,
@@ -769,13 +766,11 @@
     caseMesh.rotation.x = Math.PI/2;
     caseMesh.castShadow = !isMobile;
     g.add(caseMesh);
-
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 10, 40),
       new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.85, roughness:.2,
         emissive:0x00e0b8, emissiveIntensity:.4}));
     rim.position.z = 0.04;
     g.add(rim);
-
     const faceTex = canvasTex(512, 512, (ctx,w,h)=>{
       const cx = w/2, cy = h/2;
       const grad = ctx.createRadialGradient(cx,cy,20,cx,cy,240);
@@ -877,7 +872,6 @@
     return g;
   }
 
-  // ОДНИ часы — возле ТВ PC SHOP (слева от неона, x = -6.5)
   const clock1 = createWallClock(-6.5, 2.7, -ROOM + 0.15, 0);
   scene.add(clock1);
 
@@ -996,7 +990,6 @@
       new THREE.MeshStandardMaterial({color:0x0a0a0a, metalness:.7, roughness:.4}));
     frame.castShadow = !isMobile;
     g.add(frame);
-
     const screenTex = canvasTex(1024, 512, (ctx,w,h)=>{
       const grad = ctx.createLinearGradient(0,0,0,h);
       grad.addColorStop(0, '#0f1e2e');
@@ -1027,12 +1020,10 @@
       ctx.font = 'bold 32px sans-serif';
       ctx.fillText('● ОТКРЫТО', w-40, 72);
     });
-
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(width-0.08, height-0.08),
       new THREE.MeshBasicMaterial({map:screenTex}));
     screen.position.z = 0.032;
     g.add(screen);
-
     if(!isMobile){
       const light = new THREE.PointLight(0x00e0b8, 0.8, 5, 2);
       light.position.z = 0.8; g.add(light);
@@ -1223,120 +1214,377 @@
   scene.add(deskLamp);
 
   // ============================================================
-  // БАНКОМАТ
+  // НОВЫЙ БАНКОМАТ
   // ============================================================
   function createATM(){
     const g = new THREE.Group();
-    // Корпус
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color:0x0a1420, metalness:.7, roughness:.4,
-      emissive:0x002a55, emissiveIntensity:.35,
-    });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 0.6), bodyMat);
-    body.position.y = 1.1; body.castShadow = !isMobile;
-    g.add(body);
 
-    // Верхняя панель (экран)
-    const screenPanelTex = canvasTex(512, 256, (ctx,w,h)=>{
-      ctx.fillStyle = '#050a14'; ctx.fillRect(0,0,w,h);
-      // Синие полосы
-      for(let i=0;i<12;i++){
-        ctx.fillStyle = `rgba(58,155,255,${0.05 + Math.random()*0.15})`;
-        ctx.fillRect(0, i*22, w, 12);
-      }
-      // Заголовок
-      ctx.font='bold 70px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30;
-      ctx.fillStyle = '#3a9bff';
-      ctx.fillText('BANK', w/2, 70);
-      ctx.shadowBlur = 0;
-      // Валюта
-      ctx.font='bold 50px sans-serif';
-      ctx.fillStyle = '#ffc93c';
-      ctx.fillText('₽ → 💎', w/2, 150);
-      ctx.font='bold 30px sans-serif';
-      ctx.fillStyle = '#9babcf';
-      ctx.fillText('КУРС: 500 : 1', w/2, 210);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x1e2430, metalness: .8, roughness: .35,
     });
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.55),
-      new THREE.MeshBasicMaterial({map:screenPanelTex}));
-    screen.position.set(0, 1.7, 0.31);
+    const darkMat = new THREE.MeshStandardMaterial({
+      color: 0x08080f, metalness: .5, roughness: .65,
+    });
+    const accentMat = new THREE.MeshStandardMaterial({
+      color: 0x3a9bff, emissive: 0x3a9bff, emissiveIntensity: .55,
+      metalness: .7, roughness: .3,
+    });
+    const steelMat = new THREE.MeshStandardMaterial({
+      color: 0x5a5f6e, metalness: .9, roughness: .25,
+    });
+
+    // Нижний корпус
+    const lowerBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.35, 1.15, 0.75),
+      bodyMat
+    );
+    lowerBody.position.y = 0.575;
+    lowerBody.castShadow = !isMobile;
+    lowerBody.receiveShadow = !isMobile;
+    g.add(lowerBody);
+
+    // Подставка
+    const plinth = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.1, 0.8),
+      darkMat
+    );
+    plinth.position.y = 0.05;
+    g.add(plinth);
+
+    // Верхний корпус
+    const upperBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.35, 1.5, 0.7),
+      bodyMat
+    );
+    upperBody.position.set(0, 1.95, -0.025);
+    upperBody.rotation.x = -0.06;
+    upperBody.castShadow = !isMobile;
+    g.add(upperBody);
+
+    // Полоса-разделитель
+    const divider = new THREE.Mesh(
+      new THREE.BoxGeometry(1.42, 0.05, 0.78),
+      steelMat
+    );
+    divider.position.set(0, 1.18, 0);
+    g.add(divider);
+
+    // Козырёк
+    const canopy = new THREE.Mesh(
+      new THREE.BoxGeometry(1.45, 0.12, 0.95),
+      bodyMat
+    );
+    canopy.position.set(0, 2.72, 0.08);
+    canopy.castShadow = !isMobile;
+    g.add(canopy);
+
+    // Синяя полоса под козырьком
+    const canopyGlow = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.04, 0.9),
+      accentMat
+    );
+    canopyGlow.position.set(0, 2.66, 0.08);
+    g.add(canopyGlow);
+
+    // Вывеска
+    const bankSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
+      ctx.fillStyle = '#0a1428'; ctx.fillRect(0,0,w,h);
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0, '#3a9bff');
+      grad.addColorStop(1, '#00e0b8');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, h - 22, w, 22);
+      ctx.fillRect(0, 0, w, 12);
+      ctx.shadowColor = '#3a9bff';
+      ctx.shadowBlur = 40;
+      ctx.font = 'bold 120px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#3a9bff';
+      ctx.fillText('PC BANK', w/2, h/2 - 20);
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 40px sans-serif';
+      ctx.fillStyle = '#9bbfd0';
+      ctx.fillText('ОБМЕН ВАЛЮТЫ  •  24/7', w/2, h/2 + 70);
+    });
+    const bankSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.15, 0.3),
+      new THREE.MeshBasicMaterial({map: bankSignTex, transparent: true})
+    );
+    bankSign.position.set(0, 2.9, 0.36);
+    g.add(bankSign);
+
+    if(!isMobile){
+      const signGlow = new THREE.PointLight(0x3a9bff, 0.9, 2.8, 2);
+      signGlow.position.set(0, 2.9, 0.8);
+      g.add(signGlow);
+    }
+
+    // Экран
+    const screenTex = canvasTex(1024, 768, (ctx,w,h)=>{
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#0a1a3a');
+      grad.addColorStop(1, '#051024');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(58,155,255,0.18)';
+      ctx.fillRect(0, 0, w, 90);
+      ctx.font = 'bold 46px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#3a9bff';
+      ctx.fillText('PC BANK', 40, 45);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#00ff88';
+      ctx.fillText('● ONLINE', w - 40, 45);
+      ctx.font = 'bold 68px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('ОБМЕН ВАЛЮТЫ', w/2, 180);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(60, 250, w - 120, 170);
+      ctx.strokeStyle = '#3a9bff';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(60, 250, w - 120, 170);
+      ctx.font = 'bold 100px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffc93c';
+      ctx.fillText('500', 110, 335);
+      ctx.font = 'bold 60px sans-serif';
+      ctx.fillStyle = '#9bbfd0';
+      ctx.fillText('₽', 320, 335);
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 90px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('=', w/2, 340);
+      ctx.textAlign = 'right';
+      ctx.shadowColor = '#3a9bff';
+      ctx.shadowBlur = 40;
+      ctx.fillStyle = '#3a9bff';
+      ctx.font = 'bold 100px sans-serif';
+      ctx.fillText('1', w - 180, 335);
+      ctx.font = 'bold 60px sans-serif';
+      ctx.fillText('💎', w - 90, 335);
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 34px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#5a7ba0';
+      ctx.fillText('Поднесите карту или нажмите кнопку', w/2, 480);
+      const labels = ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
+      for(let i = 0; i < 3; i++){
+        const bx = 80 + i * 290;
+        ctx.fillStyle = 'rgba(58,155,255,0.18)';
+        ctx.fillRect(bx, 540, 260, 100);
+        ctx.strokeStyle = '#3a9bff';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(bx, 540, 260, 100);
+        ctx.fillStyle = '#3a9bff';
+        ctx.font = 'bold 40px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(labels[i], bx + 130, 595);
+      }
+      ctx.fillStyle = 'rgba(58,155,255,0.08)';
+      for(let y = 0; y < h; y += 4){
+        ctx.fillRect(0, y, w, 1);
+      }
+    });
+
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.05, 0.8),
+      new THREE.MeshBasicMaterial({map: screenTex})
+    );
+    screen.position.set(0, 1.95, 0.34);
+    screen.rotation.x = -0.06;
     g.add(screen);
 
-    // Синяя подсветка экрана
+    // Рамка экрана
+    const screenFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.18, 0.93, 0.04),
+      darkMat
+    );
+    screenFrame.position.set(0, 1.95, 0.31);
+    screenFrame.rotation.x = -0.06;
+    g.add(screenFrame);
+
     if(!isMobile){
-      const screenLight = new THREE.PointLight(0x3a9bff, 1.0, 4, 2);
-      screenLight.position.set(0, 1.7, 0.8);
+      const screenLight = new THREE.PointLight(0x3a9bff, 1.3, 4.5, 2);
+      screenLight.position.set(0, 1.95, 1.0);
       g.add(screenLight);
     }
 
-    // Кнопочная панель
-    const btnPanel = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.35, 0.02),
-      new THREE.MeshStandardMaterial({color:0x1a1a2a, metalness:.7, roughness:.4})
+    // Клавиатура
+    const keypadPanel = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.6, 0.06),
+      new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4})
     );
-    btnPanel.position.set(0, 1.15, 0.31);
-    g.add(btnPanel);
+    keypadPanel.position.set(0, 1.05, 0.33);
+    g.add(keypadPanel);
 
-    // Кнопки цифр (сетка 3x4)
-    for(let i=0;i<3;i++){
-      for(let j=0;j<4;j++){
+    const keypadFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.02, 0.67, 0.04),
+      steelMat
+    );
+    keypadFrame.position.set(0, 1.05, 0.31);
+    g.add(keypadFrame);
+
+    for(let i = 0; i < 4; i++){
+      for(let j = 0; j < 4; j++){
+        const isRed = (i === 3 && j === 3);
+        const btnMat = new THREE.MeshStandardMaterial({
+          color: isRed ? 0x8a1a1a : 0x2a3a5a,
+          emissive: isRed ? 0xd83030 : 0x1a3a6a,
+          emissiveIntensity: isRed ? 0.65 : 0.4,
+          metalness: .7,
+          roughness: .3,
+        });
         const btn = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.04, 0.04, 0.02, 12),
-          new THREE.MeshStandardMaterial({color:0x3a9bff, metalness:.5, roughness:.5,
-            emissive:0x3a9bff, emissiveIntensity:.3})
+          new THREE.BoxGeometry(0.15, 0.095, 0.04),
+          btnMat
         );
-        btn.rotation.x = Math.PI/2;
-        btn.position.set(-0.32 + j*0.21, 1.15 + (i-1)*0.1, 0.33);
+        btn.position.set(
+          -0.30 + j * 0.2,
+          1.24 - i * 0.13,
+          0.36
+        );
         g.add(btn);
       }
     }
 
     // Слот для карты
-    const cardSlot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35, 0.04, 0.05),
-      new THREE.MeshStandardMaterial({color:0x000000, metalness:.5, roughness:.3})
+    const cardSlotOuter = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.06, 0.07),
+      accentMat
     );
-    cardSlot.position.set(0, 0.85, 0.31);
-    g.add(cardSlot);
-    // Мигающий индикатор
-    const ind = new THREE.Mesh(
-      new THREE.SphereGeometry(0.025, 10, 8),
-      new THREE.MeshBasicMaterial({color:0x3aff88})
+    cardSlotOuter.position.set(0.55, 1.55, 0.32);
+    g.add(cardSlotOuter);
+    const cardSlotInner = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.018, 0.05),
+      new THREE.MeshBasicMaterial({color: 0x000000})
     );
-    ind.position.set(0.45, 0.85, 0.31);
-    ind.userData.isATMIndicator = true;
-    g.add(ind);
+    cardSlotInner.position.set(0.55, 1.55, 0.35);
+    g.add(cardSlotInner);
 
-    // Отверстие для купюр внизу
-    const cashSlot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.6, 0.06, 0.04),
-      new THREE.MeshStandardMaterial({color:0x0a0a0a})
+    // Индикатор карты
+    const cardIndicator = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 10, 8),
+      new THREE.MeshBasicMaterial({color: 0x00ff44})
     );
-    cashSlot.position.set(0, 0.45, 0.31);
-    g.add(cashSlot);
+    cardIndicator.position.set(0.55, 1.44, 0.35);
+    cardIndicator.userData.isATMIndicator = true;
+    g.add(cardIndicator);
 
-    // Логотип сверху
-    const topLabelTex = canvasTex(512, 128, (ctx,w,h)=>{
-      ctx.fillStyle = '#0a1420'; ctx.fillRect(0,0,w,h);
-      ctx.font='bold 72px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30;
+    // Купюрный слот
+    const cashSlotOuter = new THREE.Mesh(
+      new THREE.BoxGeometry(0.75, 0.11, 0.08),
+      accentMat
+    );
+    cashSlotOuter.position.set(0, 0.7, 0.33);
+    g.add(cashSlotOuter);
+    const cashSlotInner = new THREE.Mesh(
+      new THREE.BoxGeometry(0.66, 0.035, 0.06),
+      new THREE.MeshBasicMaterial({color: 0x000000})
+    );
+    cashSlotInner.position.set(0, 0.7, 0.35);
+    g.add(cashSlotInner);
+
+    if(!isMobile){
+      const cashGlow = new THREE.PointLight(0xff6644, 0.4, 1.5, 2);
+      cashGlow.position.set(0, 0.7, 0.5);
+      g.add(cashGlow);
+    }
+
+    // Боковые панели
+    const sideTex = canvasTex(512, 512, (ctx,w,h)=>{
+      ctx.fillStyle = '#0a1428';
+      ctx.fillRect(0, 0, w, h);
+      for(let i = 0; i < 10; i++){
+        ctx.fillStyle = `rgba(58,155,255,${0.05 + i * 0.01})`;
+        ctx.fillRect(0, i * 50, w, 25);
+      }
+      ctx.save();
+      ctx.translate(w/2, h/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.font = 'bold 80px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#3a9bff';
+      ctx.shadowBlur = 30;
       ctx.fillStyle = '#3a9bff';
-      ctx.fillText('🏧 ATM', w/2, h/2);
+      ctx.fillText('PC BANK', 0, 0);
+      ctx.restore();
+      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#9bbfd0';
+      ctx.fillText('• ATM •', w/2, h - 40);
     });
-    const topLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.0, 0.25),
-      new THREE.MeshBasicMaterial({map:topLabelTex})
+
+    const sideLabelLeft = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.6, 1.8),
+      new THREE.MeshBasicMaterial({map: sideTex, transparent: true})
     );
-    topLabel.position.set(0, 2.25, 0.31);
-    g.add(topLabel);
+    sideLabelLeft.position.set(-0.68, 1.6, 0);
+    sideLabelLeft.rotation.y = -Math.PI / 2;
+    g.add(sideLabelLeft);
+
+    const sideLabelRight = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.6, 1.8),
+      new THREE.MeshBasicMaterial({map: sideTex, transparent: true})
+    );
+    sideLabelRight.position.set(0.68, 1.6, 0);
+    sideLabelRight.rotation.y = Math.PI / 2;
+    g.add(sideLabelRight);
+
+    // Ручка
+    const handle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.026, 0.026, 0.55, 12),
+      steelMat
+    );
+    handle.rotation.z = Math.PI / 2;
+    handle.position.set(-0.72, 1.55, 0.1);
+    g.add(handle);
+    for(const dy of [-0.28, 0.28]){
+      const mount = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.035, 0.04, 10),
+        steelMat
+      );
+      mount.rotation.z = Math.PI / 2;
+      mount.position.set(-0.7, 1.55 + dy, 0.1);
+      g.add(mount);
+    }
+
+    // Табличка ATM
+    const atmLabelTex = canvasTex(512, 128, (ctx,w,h)=>{
+      ctx.fillStyle = '#0a1428';
+      ctx.fillRect(0, 0, w, h);
+      ctx.font = 'bold 90px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#3a9bff';
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = '#3a9bff';
+      ctx.fillText('ATM', w/2, h/2);
+    });
+    const atmLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.65, 0.16),
+      new THREE.MeshBasicMaterial({map: atmLabelTex, transparent: true})
+    );
+    atmLabel.position.set(0, 2.55, 0.36);
+    g.add(atmLabel);
+
+    // Красный индикатор
+    const warnLight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.018, 8, 8),
+      new THREE.MeshBasicMaterial({color: 0xff3344})
+    );
+    warnLight.position.set(-0.55, 2.55, 0.36);
+    g.add(warnLight);
 
     return g;
   }
 
   const atmMesh = createATM();
   atmMesh.position.set(ATM_X, 0, ATM_Z);
-  atmMesh.rotation.y = Math.PI/2; // лицом в центр зала (в -x)
+  atmMesh.rotation.y = Math.PI/2;
   scene.add(atmMesh);
 
   // ============================================================
@@ -1806,63 +2054,160 @@
     return g;
   }
 
-  // КИБЕРСПОРТСМЕН (TOP PC)
-  function makeEsportsPlayer(){
+  // DONK — киберспортсмен (в стиле Team Spirit)
+  function makeDonk(){
     const g = new THREE.Group();
-    // Форма — красно-чёрная
+
+    // Молодой, светловолосый, невысокий
     const player = makeHuman({
-      shirt: 0xd83030, pants: 0x1a1a1a, skin: 0xffdbac,
-      hair: 0x1a1a1a,
-      hat: { type:'cap', color: 0xd83030 },
-      height: 1.0,
+      shirt: 0xf4f4f4,          // белая футболка
+      pants: 0x1a1a2a,          // тёмные штаны
+      skin: 0xffdbac,
+      hair: 0xf0e0a0,           // платиновые/светлые волосы
+      height: 0.92,             // невысокий, молодой
     });
-    // Медаль на шее
+
+    // Красная спортивная жилетка поверх футболки
+    const jerseyMat = new THREE.MeshStandardMaterial({color:0xd83030, roughness:.85});
+    const jersey = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.56, 0.3), jerseyMat);
+    jersey.position.set(0, 1.05, 0);
+    player.add(jersey);
+
+    // Белые полосы на жилетке
+    const stripeMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.7});
+    for(const dx of [-0.14, 0.14]){
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.56, 0.01),
+        stripeMat
+      );
+      stripe.position.set(dx, 1.05, 0.155);
+      player.add(stripe);
+    }
+
+    // Номер «1» на спине
+    const numTex = canvasTex(256, 256, (ctx,w,h)=>{
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
+      ctx.font = 'bold 200px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#d83030';
+      ctx.fillText('1', w/2, h/2);
+    });
+    const numPlate = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.25, 0.25),
+      new THREE.MeshBasicMaterial({map:numTex})
+    );
+    numPlate.position.set(0, 1.05, -0.16);
+    numPlate.rotation.y = Math.PI;
+    player.add(numPlate);
+
+    // Золотая нашивка на груди
+    const badge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.11, 0.11, 0.012),
+      new THREE.MeshStandardMaterial({
+        color:0xffc93c, metalness:.9, roughness:.15,
+        emissive:0xffc93c, emissiveIntensity:.5,
+      })
+    );
+    badge.position.set(-0.11, 1.18, 0.16);
+    player.add(badge);
+
+    // Игровые наушники вокруг шеи
+    const headsetMat = new THREE.MeshStandardMaterial({
+      color:0x1a1a1a, metalness:.6, roughness:.35,
+    });
+    const neckband = new THREE.Mesh(
+      new THREE.TorusGeometry(0.15, 0.024, 8, 20, Math.PI),
+      headsetMat
+    );
+    neckband.rotation.x = Math.PI / 2;
+    neckband.rotation.z = Math.PI;
+    neckband.position.y = 1.28;
+    player.add(neckband);
+
+    for(const dx of [-0.14, 0.14]){
+      const cup = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.07, 0.055, 14),
+        headsetMat
+      );
+      cup.rotation.x = Math.PI / 2;
+      cup.rotation.z = Math.PI / 2;
+      cup.position.set(dx, 1.28, 0.02);
+      player.add(cup);
+      const glow = new THREE.Mesh(
+        new THREE.TorusGeometry(0.062, 0.008, 6, 16),
+        new THREE.MeshBasicMaterial({color:0x00e0b8})
+      );
+      glow.rotation.y = Math.PI / 2;
+      glow.position.set(dx + (dx > 0 ? 0.026 : -0.026), 1.28, 0.02);
+      player.add(glow);
+    }
+
+    // Медаль
     const ribbon = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36, 0.025, 0.015),
+      new THREE.BoxGeometry(0.34, 0.028, 0.015),
       new THREE.MeshStandardMaterial({color:0xd83030, roughness:.7})
     );
-    ribbon.position.set(0, 1.22, 0.19);
+    ribbon.position.set(0, 1.44, 0.19);
     player.add(ribbon);
     const medal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.065, 0.065, 0.014, 20),
-      new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.15,
-        emissive:0xffc93c, emissiveIntensity:.5})
+      new THREE.CylinderGeometry(0.06, 0.06, 0.014, 20),
+      new THREE.MeshStandardMaterial({
+        color:0xffc93c, metalness:.98, roughness:.1,
+        emissive:0xffc93c, emissiveIntensity:.55,
+      })
     );
-    medal.rotation.x = Math.PI/2;
-    medal.position.set(0, 1.08, 0.21);
+    medal.rotation.x = Math.PI / 2;
+    medal.position.set(0, 1.32, 0.21);
     player.add(medal);
-    // Кубок в левой руке
-    const trophy = new THREE.Group();
-    const cupMat = new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.12,
-      emissive:0xffc93c, emissiveIntensity:.35});
-    const cupBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.06, 10), cupMat);
-    cupBase.position.y = -0.1;
-    trophy.add(cupBase);
-    const cupStem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.14, 14), cupMat);
-    cupStem.position.y = 0.03;
-    trophy.add(cupStem);
-    const cupTop = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.05, 0.08, 14), cupMat);
-    cupTop.position.y = 0.14;
-    trophy.add(cupTop);
-    const cupHandle1 = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 6, 12, Math.PI), cupMat);
-    cupHandle1.rotation.z = -Math.PI/2;
-    cupHandle1.position.set(-0.1, 0.03, 0);
-    trophy.add(cupHandle1);
-    const cupHandle2 = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 6, 12, Math.PI), cupMat);
-    cupHandle2.rotation.z = Math.PI/2;
-    cupHandle2.position.set(0.1, 0.03, 0);
-    trophy.add(cupHandle2);
-    trophy.position.set(-0.5, 0.85, 0.1);
-    trophy.rotation.z = 0.15;
-    player.add(trophy);
-    // Бейдж на груди
-    const badge = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.08, 0.01),
-      new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2,
-        emissive:0xffc93c, emissiveIntensity:.4})
+    const medalStar = new THREE.Mesh(
+      new THREE.TorusGeometry(0.028, 0.006, 6, 5),
+      new THREE.MeshBasicMaterial({color:0xd83030})
     );
-    badge.position.set(0.12, 1.15, 0.19);
-    player.add(badge);
+    medalStar.position.set(0, 1.32, 0.22);
+    player.add(medalStar);
+
+    // КУБОК в левой руке
+    const trophy = new THREE.Group();
+    const trophyMat = new THREE.MeshStandardMaterial({
+      color:0xffc93c, metalness:.98, roughness:.1,
+      emissive:0xffc93c, emissiveIntensity:.4,
+    });
+    const tBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.04, 0.05, 12),
+      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.5, roughness:.4})
+    );
+    tBase.position.y = -0.16;
+    trophy.add(tBase);
+    const tStem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.02, 0.1, 10),
+      trophyMat
+    );
+    tStem.position.y = -0.09;
+    trophy.add(tStem);
+    const tCup = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.055, 0.15, 16),
+      trophyMat
+    );
+    tCup.position.y = 0.04;
+    trophy.add(tCup);
+    const tH1 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.05, 0.011, 6, 16, Math.PI),
+      trophyMat
+    );
+    tH1.rotation.z = -Math.PI / 2;
+    tH1.position.set(-0.11, 0.04, 0);
+    trophy.add(tH1);
+    const tH2 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.05, 0.011, 6, 16, Math.PI),
+      trophyMat
+    );
+    tH2.rotation.z = Math.PI / 2;
+    tH2.position.set(0.11, 0.04, 0);
+    trophy.add(tH2);
+
+    trophy.position.set(-0.44, 0.92, 0.15);
+    trophy.rotation.z = 0.2;
+    player.add(trophy);
+
     g.add(player);
     return g;
   }
@@ -1892,9 +2237,8 @@
       bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2;
       g.add(bg2);
     } else {
-      // TOP — киберспортсмен + фанат
-      g.add(makeEsportsPlayer());
-      // Поклонник с камерой
+      // TOP — Donk + фанат + охранник
+      g.add(makeDonk());
       const fan = makeHuman({
         shirt: 0x2a2a3a, pants: 0x1a1a1a, skin: 0xf1c27d,
         hair: 0x3a2410, height: 0.95,
@@ -1903,7 +2247,6 @@
       fan.position.set(0.9, 0, -0.5);
       fan.rotation.y = -0.2;
       g.add(fan);
-      // Ещё один охранник
       const bg = makeBodyguard();
       bg.position.set(-0.95, 0, -0.45); bg.rotation.y = 0.25;
       g.add(bg);
@@ -1974,7 +2317,7 @@
     return sprite;
   }
 
-  // Обычные полки (tier 0-3)
+  // Обычные полки tier 0-3
   for(let c=0;c<COMPONENTS.length;c++){
     const comp = COMPONENTS[c];
     const z = SHELF_Z_START + c*SHELF_Z_SPACING;
@@ -1995,11 +2338,8 @@
     }
   }
 
-  // ============================================================
-  // VIP-ВИТРИНА "TOP PC" (tier 4)
-  // ============================================================
+  // VIP-витрина "TOP PC" (tier 4)
   (()=>{
-    // Задняя панель
     const panel = new THREE.Mesh(
       new THREE.BoxGeometry(2.3, 3.05, 0.08),
       new THREE.MeshStandardMaterial({
@@ -2011,7 +2351,6 @@
     panel.receiveShadow = !isMobile;
     scene.add(panel);
 
-    // Рамка фиолетовая
     const frameMatP = new THREE.MeshStandardMaterial({
       color:0xa855f7, metalness:.9, roughness:.2,
       emissive:0xa855f7, emissiveIntensity:.55,
@@ -2028,7 +2367,6 @@
       scene.add(sideBar);
     }
 
-    // Полки
     for(let i=0;i<5;i++){
       const y = TOPSHELF_SHELF_Y[i];
       const shelf = new THREE.Mesh(
@@ -2037,7 +2375,6 @@
       );
       shelf.position.set(TOPSHELF_X, y - 0.025, TOPSHELF_Z + 0.12);
       scene.add(shelf);
-      // Подсветка полки снизу
       const strip = new THREE.Mesh(
         new THREE.BoxGeometry(2.0, 0.02, 0.02),
         new THREE.MeshBasicMaterial({color:0xa855f7})
@@ -2051,7 +2388,6 @@
       }
     }
 
-    // Вывеска "TOP PC"
     const topSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#0a0420'; ctx.fillRect(0,0,w,h);
       ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 10;
@@ -2073,7 +2409,6 @@
     topSign.position.set(TOPSHELF_X, 3.6, TOPSHELF_Z + 0.06);
     scene.add(topSign);
 
-    // Топ-детали
     for(let i=0;i<COMPONENTS.length;i++){
       const comp = COMPONENTS[i];
       const shelfY = TOPSHELF_SHELF_Y[i];
@@ -2123,7 +2458,6 @@
   matRubber.position.set(BENCH_X, 1.075, 0);
   scene.add(matRubber);
 
-  // Задняя панель с инструментами
   const toolWall = new THREE.Group();
   const wallPanelMat = new THREE.MeshStandardMaterial({
     color:0x1a1f2a, metalness:.7, roughness:.5,
@@ -2360,11 +2694,12 @@
       { who:'Охранник', text:'Шеф, тут... э... компьютерный магазин. Как вы и просили.' },
     ],
     4: [
-      { who:'Киберспортсмен', text:'ЙО! Мне нужна ТОПОВАЯ сборка! Турнир через неделю!' },
-      { who:'Киберспортсмен', text:'Бро! Максимум ФПС! Я в финале чемпионата!' },
-      { who:'Киберспортсмен', text:'Давай самое лучшее, что есть! Цена — не вопрос!' },
-      { who:'Киберспортсмен', text:'Видишь кубок? Вот за него играю. Нужен турнирный комп!' },
-      { who:'Киберспортсмен', text:'Мне ТОП! Слышишь? Не премиум, а ТОП!' },
+      { who:'Donk', text:'Йо! Мне нужен ТОП! Я на турнир через неделю!' },
+      { who:'Donk', text:'Бро! Максимум ФПС! С этим я всех порву!' },
+      { who:'Donk', text:'Давай самое лучшее! Я финал играю!' },
+      { who:'Donk', text:'Смотри — кубок мой. Теперь нужен комп под стать!' },
+      { who:'Donk', text:'Мне ТОП-сборку! Хочу 500 ФПС в CS!' },
+      { who:'Donk', text:'Это мой шанс! Нужен комп мечты!' },
     ],
   };
 
@@ -2392,9 +2727,9 @@
         { who:'Богач',    text:'Наконец-то хоть кто-то сделал нормально.' },
       ],
       4: [
-        { who:'Киберспортсмен', text:'ЙЕЕЕ! ЭТО МОНСТР! Спасибо, бро! Победа наша!' },
-        { who:'Киберспортсмен', text:'ВОТ ЭТО ТОП! С этим я всех порву!' },
-        { who:'Киберспортсмен', text:'Красава! Это же турнирная машина!' },
+        { who:'Donk', text:'ЙЕЕЕ! ЭТО МОНСТР! Спасибо, бро! Победа наша!' },
+        { who:'Donk', text:'ВОТ ЭТО ТОП! С этим я всех порву!' },
+        { who:'Donk', text:'Красава! Турнирная машина!' },
       ],
     },
     cheap: {
@@ -2416,8 +2751,8 @@
         { who:'Богач',    text:'Мне это не подходит. Я разочарован.' },
       ],
       4: [
-        { who:'Киберспортсмен', text:'ЧТО?! Это не тянет даже в Мортал! Позор!' },
-        { who:'Киберспортсмен', text:'Ты меня подставил! Я это на турнир не понесу!' },
+        { who:'Donk', text:'ЧТО?! Это не тянет даже в Мортал! Позор!' },
+        { who:'Donk', text:'Ты меня подставил! Я это на турнир не понесу!' },
       ],
     },
     expensive: {
@@ -2439,8 +2774,8 @@
         { who:'Богач',    text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' },
       ],
       4: [
-        { who:'Киберспортсмен', text:'Зачем так перекачал? Мне это не нужно!' },
-        { who:'Киберспортсмен', text:'Это лишнее. Я играю, а не майню!' },
+        { who:'Donk', text:'Зачем так перекачал? Мне это не нужно!' },
+        { who:'Donk', text:'Это лишнее. Я играю, а не майню!' },
       ],
     },
   };
@@ -2652,7 +2987,6 @@
     atmModalEl.classList.add('show');
     updateATMUI();
     sfxATM();
-    // Снять pointer lock, чтобы курсор стал виден
     if(playing && !isMobile && document.pointerLockElement){
       try{ document.exitPointerLock(); }catch(e){}
     }
@@ -2662,7 +2996,6 @@
     atmOpen = false;
     atmModalEl.classList.remove('show');
     beep(500,.08,'sine',.05);
-    // Не возвращаем pointer lock автоматически — игрок кликнет и вернёт
   }
 
   atmBtnEl.addEventListener('click', (e) => { e.stopPropagation(); openATM(); });
@@ -2684,7 +3017,6 @@
     });
   });
 
-  // Клик по фону закрывает модалку
   atmModalEl.addEventListener('click', (e) => {
     if(e.target === atmModalEl) closeATM();
   });
@@ -2727,33 +3059,33 @@
   function spawnCustomer(){
     if(state.customer) return;
     let tier;
-    if(state.ordersDone < 2) tier = 0;
-    else {
+
+    if(state.ordersDone < 2){
+      tier = 0;
+    } else {
       const r = Math.random();
-      const bonus = state.rating / 200;
-      if(state.rating >= 70){
-        // С топ-тиром
-        if(r < .25 - bonus) tier = 0;
-        else if(r < .5 - bonus) tier = 1;
-        else if(r < .75 - bonus*.5) tier = 2;
-        else if(r < .94 - bonus*.2) tier = 3;
-        else tier = 4;
+      const rating = state.rating;
+      const topChance = Math.max(0.05, Math.min(0.25, (rating - 40) / 240));
+      const bonus = Math.max(0, (rating - 50) / 100);
+
+      if(r < topChance){
+        tier = 4;
+      } else if(r < topChance + 0.20 - bonus*0.1){
+        tier = 3;
+      } else if(r < topChance + 0.50 - bonus*0.15){
+        tier = 2;
+      } else if(r < topChance + 0.80 - bonus*0.15){
+        tier = 1;
       } else {
-        if(r < .3 - bonus) tier = 0;
-        else if(r < .6 - bonus) tier = 1;
-        else if(r < .88 - bonus*.5) tier = 2;
-        else tier = 3;
+        tier = 0;
       }
     }
+
     const mesh = createCustomerMesh(tier);
     mesh.position.set(0, 0, ROOM + 2.5);
     scene.add(mesh);
     state.customer = { mesh, arrived:false, tier, idleT: Math.random()*10, greeted:false };
-    if(!state.order){
-      state.order = { tier };
-    } else {
-      state.customer.tier = state.order.tier;
-    }
+    state.order = { tier };
     updateOrderHUD();
     beep(880,.08,'sine',.04);
     setTimeout(()=>beep(1200,.1,'sine',.04),80);
@@ -2961,6 +3293,12 @@
     starsEl.textContent = s;
     const col = state.rating >= 70 ? '#00e0b8' : state.rating >= 40 ? '#ffc93c' : '#ff4d6a';
     ratingEl.style.color = col;
+    const tc = Math.round(Math.max(0.05, Math.min(0.25, (state.rating - 40) / 240)) * 100);
+    const tcEl = document.getElementById('topChance');
+    if(tcEl){
+      tcEl.textContent = '🎮 TOP: ' + tc + '%';
+      tcEl.style.opacity = tc >= 15 ? 1 : 0.55;
+    }
   }
   function updateInventory(){
     for(const c of COMPONENTS){
@@ -3279,29 +3617,38 @@
     camera.position.x = Math.max(-lim, Math.min(lim, camera.position.x));
     camera.position.z = Math.max(-lim, Math.min(lim, camera.position.z));
 
-    // Коллизия со стойкой
     if(Math.abs(camera.position.z - COUNTER_Z) < 1.4 && Math.abs(camera.position.x) < 3.8){
       if(camera.position.z < COUNTER_Z) camera.position.z = COUNTER_Z - 1.4;
       else camera.position.z = COUNTER_Z + 1.4;
     }
 
-    // === КОЛЛИЗИЯ С ЛЮДЬМИ ===
-    const customerBodies = [];
-    if(state.customer && state.customer.mesh) customerBodies.push(state.customer.mesh);
-    if(leavingCustomerRef && leavingCustomerRef.mesh) customerBodies.push(leavingCustomerRef.mesh);
-    for(const cm of customerBodies){
-      const dx = camera.position.x - cm.position.x;
-      const dz = camera.position.z - cm.position.z;
-      const distSq = dx*dx + dz*dz;
-      const minDist = 0.85;
-      if(distSq < minDist*minDist && distSq > 0.0001){
-        const d = Math.sqrt(distSq);
-        const push = (minDist - d);
-        camera.position.x += (dx/d) * push;
-        camera.position.z += (dz/d) * push;
+    // === КОЛЛИЗИЯ СО ВСЕМИ ЛЮДЬМИ В ГРУППЕ ===
+    const customerGroups = [];
+    if(state.customer && state.customer.mesh) customerGroups.push(state.customer.mesh);
+    if(leavingCustomerRef && leavingCustomerRef.mesh) customerGroups.push(leavingCustomerRef.mesh);
+
+    for(const cm of customerGroups){
+      const rotY = cm.rotation.y;
+      const cosR = Math.cos(rotY);
+      const sinR = Math.sin(rotY);
+      for(const child of cm.children){
+        if(!child.position) continue;
+        // Локальная позиция → мировая (с учётом поворота группы)
+        const wx = cm.position.x + child.position.x * cosR + child.position.z * sinR;
+        const wz = cm.position.z - child.position.x * sinR + child.position.z * cosR;
+
+        const dx = camera.position.x - wx;
+        const dz = camera.position.z - wz;
+        const distSq = dx*dx + dz*dz;
+        const minDist = 0.85;
+        if(distSq < minDist*minDist && distSq > 0.0001){
+          const d = Math.sqrt(distSq);
+          const push = (minDist - d);
+          camera.position.x += (dx/d) * push;
+          camera.position.z += (dz/d) * push;
+        }
       }
     }
-    // Повторная проверка границ после отталкивания
     camera.position.x = Math.max(-lim, Math.min(lim, camera.position.x));
     camera.position.z = Math.max(-lim, Math.min(lim, camera.position.z));
 
@@ -3395,9 +3742,7 @@
         dayState.timeLeft = d.timeLeft;
       }
       if(typeof d.isNight === 'boolean') dayState.isNight = d.isNight;
-      if(typeof d.orderTier === 'number'){
-        state.order = { tier: d.orderTier };
-      }
+      // orderTier НЕ восстанавливаем — новый клиент получит свой tier при спавне
     }catch(e){}
   }
 
