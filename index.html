@@ -475,14 +475,13 @@
     { name:'Супер Топ', short:'MEGA', color:0x00d4ff, hex:'#00d4ff', cost:0,    buyer:'💎 Миллионер' },
   ];
 
-  // Цены в СИНИХ монетах для витрины "Супер Топ"
   const BLUE_PRICES = { cpu: 10, mb: 15, ram: 20, psu: 30, gpu: 50 };
   const MEGA_TOTAL_BLUE = 125;
   const MEGA_REWARD_BLUE = 250;
   const MEGA_REWARD_MONEY = 5000;
 
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v12';
+  const SAVE_KEY = 'pc-shop-3d-v13';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -2106,7 +2105,6 @@
     return g;
   }
 
-  // DONK
   function makeDonk(){
     const g = new THREE.Group();
     const player = makeHuman({
@@ -2163,10 +2161,8 @@
     return g;
   }
 
-  // МИЛЛИОНЕР — самый богатый клиент, носит золото и цилиндр
   function makeMillionaire(){
     const g = new THREE.Group();
-    // Золотой костюм
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xffd700, metalness: .95, roughness: .15,
       emissive: 0xffc93c, emissiveIntensity: .25,
@@ -2177,8 +2173,6 @@
       tieColor: 0xffd700,
       accessory: 'watch', height: 1.05,
     });
-
-    // Цилиндр
     const topHatMat = new THREE.MeshStandardMaterial({
       color: 0x0a0a0a, metalness: .7, roughness: .35,
       emissive: 0xffd700, emissiveIntensity: .15,
@@ -2187,36 +2181,26 @@
     topCyl.position.y = 1.95; player.add(topCyl);
     const topBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.025, 20), topHatMat);
     topBrim.position.y = 1.78; player.add(topBrim);
-    // Золотая полоса на цилиндре
     const topBand = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.02, 8, 24), goldMat);
     topBand.rotation.x = Math.PI/2; topBand.position.y = 1.85; player.add(topBand);
-
-    // Золотая цепь на шее
     const chain = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.018, 8, 24), goldMat);
     chain.rotation.x = Math.PI/2; chain.position.y = 1.32; player.add(chain);
-    // Медальон (💎)
     const pendant = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.055, 0),
       new THREE.MeshStandardMaterial({color:0x00d4ff, emissive:0x00d4ff, emissiveIntensity:.8,
         metalness:.9, roughness:.15})
     );
     pendant.position.set(0, 1.2, 0.2); player.add(pendant);
-
-    // Чемодан с деньгами в левой руке
     const caseMat = new THREE.MeshStandardMaterial({color: 0x1a1a2a, roughness:.5, metalness:.4});
     const moneyCase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.1), caseMat);
     moneyCase.position.set(-0.34, 0.55, 0.05); player.add(moneyCase);
-    // Замки из золота
     for(const dx of [-0.08, 0.08]){
       const lock = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.02), goldMat);
       lock.position.set(-0.34 + dx, 0.58, 0.1); player.add(lock);
     }
-    // Ручка
     const caseHandle = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12), goldMat);
     caseHandle.rotation.y = Math.PI/2;
     caseHandle.position.set(-0.34, 0.68, 0.05); player.add(caseHandle);
-
-    // Золотые часы
     const watchMat = new THREE.MeshStandardMaterial({
       color: 0xffd700, metalness: 1.0, roughness: .08,
       emissive: 0xffd700, emissiveIntensity: .5,
@@ -2224,13 +2208,10 @@
     const watch = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.016, 8, 20), watchMat);
     watch.rotation.x = Math.PI/2;
     watch.position.set(0.26, 0.72, 0); player.add(watch);
-
-    // Позолоченные туфли
     for(const dx of [-0.11, 0.11]){
       const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.26), goldMat);
       shoe.position.set(dx, 0.045, 0.04); player.add(shoe);
     }
-
     g.add(player);
     return g;
   }
@@ -2256,7 +2237,6 @@
       const bg2 = makeBodyguard();
       bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2; g.add(bg2);
     } else if(tier === 4){
-      // TOP — Donk + фанат + охранник
       g.add(makeDonk());
       const fan = makeHuman({
         shirt: 0x2a2a3a, pants: 0x1a1a1a, skin: 0xf1c27d,
@@ -2266,7 +2246,6 @@
       const bg = makeBodyguard();
       bg.position.set(-0.95, 0, -0.45); bg.rotation.y = 0.25; g.add(bg);
     } else {
-      // MEGA — Миллионер + 4 охранника по бокам
       g.add(makeMillionaire());
       const positions = [
         [-1.1, 0.2, -0.5], [1.1, -0.2, -0.5],
@@ -2442,7 +2421,7 @@
   })();
 
   // ============================================================
-  // СУПЕР ТОП ВИТРИНА (за 💎)
+  // СУПЕР ТОП ВИТРИНА (за 💎) — ИСПРАВЛЕННЫЕ МОДЕЛЬКИ
   // ============================================================
   (()=>{
     const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.05, 2.3),
@@ -2504,17 +2483,36 @@
     for(let i=0;i<COMPONENTS.length;i++){
       const comp = COMPONENTS[i];
       const shelfY = MEGASHELF_Y[i];
-      const detailY = shelfY + comp.size[1]/2 + 0.01;
-      const mesh = MODEL_FACTORIES[comp.id](5); // tier 5 = MEGA (cyan)
-      mesh.position.set(MEGASHELF_X - 0.05, detailY, MEGASHELF_Z);
-      mesh.rotation.y = Math.PI/2;
+      const detailY = shelfY + comp.size[1]/2 * 1.7 + 0.02;
+      const mesh = MODEL_FACTORIES[comp.id](5);
+      mesh.position.set(MEGASHELF_X - 0.15, detailY, MEGASHELF_Z);
+      mesh.rotation.y = 0;
+      mesh.scale.set(1.7, 1.7, 1.7);
+
+      // Усиливаем свечение для tier 5
+      mesh.traverse(o => {
+        if(o.isMesh && o.material){
+          if(o.material.emissive !== undefined){
+            o.material = o.material.clone();
+            o.material.emissive.setHex(0x00d4ff);
+            o.material.emissiveIntensity = Math.max(o.material.emissiveIntensity || 0, 0.55);
+          }
+        }
+      });
+
       mesh.userData = { kind:'shelf-component', componentId:comp.id, tier:5 };
       mesh.traverse(o => { if(o.isMesh) o.userData.parentData = mesh.userData; });
       scene.add(mesh);
       componentMeshes.push(mesh);
 
+      // Индивидуальный cyan-фонарик у каждой детали
+      if(!isMobile){
+        const itemLight = new THREE.PointLight(0x00d4ff, 0.7, 1.8, 2);
+        itemLight.position.set(MEGASHELF_X - 0.35, shelfY + 0.35, MEGASHELF_Z);
+        scene.add(itemLight);
+      }
+
       const bluePrice = BLUE_PRICES[comp.id];
-      // Метка с ценой в синих монетах
       const canvas = document.createElement('canvas');
       canvas.width = 512; canvas.height = 256;
       const ctx = canvas.getContext('2d');
@@ -3084,9 +3082,9 @@
       const bonus = Math.max(0, (rating - 50) / 100);
 
       if(r < megaChance){
-        tier = 5; // 💎 Миллионер
+        tier = 5;
       } else if(r < megaChance + topChance){
-        tier = 4; // Donk
+        tier = 4;
       } else if(r < megaChance + topChance + 0.20 - bonus*0.1){
         tier = 3;
       } else if(r < megaChance + topChance + 0.50 - bonus*0.15){
@@ -3142,12 +3140,10 @@
 
     let cost = 0;
     let curName = '₽';
-    let cur = null;
 
     if(tier === 5){
       cost = BLUE_PRICES[componentId];
       curName = '💎';
-      cur = 'blue';
       if(state.blue < cost){ toast('Нужно ' + cost + ' 💎', true); sfxFail(); return; }
       state.blue -= cost;
     } else {
@@ -3209,9 +3205,7 @@
     else if(diff < -0.4){ ratingDelta = -3; reactionKey = 'cheap'; good = false; }
     else { ratingDelta = -6; reactionKey = 'expensive'; good = false; }
 
-    // === НАГРАДА ===
     if(expected === 5){
-      // Миллионер — платит в 💎
       const blueDelta = Math.floor(MEGA_REWARD_BLUE * (reactionKey === 'perfect' ? 1 : reactionKey === 'cheap' ? 0.5 : 0.7));
       state.blue += blueDelta;
       state.money += Math.floor(MEGA_REWARD_MONEY * (reactionKey === 'perfect' ? 1 : 0.5));
@@ -3661,7 +3655,6 @@
       else camera.position.z = COUNTER_Z + 1.4;
     }
 
-    // КОЛЛИЗИЯ со всеми в группе
     const customerGroups = [];
     if(state.customer && state.customer.mesh) customerGroups.push(state.customer.mesh);
     if(leavingCustomerRef && leavingCustomerRef.mesh) customerGroups.push(leavingCustomerRef.mesh);
