@@ -321,7 +321,7 @@
     { name:'Премиум',  short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
   ];
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v8';
+  const SAVE_KEY = 'pc-shop-3d-v9';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -354,10 +354,8 @@
   const doorState = { open: 0, target: 0 };
   let leavingCustomerRef = null;
 
-  // ============================================================
-  // СОСТОЯНИЕ ДНЯ И НОЧИ
-  // ============================================================
-  const DAY_DURATION = 120; // 2 минуты
+  // День / ночь
+  const DAY_DURATION = 120;
   const dayState = {
     day: 1,
     timeLeft: DAY_DURATION,
@@ -662,6 +660,171 @@
   sign.position.set(0,3.1,-ROOM+.1); scene.add(sign);
   const signLight = new THREE.PointLight(0x00e0b8, isMobile ? 0.9 : 1.6, 12, 2);
   signLight.position.set(0,3,-ROOM+1.2); scene.add(signLight);
+
+  // ============================================================
+  // ЧАСЫ НА СТЕНЕ (со стрелками)
+  // ============================================================
+  function createWallClock(x, y, z, rotationY = 0){
+    const g = new THREE.Group();
+
+    // Корпус часов
+    const caseMat = new THREE.MeshStandardMaterial({
+      color:0x2a2a3a, metalness:.7, roughness:.35,
+      emissive:0x00a888, emissiveIntensity:.15,
+    });
+    const caseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 32), caseMat);
+    caseMesh.rotation.x = Math.PI/2;
+    caseMesh.castShadow = !isMobile;
+    g.add(caseMesh);
+
+    // Внешний ободок
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 10, 40),
+      new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.85, roughness:.2,
+        emissive:0x00e0b8, emissiveIntensity:.4}));
+    rim.position.z = 0.04;
+    g.add(rim);
+
+    // Циферблат — canvas с цифрами
+    const faceTex = canvasTex(512, 512, (ctx,w,h)=>{
+      const cx = w/2, cy = h/2;
+      // Фон
+      const grad = ctx.createRadialGradient(cx,cy,20,cx,cy,240);
+      grad.addColorStop(0, '#f8f8f2');
+      grad.addColorStop(1, '#d8d8cc');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(cx, cy, 235, 0, Math.PI*2); ctx.fill();
+      // Обводка
+      ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(cx, cy, 235, 0, Math.PI*2); ctx.stroke();
+      // Минутные риски
+      for(let i=0;i<60;i++){
+        const ang = (i/60) * Math.PI * 2 - Math.PI/2;
+        const isHour = i % 5 === 0;
+        const len = isHour ? 24 : 12;
+        const wid = isHour ? 6 : 3;
+        const r1 = 210;
+        const r2 = 210 - len;
+        ctx.strokeStyle = isHour ? '#1a1a2a' : '#7a7a7a';
+        ctx.lineWidth = wid;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ang)*r1, cy + Math.sin(ang)*r1);
+        ctx.lineTo(cx + Math.cos(ang)*r2, cy + Math.sin(ang)*r2);
+        ctx.stroke();
+      }
+      // Цифры
+      ctx.fillStyle = '#1a1a2a';
+      ctx.font = 'bold 60px Georgia, serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for(let i=1;i<=12;i++){
+        const ang = (i/12) * Math.PI * 2 - Math.PI/2;
+        const r = 165;
+        ctx.fillText(i.toString(), cx + Math.cos(ang)*r, cy + Math.sin(ang)*r);
+      }
+      // Логотип
+      ctx.fillStyle = '#00a888';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('PC SHOP', cx, cy + 90);
+      ctx.font = '14px sans-serif';
+      ctx.fillStyle = '#7a7a7a';
+      ctx.fillText('TIME', cx, cy + 112);
+      // Центральная точка
+      ctx.fillStyle = '#1a1a2a';
+      ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.fill();
+    });
+    const face = new THREE.Mesh(
+      new THREE.CircleGeometry(0.44, 40),
+      new THREE.MeshBasicMaterial({ map: faceTex })
+    );
+    face.position.z = 0.045;
+    g.add(face);
+
+    // Стрелки
+    const hourHand = new THREE.Mesh(
+      new THREE.BoxGeometry(0.03, 0.24, 0.008),
+      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.5})
+    );
+    hourHand.position.set(0, 0.12, 0.06);
+    hourHand.userData.role = 'hour';
+    g.add(hourHand);
+
+    const minuteHand = new THREE.Mesh(
+      new THREE.BoxGeometry(0.022, 0.32, 0.008),
+      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.5})
+    );
+    minuteHand.position.set(0, 0.16, 0.065);
+    minuteHand.userData.role = 'minute';
+    g.add(minuteHand);
+
+    const secondHand = new THREE.Mesh(
+      new THREE.BoxGeometry(0.008, 0.36, 0.006),
+      new THREE.MeshStandardMaterial({color:0xd83030, metalness:.3, roughness:.5,
+        emissive:0xd83030, emissiveIntensity:.2})
+    );
+    secondHand.position.set(0, 0.14, 0.07);
+    secondHand.userData.role = 'second';
+    g.add(secondHand);
+
+    // Красная точка секундной стрелки (противовес)
+    const secondTail = new THREE.Mesh(
+      new THREE.BoxGeometry(0.014, 0.08, 0.006),
+      new THREE.MeshStandardMaterial({color:0xd83030})
+    );
+    secondTail.position.set(0, -0.04, 0.07);
+    secondTail.userData.role = 'second';
+    g.add(secondTail);
+
+    // Центральная ось
+    const axis = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.02, 16),
+      new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.9, roughness:.15,
+        emissive:0x00e0b8, emissiveIntensity:.6})
+    );
+    axis.rotation.x = Math.PI/2;
+    axis.position.z = 0.075;
+    g.add(axis);
+
+    // Подсветка часов
+    if(!isMobile){
+      const clockLight = new THREE.PointLight(0xffeecc, 0.6, 3, 2);
+      clockLight.position.z = 0.8;
+      g.add(clockLight);
+    }
+
+    g.position.set(x, y, z);
+    g.rotation.y = rotationY;
+    g.userData.isClock = true;
+    return g;
+  }
+
+  // Часы на задней стене (слева от неона)
+  const clock1 = createWallClock(-6.5, 2.7, -ROOM + 0.15, 0);
+  scene.add(clock1);
+
+  // Вторые часы — на правой стене
+  const clock2 = createWallClock(ROOM - 0.15, 2.7, -3, -Math.PI/2);
+  scene.add(clock2);
+
+  // Функция обновления стрелок
+  const allClocks = [clock1, clock2];
+  function updateClocks(){
+    const now = new Date();
+    const h = now.getHours() % 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    const ms = now.getMilliseconds();
+
+    const hourAngle = -((h + m/60) / 12) * Math.PI * 2;
+    const minuteAngle = -((m + s/60) / 60) * Math.PI * 2;
+    const secondAngle = -((s + ms/1000) / 60) * Math.PI * 2;
+
+    for(const clock of allClocks){
+      clock.traverse(o => {
+        if(o.userData.role === 'hour')   o.rotation.z = hourAngle;
+        if(o.userData.role === 'minute') o.rotation.z = minuteAngle;
+        if(o.userData.role === 'second') o.rotation.z = secondAngle;
+      });
+    }
+  }
 
   // ============================================================
   // ДЕКОР
@@ -971,11 +1134,11 @@
   scene.add(createBigPlant( 9.8, -5));
 
   const tv = createTV(1.8, 1.0);
-  tv.position.set(-6.5, 2.6, -ROOM + 0.15);
+  tv.position.set(-6.5, 1.7, -ROOM + 0.15);
   scene.add(tv);
 
   const tv2 = createTV(1.8, 1.0);
-  tv2.position.set(6.5, 2.6, -ROOM + 0.15);
+  tv2.position.set(6.5, 1.7, -ROOM + 0.15);
   scene.add(tv2);
 
   const COUNTER_TOP_Y = 1.28;
@@ -1584,7 +1747,7 @@
   }
 
   // ============================================================
-  // ВЕРСТАК
+  // ВЕРСТАК (улучшенный: станок, инструменты, светильник)
   // ============================================================
   const benchMat = new THREE.MeshStandardMaterial({ map:metalTex, metalness:.4, roughness:.6 });
   const benchTop = new THREE.Mesh(new THREE.BoxGeometry(1.8,.1,8), benchMat);
@@ -1595,8 +1758,202 @@
     const leg = new THREE.Mesh(new THREE.BoxGeometry(1.6,.95,1.6), benchMat);
     leg.position.set(BENCH_X,.475,dz); leg.castShadow=!isMobile; scene.add(leg);
   }
+
+  // Металлическая подложка — станок
+  const benchMat2 = new THREE.MeshStandardMaterial({
+    color:0x1a1d26, metalness:.85, roughness:.35,
+    emissive:0x001820, emissiveIntensity:.2,
+  });
+  const benchPlate = new THREE.Mesh(new THREE.BoxGeometry(1.5, .02, 7.5), benchMat2);
+  benchPlate.position.set(BENCH_X, 1.06, 0);
+  benchPlate.receiveShadow = !isMobile;
+  scene.add(benchPlate);
+
+  // Резиновый коврик по центру
+  const matRubber = new THREE.Mesh(
+    new THREE.BoxGeometry(1.1, .015, 7), 
+    new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:1})
+  );
+  matRubber.position.set(BENCH_X, 1.075, 0);
+  scene.add(matRubber);
+
+  // === ЗАДНЯЯ СТЕНКА С ИНСТРУМЕНТАМИ ===
+  const toolWall = new THREE.Group();
+  // Сама стенка (перфорированная панель)
+  const wallPanelMat = new THREE.MeshStandardMaterial({
+    color:0x1a1f2a, metalness:.7, roughness:.5,
+    emissive:0x001820, emissiveIntensity:.15,
+  });
+  const wallPanel = new THREE.Mesh(new THREE.BoxGeometry(.08, 1.2, 8), wallPanelMat);
+  wallPanel.position.set(BENCH_X + 1.3, 1.8, 0);
+  wallPanel.castShadow = !isMobile;
+  wallPanel.receiveShadow = !isMobile;
+  toolWall.add(wallPanel);
+  // Рамка панели
+  const toolFrame = new THREE.Mesh(new THREE.BoxGeometry(.1, 1.3, 8.2),
+    new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.9, roughness:.2,
+      emissive:0x00e0b8, emissiveIntensity:.35}));
+  toolFrame.position.set(BENCH_X + 1.36, 1.8, 0);
+  toolWall.add(toolFrame);
+
+  // Отвертки — 4 штуки разных цветов
+  const screwdriverColors = [0xd83a3a, 0x3a8ad8, 0xf3b03a, 0x3ad86a];
+  for(let i=0;i<4;i++){
+    const sd = new THREE.Group();
+    const handleColor = screwdriverColors[i];
+    // Рукоятка
+    const handle = new THREE.Mesh(
+      new THREE.CylinderGeometry(.035, .04, .16, 12),
+      new THREE.MeshStandardMaterial({color:handleColor, roughness:.5, metalness:.2})
+    );
+    handle.rotation.z = Math.PI/2;
+    sd.add(handle);
+    // Жало
+    const shaft = new THREE.Mesh(
+      new THREE.CylinderGeometry(.012, .012, .22, 8),
+      new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15})
+    );
+    shaft.rotation.z = Math.PI/2;
+    shaft.position.x = .19;
+    sd.add(shaft);
+    // Кончик
+    const tip = new THREE.Mesh(
+      new THREE.CylinderGeometry(.014, .006, .04, 8),
+      new THREE.MeshStandardMaterial({color:0x888888, metalness:.95, roughness:.2})
+    );
+    tip.rotation.z = Math.PI/2;
+    tip.position.x = .32;
+    sd.add(tip);
+
+    sd.position.set(BENCH_X + 1.28, 2.1 - i * 0.22, -2.5);
+    sd.rotation.y = -Math.PI/2;
+    toolWall.add(sd);
+  }
+
+  // Гаечные ключи — 3 штуки
+  for(let i=0;i<3;i++){
+    const wrench = new THREE.Group();
+    const wMat = new THREE.MeshStandardMaterial({color:0xc8c8d0, metalness:.95, roughness:.2});
+    // Стержень
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(.05, .35, .012), wMat);
+    wrench.add(bar);
+    // Головки
+    const head1 = new THREE.Mesh(new THREE.TorusGeometry(.05, .012, 6, 16), wMat);
+    head1.position.y = .2;
+    wrench.add(head1);
+    const head2 = new THREE.Mesh(new THREE.TorusGeometry(.05, .012, 6, 16), wMat);
+    head2.position.y = -.2;
+    wrench.add(head2);
+    // Захват в головках
+    for(const h of [head1, head2]){
+      const cut = new THREE.Mesh(new THREE.BoxGeometry(.02, .07, .02),
+        new THREE.MeshBasicMaterial({color:0x1a1f2a}));
+      cut.position.y = h === head1 ? .2 : -.2;
+      wrench.add(cut);
+    }
+
+    wrench.position.set(BENCH_X + 1.28, 2.1 - i * 0.25, 0.5 + i * 0.35);
+    wrench.rotation.z = Math.PI/2 + (i - 1) * 0.15;
+    wrench.rotation.y = -Math.PI/2;
+    toolWall.add(wrench);
+  }
+
+  // Плоскогубцы
+  const pliers = new THREE.Group();
+  const plMat = new THREE.MeshStandardMaterial({color:0xd83a3a, roughness:.6, metalness:.2});
+  const plMat2 = new THREE.MeshStandardMaterial({color:0xc0c0c8, metalness:.95, roughness:.2});
+  for(const dx of [-.025, .025]){
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(.035, .16, .02), plMat);
+    handle.position.set(dx, -.1, 0);
+    pliers.add(handle);
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(.028, .14, .015), plMat2);
+    jaw.position.set(dx * 0.4, .08, 0);
+    pliers.add(jaw);
+  }
+  // Шарнир
+  const pivot = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .025, 12),
+    new THREE.MeshStandardMaterial({color:0x666666, metalness:.9, roughness:.2}));
+  pivot.rotation.z = Math.PI/2;
+  pliers.add(pivot);
+  pliers.position.set(BENCH_X + 1.28, 2.1, 2.5);
+  pliers.rotation.y = -Math.PI/2;
+  toolWall.add(pliers);
+
+  // Термопаста (тюбик)
+  const pasteTube = new THREE.Mesh(
+    new THREE.CylinderGeometry(.028, .028, .12, 12),
+    new THREE.MeshStandardMaterial({color:0xe8e8e8, roughness:.4, metalness:.1})
+  );
+  pasteTube.rotation.z = Math.PI/2;
+  pasteTube.position.set(BENCH_X + 1.28, 1.55, 2.9);
+  toolWall.add(pasteTube);
+  const pasteCap = new THREE.Mesh(
+    new THREE.CylinderGeometry(.03, .03, .04, 12),
+    new THREE.MeshStandardMaterial({color:0x00e0b8, roughness:.5, emissive:0x00e0b8, emissiveIntensity:.3})
+  );
+  pasteCap.rotation.z = Math.PI/2;
+  pasteCap.position.set(BENCH_X + 1.28, 1.55, 2.76);
+  toolWall.add(pasteCap);
+
+  // Катушка с припоем
+  const solderRoll = new THREE.Mesh(
+    new THREE.CylinderGeometry(.07, .07, .06, 16),
+    new THREE.MeshStandardMaterial({color:0x505050, roughness:.4, metalness:.7})
+  );
+  solderRoll.rotation.z = Math.PI/2;
+  solderRoll.position.set(BENCH_X + 1.28, 1.55, -2.9);
+  toolWall.add(solderRoll);
+  const solderWire = new THREE.Mesh(
+    new THREE.TorusGeometry(.07, .008, 6, 20),
+    new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15})
+  );
+  solderWire.rotation.y = Math.PI/2;
+  solderWire.position.set(BENCH_X + 1.28, 1.55, -2.9);
+  toolWall.add(solderWire);
+
+  scene.add(toolWall);
+
+  // === МАЛЕНЬКИЙ СВЕТИЛЬНИК НАД ВЕРСТАКОМ ===
+  const benchLampGroup = new THREE.Group();
+  // Кронштейн
+  const benchLampArm = new THREE.Mesh(
+    new THREE.CylinderGeometry(.02, .02, .5, 8),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3})
+  );
+  benchLampArm.position.set(BENCH_X + 1.3, 3.2, 0);
+  benchLampGroup.add(benchLampArm);
+  const benchLampArm2 = new THREE.Mesh(
+    new THREE.CylinderGeometry(.02, .02, .5, 8),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3})
+  );
+  benchLampArm2.rotation.z = Math.PI/2;
+  benchLampArm2.position.set(BENCH_X + 1.05, 3.45, 0);
+  benchLampGroup.add(benchLampArm2);
+  // Корпус лампы
+  const benchLampHead = new THREE.Mesh(
+    new THREE.BoxGeometry(.4, .06, 1.4),
+    new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.7, roughness:.35,
+      emissive:0x00e0b8, emissiveIntensity:.3})
+  );
+  benchLampHead.position.set(BENCH_X + 0.8, 3.45, 0);
+  benchLampGroup.add(benchLampHead);
+  // Светящаяся панель лампы
+  const benchLampGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(.32, .02, 1.3),
+    new THREE.MeshBasicMaterial({color:0xddeeff})
+  );
+  benchLampGlow.position.set(BENCH_X + 0.8, 3.41, 0);
+  benchLampGroup.add(benchLampGlow);
+  // Направленный свет от лампы (только десктоп)
   if(!isMobile){
-    const benchLight = new THREE.PointLight(0x00e0b8, 1.4, 6, 2);
+    const benchLampLight = new THREE.PointLight(0xddeeff, 1.4, 6, 2);
+    benchLampLight.position.set(BENCH_X + 0.8, 3.3, 0);
+    benchLampGroup.add(benchLampLight);
+  }
+  scene.add(benchLampGroup);
+
+  if(!isMobile){
+    const benchLight = new THREE.PointLight(0x00e0b8, 1.2, 6, 2);
     benchLight.position.set(BENCH_X - 1, 2.5, 0); scene.add(benchLight);
   }
 
@@ -1890,25 +2247,21 @@
     sleepBtnEl.classList.remove('show');
     nightHintEl.classList.remove('show');
 
-    // 1. Плавное затемнение
     sleepOverlayEl.classList.add('show');
     await sleep(30);
     sleepOverlayEl.classList.add('visible');
     await sleep(1500);
 
-    // 2. Показываем текущий день
     sleepDayTextEl.textContent = `День ${dayState.day}`;
     sleepSubTextEl.textContent = 'Засыпаем...';
     sleepDayTextEl.classList.add('visible');
     sleepSubTextEl.classList.add('visible');
     await sleep(1400);
 
-    // 3. Плавно скрываем текст
     sleepDayTextEl.classList.remove('visible');
     sleepSubTextEl.classList.remove('visible');
     await sleep(700);
 
-    // 4. Меняем день и показываем новый
     dayState.day += 1;
     sleepDayTextEl.textContent = `День ${dayState.day}`;
     sleepSubTextEl.textContent = 'Просыпаемся...';
@@ -1916,7 +2269,6 @@
     sleepSubTextEl.classList.add('visible');
     await sleep(1500);
 
-    // 5. Скрываем текст и убираем черный экран
     sleepDayTextEl.classList.remove('visible');
     sleepSubTextEl.classList.remove('visible');
     await sleep(400);
@@ -1924,7 +2276,6 @@
     await sleep(1500);
     sleepOverlayEl.classList.remove('show');
 
-    // 6. Начинаем новый день
     dayState.isSleeping = false;
     startDay();
     save();
@@ -1984,7 +2335,13 @@
     mesh.position.set(0, 0, ROOM + 2.5);
     scene.add(mesh);
     state.customer = { mesh, arrived:false, tier, idleT: Math.random()*10, greeted:false };
-    state.order = { tier };
+    // Если загруженного заказа не было — ставим текущий
+    if(!state.order){
+      state.order = { tier };
+    } else {
+      // Если заказ уже был загружен — используем его tier
+      state.customer.tier = state.order.tier;
+    }
     updateOrderHUD();
     beep(880,.08,'sine',.04);
     setTimeout(()=>beep(1200,.1,'sine',.04),80);
@@ -2029,6 +2386,7 @@
     sfxBuy();
     toast('Куплено: ' + getComp(componentId).name + ' · ' + TIERS[tier].name + ' (−' + cost + ' ₽)');
     updateAll();
+    save();
   }
 
   function placeComponent(componentId){
@@ -2041,6 +2399,7 @@
     sfxPlace();
     refreshBenchVisuals();
     updateAll();
+    save();
     toast('Установлено: ' + getComp(componentId).name);
   }
 
@@ -2055,6 +2414,7 @@
     state.builtPC = {};
     refreshBenchVisuals();
     updateAll();
+    save();
     sfxCoin();
     toast('ПК собран! Иди к клиенту', false, 'gold');
   }
@@ -2285,6 +2645,55 @@
   }
 
   // ============================================================
+  // ВИДИМОСТЬ ТАБЛИЧЕК (скрытие за клиентами)
+  // ============================================================
+  const _tmpTargetPos = new THREE.Vector3();
+  const _tmpDir = new THREE.Vector3();
+  const _blockers = [];
+
+  function isVisibleFromCamera(targetObj){
+    if(!targetObj) return true;
+    // Собираем всё, что может перекрыть (клиенты)
+    _blockers.length = 0;
+    if(state.customer && state.customer.mesh){
+      state.customer.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); });
+    }
+    if(leavingCustomerRef && leavingCustomerRef.mesh){
+      leavingCustomerRef.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); });
+    }
+    if(_blockers.length === 0) return true;
+
+    targetObj.getWorldPosition(_tmpTargetPos);
+    const camPos = camera.position;
+    _tmpDir.subVectors(_tmpTargetPos, camPos);
+    const distance = _tmpDir.length();
+    if(distance < 0.01) return true;
+    _tmpDir.normalize();
+
+    raycaster.set(camPos, _tmpDir);
+    raycaster.far = distance;
+    const hits = raycaster.intersectObjects(_blockers, false);
+    if(hits.length > 0 && hits[0].distance < distance - 0.15){
+      return false;
+    }
+    return true;
+  }
+
+  function updateLabelVisibility(){
+    // Проверяем только если есть хоть кто-то
+    if(!state.customer && !leavingCustomerRef) {
+      for(const label of labelSprites){
+        if(!label.visible) label.visible = true;
+      }
+      return;
+    }
+    for(const label of labelSprites){
+      const vis = isVisibleFromCamera(label);
+      if(label.visible !== vis) label.visible = vis;
+    }
+  }
+
+  // ============================================================
   // УПРАВЛЕНИЕ
   // ============================================================
   let playing = false;
@@ -2449,11 +2858,16 @@
   let lastPrompt = '';
   function updatePrompt(){
     if(!playing){ if(lastPrompt){ promptEl.classList.remove('show'); lastPrompt=''; } return; }
+    // Скрываем таблички за клиентами
+    updateLabelVisibility();
+
     raycaster.setFromCamera({x:0,y:0}, camera);
     raycaster.far = 6;
     const targets = [];
     for(const m of componentMeshes) targets.push(m);
-    for(const l of labelSprites) targets.push(l);
+    for(const l of labelSprites){
+      if(l.visible) targets.push(l);
+    }
     targets.push(sleepingBag);
     const hits = raycaster.intersectObjects(targets, true);
     let text = '';
@@ -2496,9 +2910,17 @@
   function save(){
     try{
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        money: state.money, rating: state.rating,
-        ordersDone: state.ordersDone, perfectOrders: state.perfectOrders,
+        money: state.money,
+        rating: state.rating,
+        ordersDone: state.ordersDone,
+        perfectOrders: state.perfectOrders,
+        inventory: state.inventory,
+        builtPC: state.builtPC,
+        holdingPC: state.holdingPC,
+        orderTier: state.order ? state.order.tier : null,
         day: dayState.day,
+        timeLeft: dayState.timeLeft,
+        isNight: dayState.isNight,
       }));
     }catch(e){}
   }
@@ -2511,7 +2933,17 @@
       if(typeof d.rating === 'number') state.rating = d.rating;
       if(typeof d.ordersDone === 'number') state.ordersDone = d.ordersDone;
       if(typeof d.perfectOrders === 'number') state.perfectOrders = d.perfectOrders;
+      if(d.inventory && typeof d.inventory === 'object') state.inventory = d.inventory;
+      if(d.builtPC && typeof d.builtPC === 'object') state.builtPC = d.builtPC;
+      if(d.holdingPC && typeof d.holdingPC === 'object') state.holdingPC = d.holdingPC;
       if(typeof d.day === 'number' && d.day > 0) dayState.day = d.day;
+      if(typeof d.timeLeft === 'number' && d.timeLeft > 0 && d.timeLeft <= DAY_DURATION){
+        dayState.timeLeft = d.timeLeft;
+      }
+      if(typeof d.isNight === 'boolean') dayState.isNight = d.isNight;
+      if(typeof d.orderTier === 'number'){
+        state.order = { tier: d.orderTier };
+      }
     }catch(e){}
   }
 
@@ -2529,6 +2961,7 @@
     updateCustomerMovement(dt);
     updateDoors(dt);
     updateDay(dt);
+    updateClocks();
 
     if(now - lastUITick > 100){
       lastUITick = now;
@@ -2547,6 +2980,15 @@
   refreshBenchVisuals();
   updateAll();
   updateDayHUD();
+  // Если загрузилась ночь — применим ночной режим сразу
+  if(dayState.isNight){
+    scene.background.setHex(0x050510);
+    scene.fog.color.setHex(0x050510);
+    scene.fog.near = 8;
+    scene.fog.far = 28;
+    nightOverlayEl.classList.add('show');
+    nightHintEl.classList.add('show');
+  }
   spawnCustomer();
   setInterval(save, 5000);
   addEventListener('beforeunload', save);
