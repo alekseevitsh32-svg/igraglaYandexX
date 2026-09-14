@@ -125,17 +125,16 @@
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
   body.is-mobile #dialogBubble{top:130px;font-size:13px;padding:10px 16px;max-width:92vw;}
 
-  /* LANGUAGE SCREEN */
   #langScreen{position:fixed;inset:0;z-index:150;
     background:radial-gradient(ellipse at center,#16203a 0%,#050710 70%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;padding:20px;gap:20px;
-    transition:opacity .3s}
+    transition:opacity .3s;pointer-events:auto}
   #langScreen.hidden{opacity:0;pointer-events:none;visibility:hidden}
   #langScreen .flag-row{display:flex;gap:40px;font-size:60px;margin-bottom:10px}
-  #langScreen h1{font-size:clamp(24px,5vw,42px);font-weight:900;
+  #langScreen h1{font-size:clamp(22px,4.5vw,38px);font-weight:900;
     background:linear-gradient(135deg,#00e0b8,#00b3ff);-webkit-background-clip:text;
-    background-clip:text;color:transparent;letter-spacing:-1px}
+    background-clip:text;color:transparent;letter-spacing:-1px;max-width:700px}
   #langScreen .sub{color:#7b8bb0;font-size:16px;margin-bottom:16px}
   #langScreen .lang-buttons{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
   #langScreen .lang-btn{
@@ -143,13 +142,15 @@
     border:2px solid rgba(0,224,184,.5);border-radius:16px;
     padding:20px 40px;font-size:20px;font-weight:800;cursor:pointer;
     font-family:inherit;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px;
-    min-width:180px}
+    min-width:180px;pointer-events:auto;user-select:none;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation}
   #langScreen .lang-btn:hover{
     background:linear-gradient(135deg,#00e0b8,#00b3ff);color:#04121a;
     transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,224,184,.5)}
-  #langScreen .lang-btn .flag{font-size:42px}
-  #langScreen .lang-btn .name{font-size:16px;letter-spacing:1px}
-  #langScreen .lang-btn .native{font-size:12px;opacity:.7;font-weight:600}
+  #langScreen .lang-btn:active{transform:translateY(-1px) scale(.98)}
+  #langScreen .lang-btn .flag{font-size:42px;pointer-events:none}
+  #langScreen .lang-btn .name{font-size:16px;letter-spacing:1px;pointer-events:none}
+  #langScreen .lang-btn .native{font-size:12px;opacity:.7;font-weight:600;pointer-events:none}
 
   #startScreen{position:fixed;inset:0;background:radial-gradient(ellipse at center,#16203a 0%,#050710 70%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;
@@ -367,18 +368,17 @@
 <body>
   <div id="app"></div>
 
-  <!-- LANGUAGE SELECTION SCREEN -->
   <div id="langScreen">
     <div class="flag-row">🌍 🌏</div>
-    <h1 id="langTitle">Привет! Выбери язык / Hello! Choose language</h1>
-    <div class="sub" id="langSub">Выбери язык интерфейса / Choose interface language</div>
+    <h1>Привет! Выбери язык / Hello! Choose language</h1>
+    <div class="sub">Выбери язык интерфейса / Choose interface language</div>
     <div class="lang-buttons">
-      <button class="lang-btn" data-lang="ru">
+      <button type="button" class="lang-btn" id="langBtnRu">
         <div class="flag">🇷🇺</div>
         <div class="name">РУССКИЙ</div>
         <div class="native">Russian</div>
       </button>
-      <button class="lang-btn" data-lang="en">
+      <button type="button" class="lang-btn" id="langBtnEn">
         <div class="flag">🇬🇧</div>
         <div class="name">ENGLISH</div>
         <div class="native">Английский</div>
@@ -478,7 +478,7 @@
     </div>
   </div>
 
-  <div id="startScreen">
+  <div id="startScreen" class="hidden">
     <h1>PC SHOP TYCOON</h1>
     <p id="start-desc">Управляй магазином сборки ПК. Принимай заказы, покупай детали, собирай компьютеры и выдавай их клиентам.</p>
     <div class="controls desktop-hint">
@@ -494,6 +494,64 @@
     <button id="startBtn" type="button">НАЧАТЬ ИГРУ</button>
   </div>
 
+  <!-- ============================================================
+       ПРОСТОЙ SCRIPT ДЛЯ ВЫБОРА ЯЗЫКА
+       Работает СРАЗУ, не зависит от Three.js
+       ============================================================ -->
+  <script>
+    (function(){
+      var LANG_KEY = 'pc-shop-lang';
+
+      function safeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+      function safeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+      window.__gameLang = safeGet(LANG_KEY) || 'ru';
+
+      window.__pickLang = function(code){
+        window.__gameLang = code;
+        safeSet(LANG_KEY, code);
+        document.documentElement.lang = code;
+
+        var ls = document.getElementById('langScreen');
+        var ss = document.getElementById('startScreen');
+        if(ls) ls.classList.add('hidden');
+        if(ss) ss.classList.remove('hidden');
+
+        if(typeof window.__onLangChosen === 'function'){
+          try{ window.__onLangChosen(code); }catch(e){ console.error(e); }
+        }
+      };
+
+      function bindButtons(){
+        var ru = document.getElementById('langBtnRu');
+        var en = document.getElementById('langBtnEn');
+        if(ru){
+          ru.onclick = function(e){ if(e) e.preventDefault(); window.__pickLang('ru'); };
+          ru.addEventListener('touchend', function(e){ e.preventDefault(); window.__pickLang('ru'); }, {passive:false});
+        }
+        if(en){
+          en.onclick = function(e){ if(e) e.preventDefault(); window.__pickLang('en'); };
+          en.addEventListener('touchend', function(e){ e.preventDefault(); window.__pickLang('en'); }, {passive:false});
+        }
+
+        // Если язык уже выбран — пропускаем экран
+        var saved = safeGet(LANG_KEY);
+        if(saved === 'ru' || saved === 'en'){
+          var ls = document.getElementById('langScreen');
+          var ss = document.getElementById('startScreen');
+          if(ls) ls.classList.add('hidden');
+          if(ss) ss.classList.remove('hidden');
+        }
+      }
+
+      if(document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', bindButtons);
+      } else {
+        bindButtons();
+      }
+    })();
+  </script>
+
   <script type="importmap">
   { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
   </script>
@@ -502,10 +560,13 @@
   import * as THREE from 'three';
 
   // ============================================================
-  // ЯЗЫКИ / LANGUAGES
+  // ЯЗЫКИ
   // ============================================================
   const LANG_KEY = 'pc-shop-lang';
-  let lang = localStorage.getItem(LANG_KEY) || null;
+  function safeGetLang(){ try{ return localStorage.getItem(LANG_KEY); }catch(e){ return null; } }
+  function safeSetLang(v){ try{ localStorage.setItem(LANG_KEY, v); }catch(e){} }
+
+  let lang = safeGetLang() || window.__gameLang || 'ru';
 
   const I18N = {
     ru: {
@@ -517,61 +578,29 @@
       startMob1: '<b>Джойстик слева</b> — движение',
       startMob2: '<b>Свайп справа</b> — обзор',
       startMob3: '<b>Тап</b> по полке — купить · У верстака — кнопки сборки',
-      lblMoney: 'Баланс',
-      lblBlue: '💎 Синяя валюта',
-      lblRating: 'Рейтинг магазина',
-      lblOrder: 'Заказ',
-      lblTable: 'Верстак · Сборка',
-      lblGive: 'ВЫДАТЬ ПК КЛИЕНТУ',
-      lblAtm: 'Открыть Банкомат',
-      lblEx: 'Обменник',
-      lblDay: 'День',
-      lblNight: 'Наступила ночь. Нажми на спальный мешок и спи',
-      lblSleep: 'СПАТЬ',
-      atmTitle: 'БАНКОМАТ',
-      atmSub: 'Курс обмена:',
-      atmRub: 'Рубли',
-      atmBlue: 'Синие 💎',
-      exTitle: 'ОБМЕННИК',
-      exSub: 'Курс обмена:',
-      close: 'Закрыть',
+      lblMoney: 'Баланс', lblBlue: '💎 Синяя валюта', lblRating: 'Рейтинг магазина',
+      lblOrder: 'Заказ', lblTable: 'Верстак · Сборка',
+      lblGive: 'ВЫДАТЬ ПК КЛИЕНТУ', lblAtm: 'Открыть Банкомат', lblEx: 'Обменник',
+      lblDay: 'День', lblNight: 'Наступила ночь. Нажми на спальный мешок и спи', lblSleep: 'СПАТЬ',
+      atmTitle: 'БАНКОМАТ', atmSub: 'Курс обмена:', atmRub: 'Рубли', atmBlue: 'Синие 💎',
+      exTitle: 'ОБМЕННИК', exSub: 'Курс обмена:', close: 'Закрыть',
       waitingClient: 'Ожидание клиента...',
-      orderReward: 'Бюджет-ориентир:',
-      orderRewardMega: 'Оплата:',
-      perPart: '₽/деталь',
-      clientLabel: 'Клиент:',
-      sleepFalling: 'Засыпаем...',
-      sleepWaking: 'Просыпаемся...',
-      sleepDay: 'День',
-      noOrder: 'Нет активного заказа. Дождись клиента.',
-      slotBusy: 'Слот занят. Убери деталь.',
-      needMoney: 'Нужно',
-      slotEmpty: 'Слот пуст. Купи деталь на полке.',
-      placed: 'Установлено:',
-      noPart: 'Нет детали в инвентаре. Купи на полке.',
-      allParts: 'Собери все 5 деталей',
-      pcReady: 'ПК собран! Иди к клиенту',
-      youHave: 'Уже есть',
-      bought: 'Куплено:',
+      orderReward: 'Бюджет-ориентир:', orderRewardMega: 'Оплата:', clientLabel: 'Клиент:',
+      sleepFalling: 'Засыпаем...', sleepWaking: 'Просыпаемся...', sleepDay: 'День',
+      noOrder: 'Нет активного заказа.', slotBusy: 'Слот занят.',
+      needMoney: 'Нужно', slotEmpty: 'Слот пуст.',
+      placed: 'Установлено:', noPart: 'Нет детали в инвентаре.',
+      allParts: 'Собери все 5 деталей', pcReady: 'ПК собран! Иди к клиенту',
+      youHave: 'Уже есть', bought: 'Куплено:',
       sleepOnlyNight: 'Спать можно только ночью',
-      clientNotArrived: 'Клиент ещё не подошёл',
-      noOrderYet: 'Нет заказа',
+      clientNotArrived: 'Клиент ещё не подошёл', noOrderYet: 'Нет заказа',
       deliverAll: 'Собери все 5 деталей на верстаке',
       wrongParts: 'Не те комплектующие. Нужны:',
-      orderDone: 'Заказ выполнен!',
-      rating: 'Рейтинг',
-      sleepBagHint: 'ЛКМ чтобы спать',
-      sleepBagDay: 'спать можно ночью',
-      ratingTop: 'ТОП',
-      itemName: 'Наименование',
-      tierBase: 'Базовая',
-      tierStd: 'Стандарт',
-      tierGame: 'Игровая',
-      tierPro: 'Премиум',
-      tierTop: 'Топ',
-      tierMega: 'Супер Топ',
-      buy: 'купить',
-      take: 'ВЗЯТЬ ПК',
+      orderDone: 'Заказ выполнен!', rating: 'Рейтинг',
+      sleepBagHint: 'ЛКМ чтобы спать', sleepBagDay: 'спать можно ночью',
+      ratingTop: 'ТОП', buy: 'купить', take: 'ВЗЯТЬ ПК',
+      tierBase: 'Базовая', tierStd: 'Стандарт', tierGame: 'Игровая',
+      tierPro: 'Премиум', tierTop: 'Топ', tierMega: 'Супер Топ',
     },
     en: {
       startTitle: 'START GAME',
@@ -582,65 +611,33 @@
       startMob1: '<b>Left joystick</b> — move',
       startMob2: '<b>Swipe right</b> — look',
       startMob3: '<b>Tap</b> shelf — buy · At bench — build buttons',
-      lblMoney: 'Balance',
-      lblBlue: '💎 Blue currency',
-      lblRating: 'Shop rating',
-      lblOrder: 'Order',
-      lblTable: 'Workbench · Build',
-      lblGive: 'GIVE PC TO CUSTOMER',
-      lblAtm: 'Open ATM',
-      lblEx: 'Exchange',
-      lblDay: 'Day',
-      lblNight: 'Night has come. Click on the sleeping bag and sleep',
-      lblSleep: 'SLEEP',
-      atmTitle: 'ATM',
-      atmSub: 'Exchange rate:',
-      atmRub: 'Rubles',
-      atmBlue: 'Blue 💎',
-      exTitle: 'EXCHANGE',
-      exSub: 'Exchange rate:',
-      close: 'Close',
+      lblMoney: 'Balance', lblBlue: '💎 Blue currency', lblRating: 'Shop rating',
+      lblOrder: 'Order', lblTable: 'Workbench · Build',
+      lblGive: 'GIVE PC TO CUSTOMER', lblAtm: 'Open ATM', lblEx: 'Exchange',
+      lblDay: 'Day', lblNight: 'Night has come. Click the sleeping bag and sleep', lblSleep: 'SLEEP',
+      atmTitle: 'ATM', atmSub: 'Exchange rate:', atmRub: 'Rubles', atmBlue: 'Blue 💎',
+      exTitle: 'EXCHANGE', exSub: 'Exchange rate:', close: 'Close',
       waitingClient: 'Waiting for a customer...',
-      orderReward: 'Budget guide:',
-      orderRewardMega: 'Payment:',
-      perPart: '₽/part',
-      clientLabel: 'Customer:',
-      sleepFalling: 'Falling asleep...',
-      sleepWaking: 'Waking up...',
-      sleepDay: 'Day',
-      noOrder: 'No active order. Wait for a customer.',
-      slotBusy: 'Slot busy. Remove part first.',
-      needMoney: 'You need',
-      slotEmpty: 'Slot empty. Buy a part from the shelf.',
-      placed: 'Installed:',
-      noPart: 'No part in inventory. Buy from the shelf.',
-      wrongParts: 'Wrong components. Needed:',
-      deliverAll: 'Build all 5 parts on the workbench',
-      noOrderYet: 'No order',
-      clientNotArrived: 'Customer has not arrived yet',
-      allParts: 'Build all 5 parts',
-      pcReady: 'PC built! Go to the customer',
-      youHave: 'Already have',
-      bought: 'Bought:',
+      orderReward: 'Budget guide:', orderRewardMega: 'Payment:', clientLabel: 'Customer:',
+      sleepFalling: 'Falling asleep...', sleepWaking: 'Waking up...', sleepDay: 'Day',
+      noOrder: 'No active order.', slotBusy: 'Slot busy.',
+      needMoney: 'You need', slotEmpty: 'Slot empty.',
+      placed: 'Installed:', noPart: 'No part in inventory.',
+      allParts: 'Build all 5 parts', pcReady: 'PC built! Go to the customer',
+      youHave: 'Already have', bought: 'Bought:',
       sleepOnlyNight: 'You can only sleep at night',
-      orderDone: 'Order completed!',
-      rating: 'Rating',
-      sleepBagHint: 'LMB to sleep',
-      sleepBagDay: 'can only sleep at night',
-      ratingTop: 'TOP',
-      itemName: 'Item',
-      tierBase: 'Basic',
-      tierStd: 'Standard',
-      tierGame: 'Gaming',
-      tierPro: 'Premium',
-      tierTop: 'Top',
-      tierMega: 'Super Top',
-      buy: 'buy',
-      take: 'TAKE PC',
+      clientNotArrived: 'Customer has not arrived yet', noOrderYet: 'No order',
+      deliverAll: 'Build all 5 parts on the workbench',
+      wrongParts: 'Wrong components. Needed:',
+      orderDone: 'Order completed!', rating: 'Rating',
+      sleepBagHint: 'LMB to sleep', sleepBagDay: 'can only sleep at night',
+      ratingTop: 'TOP', buy: 'buy', take: 'TAKE PC',
+      tierBase: 'Basic', tierStd: 'Standard', tierGame: 'Gaming',
+      tierPro: 'Premium', tierTop: 'Top', tierMega: 'Super Top',
     }
   };
 
-  function t(key){ return I18N[lang][key] || I18N.ru[key] || key; }
+  function t(key){ return (I18N[lang] && I18N[lang][key]) || I18N.ru[key] || key; }
 
   // ============================================================
   // КОНФИГ
@@ -665,12 +662,11 @@
   function tierName(tier){ return lang === 'en' ? TIERS[tier].nameEn : TIERS[tier].name; }
 
   const BLUE_PRICES = { cpu: 10, mb: 15, ram: 20, psu: 30, gpu: 50 };
-  const MEGA_TOTAL_BLUE = 125;
   const MEGA_REWARD_BLUE = 250;
   const MEGA_REWARD_MONEY = 5000;
 
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v16';
+  const SAVE_KEY = 'pc-shop-3d-v17';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -681,19 +677,12 @@
   const SHELF_X = -10.5, SHELF_Z_START = -4, SHELF_Z_SPACING = 2;
   const SHELF_TIER_Y = [.75, 1.5, 2.25, 3.0];
   const DOOR_Z = ROOM - 0.06;
-
-  const TOPSHELF_X = 4.4;
-  const TOPSHELF_Z = -ROOM + 0.22;
+  const TOPSHELF_X = 4.4, TOPSHELF_Z = -ROOM + 0.22;
   const TOPSHELF_SHELF_Y = [0.45, 1.0, 1.55, 2.1, 2.65];
-
-  const MEGASHELF_X = 11.5;
-  const MEGASHELF_Z = -7.5;
+  const MEGASHELF_X = 11.5, MEGASHELF_Z = -7.5;
   const MEGASHELF_Y = [0.45, 1.0, 1.55, 2.1, 2.65];
-
-  const ATM_X = ROOM - 0.35;
-  const ATM_Z = 8;
-  const EXCHANGE_X = ROOM - 0.35;
-  const EXCHANGE_Z = 4;
+  const ATM_X = ROOM - 0.35, ATM_Z = 8;
+  const EXCHANGE_X = ROOM - 0.35, EXCHANGE_Z = 4;
 
   const isMobile = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
                    || (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 1100);
@@ -703,30 +692,17 @@
   // СОСТОЯНИЕ
   // ============================================================
   const state = {
-    money: START_MONEY,
-    blue: 0,
-    rating: 50,
-    inventory: {},
-    builtPC: {},
-    holdingPC: null,
-    order: null,
-    customer: null,
-    ordersDone: 0,
-    perfectOrders: 0,
-    megaOrders: 0,
+    money: START_MONEY, blue: 0, rating: 50,
+    inventory: {}, builtPC: {}, holdingPC: null,
+    order: null, customer: null,
+    ordersDone: 0, perfectOrders: 0, megaOrders: 0,
   };
   const doorState = { open: 0, target: 0 };
   let leavingCustomerRef = null;
-  let atmOpen = false;
-  let exOpen = false;
+  let atmOpen = false, exOpen = false;
 
   const DAY_DURATION = 120;
-  const dayState = {
-    day: 1,
-    timeLeft: DAY_DURATION,
-    isNight: false,
-    isSleeping: false,
-  };
+  const dayState = { day: 1, timeLeft: DAY_DURATION, isNight: false, isSleeping: false };
 
   // ============================================================
   // АУДИО
@@ -755,13 +731,13 @@
       o.start(); o.stop(audioCtx.currentTime + 0.018);
     }catch(e){}
   }
-  const sfxBuy   = () => beep(500,.08,'triangle',.05);
+  const sfxBuy = () => beep(500,.08,'triangle',.05);
   const sfxPlace = () => { beep(300,.1,'square',.05); setTimeout(()=>beep(450,.1,'square',.04),60); };
-  const sfxWin   = () => { beep(660,.1); setTimeout(()=>beep(880,.1),90); setTimeout(()=>beep(1320,.2),180); };
-  const sfxFail  = () => { beep(200,.15,'sawtooth',.06); setTimeout(()=>beep(140,.2,'sawtooth',.05),100); };
-  const sfxCoin  = () => { beep(1400,.05,'sine',.05); setTimeout(()=>beep(1800,.08,'sine',.05),50); };
-  const sfxDoor  = () => { beep(180,.25,'sine',.04); setTimeout(()=>beep(140,.35,'sine',.03),120); };
-  const sfxATM   = () => { beep(880,.06,'square',.05); setTimeout(()=>beep(660,.1,'square',.04),70); setTimeout(()=>beep(990,.08,'sine',.05),180); };
+  const sfxWin = () => { beep(660,.1); setTimeout(()=>beep(880,.1),90); setTimeout(()=>beep(1320,.2),180); };
+  const sfxFail = () => { beep(200,.15,'sawtooth',.06); setTimeout(()=>beep(140,.2,'sawtooth',.05),100); };
+  const sfxCoin = () => { beep(1400,.05,'sine',.05); setTimeout(()=>beep(1800,.08,'sine',.05),50); };
+  const sfxDoor = () => { beep(180,.25,'sine',.04); setTimeout(()=>beep(140,.35,'sine',.03),120); };
+  const sfxATM = () => { beep(880,.06,'square',.05); setTimeout(()=>beep(660,.1,'square',.04),70); setTimeout(()=>beep(990,.08,'sine',.05),180); };
 
   // ============================================================
   // ТЕКСТУРЫ
@@ -849,12 +825,7 @@
   camera.position.set(0, PLAYER_HEIGHT, 6.5);
   camera.rotation.order = 'YXZ';
 
-  const renderer = new THREE.WebGLRenderer({
-    antialias: false,
-    powerPreference: 'high-performance',
-    stencil: false,
-    alpha: false,
-  });
+  const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false, alpha: false });
   let currentPixelRatio = isMobile ? 0.75 : Math.min(devicePixelRatio, 2);
   function applyPixelRatio(){ renderer.setPixelRatio(currentPixelRatio); }
   renderer.setSize(innerWidth, innerHeight);
@@ -862,39 +833,30 @@
   renderer.shadowMap.enabled = !isMobile;
   if(!isMobile) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  if(!isMobile){
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
-  }
+  if(!isMobile){ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15; }
   document.getElementById('app').appendChild(renderer.domElement);
   addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-  let frameCount = 0;
-  let fpsTimer = performance.now();
-  let adaptiveCooldown = 0;
+  let frameCount = 0, fpsTimer = performance.now(), adaptiveCooldown = 0;
   const MAX_RATIO = isMobile ? 1.0 : Math.min(devicePixelRatio, 2);
   const MIN_RATIO = 0.5;
   function checkAdaptive(now){
     frameCount++;
     if(now - fpsTimer < 1800 || now < adaptiveCooldown) return;
     const avgFps = frameCount / ((now - fpsTimer) / 1000);
-    frameCount = 0;
-    fpsTimer = now;
+    frameCount = 0; fpsTimer = now;
     if(avgFps < 42 && currentPixelRatio > MIN_RATIO){
       currentPixelRatio = Math.max(MIN_RATIO, currentPixelRatio - 0.15);
-      applyPixelRatio();
-      adaptiveCooldown = now + 2000;
+      applyPixelRatio(); adaptiveCooldown = now + 2000;
     } else if(avgFps > 56 && currentPixelRatio < MAX_RATIO){
       currentPixelRatio = Math.min(MAX_RATIO, currentPixelRatio + 0.1);
-      applyPixelRatio();
-      adaptiveCooldown = now + 3000;
+      applyPixelRatio(); adaptiveCooldown = now + 3000;
     }
   }
 
-  // === ОСВЕЩЕНИЕ ===
+  // ОСВЕЩЕНИЕ
   scene.add(new THREE.AmbientLight(0xb8c8e8, isMobile ? 1.6 : 1.0));
   scene.add(new THREE.HemisphereLight(0xc8e0ff, 0x1a2030, isMobile ? 1.0 : 0.7));
-
   const dirLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.6 : 1.1);
   dirLight.position.set(8, 16, 8);
   dirLight.castShadow = !isMobile;
@@ -904,37 +866,19 @@
     dirLight.shadow.bias = -0.0005;
   }
   scene.add(dirLight);
-
   if(!isMobile){
     const fillLight = new THREE.DirectionalLight(0x88aaff, 0.4);
-    fillLight.position.set(-8, 10, -6);
-    scene.add(fillLight);
+    fillLight.position.set(-8, 10, -6); scene.add(fillLight);
   }
-
-  const lampPositions = isMobile
-    ? [[-6,-6],[6,-6],[-6,6],[6,6]]
-    : [[-8,-8],[0,-8],[8,-8],[-8,0],[0,0],[8,0],[-8,8],[0,8],[8,8]];
+  const lampPositions = isMobile ? [[-6,-6],[6,-6],[-6,6],[6,6]] : [[-8,-8],[0,-8],[8,-8],[-8,0],[0,0],[8,0],[-8,8],[0,8],[8,8]];
   for(const [x,z] of lampPositions){
-    if(!isMobile){
-      const lamp = new THREE.PointLight(0xddeaff, 0.7, 16, 2);
-      lamp.position.set(x, 3.7, z);
-      scene.add(lamp);
-    }
-    const bulb = new THREE.Mesh(
-      new THREE.BoxGeometry(1.3,.08,.4),
-      new THREE.MeshBasicMaterial({color:0xffffff})
-    );
-    bulb.position.set(x, 3.9, z);
-    scene.add(bulb);
+    if(!isMobile){ const lamp = new THREE.PointLight(0xddeaff, 0.7, 16, 2); lamp.position.set(x, 3.7, z); scene.add(lamp); }
+    const bulb = new THREE.Mesh(new THREE.BoxGeometry(1.3,.08,.4), new THREE.MeshBasicMaterial({color:0xffffff}));
+    bulb.position.set(x, 3.9, z); scene.add(bulb);
   }
+  if(isMobile){ const mainLight = new THREE.PointLight(0xddeaff, 1.2, 28, 1.5); mainLight.position.set(0, 3.5, 0); scene.add(mainLight); }
 
-  if(isMobile){
-    const mainLight = new THREE.PointLight(0xddeaff, 1.2, 28, 1.5);
-    mainLight.position.set(0, 3.5, 0);
-    scene.add(mainLight);
-  }
-
-  // === КОМНАТА ===
+  // КОМНАТА
   const floorMat = new THREE.MeshStandardMaterial({ map:floorTex, roughness:.7, metalness:.08 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, ROOM*2), floorMat);
   floor.rotation.x = -Math.PI/2; floor.receiveShadow = !isMobile; scene.add(floor);
@@ -942,373 +886,205 @@
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, ROOM*2), ceilMat);
   ceil.rotation.x = Math.PI/2; ceil.position.y = WALL_H; scene.add(ceil);
   const wallMat = new THREE.MeshStandardMaterial({ map:wallTex, roughness:.9 });
-  function addWall(x,z,r){ const m = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, WALL_H), wallMat);
-    m.position.set(x, WALL_H/2, z); m.rotation.y=r; m.receiveShadow=!isMobile; scene.add(m); }
+  function addWall(x,z,r){ const m = new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2, WALL_H), wallMat); m.position.set(x, WALL_H/2, z); m.rotation.y=r; m.receiveShadow=!isMobile; scene.add(m); }
   addWall(0,-ROOM,0);
   (()=>{
     const doorW = 3.2;
     const sideW = (ROOM*2 - doorW) / 2;
     const left = new THREE.Mesh(new THREE.PlaneGeometry(sideW, WALL_H), wallMat);
-    left.position.set(-(doorW/2 + sideW/2), WALL_H/2, ROOM);
-    left.rotation.y = Math.PI; left.receiveShadow = !isMobile;
-    scene.add(left);
+    left.position.set(-(doorW/2 + sideW/2), WALL_H/2, ROOM); left.rotation.y = Math.PI; left.receiveShadow = !isMobile; scene.add(left);
     const right = new THREE.Mesh(new THREE.PlaneGeometry(sideW, WALL_H), wallMat);
-    right.position.set(doorW/2 + sideW/2, WALL_H/2, ROOM);
-    right.rotation.y = Math.PI; right.receiveShadow = !isMobile;
-    scene.add(right);
+    right.position.set(doorW/2 + sideW/2, WALL_H/2, ROOM); right.rotation.y = Math.PI; right.receiveShadow = !isMobile; scene.add(right);
     const top = new THREE.Mesh(new THREE.PlaneGeometry(doorW, WALL_H - 3.4), wallMat);
-    top.position.set(0, 3.4 + (WALL_H-3.4)/2, ROOM);
-    top.rotation.y = Math.PI; scene.add(top);
+    top.position.set(0, 3.4 + (WALL_H-3.4)/2, ROOM); top.rotation.y = Math.PI; scene.add(top);
   })();
   addWall(-ROOM,0,Math.PI/2); addWall(ROOM,0,-Math.PI/2);
 
-  // === ДВЕРИ ===
-  const doorMat = new THREE.MeshStandardMaterial({
-    color:0x1a3050, metalness:.5, roughness:.4,
-    emissive:0x005544, emissiveIntensity:.25,
-  });
+  // ДВЕРИ
+  const doorMat = new THREE.MeshStandardMaterial({ color:0x1a3050, metalness:.5, roughness:.4, emissive:0x005544, emissiveIntensity:.25 });
   const doorLeft = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.3, .14), doorMat);
-  doorLeft.position.set(-0.8, 1.65, DOOR_Z);
-  doorLeft.castShadow = !isMobile;
-  scene.add(doorLeft);
-
+  doorLeft.position.set(-0.8, 1.65, DOOR_Z); doorLeft.castShadow = !isMobile; scene.add(doorLeft);
   const doorRight = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.3, .14), doorMat);
-  doorRight.position.set(0.8, 1.65, DOOR_Z);
-  doorRight.castShadow = !isMobile;
-  scene.add(doorRight);
-
+  doorRight.position.set(0.8, 1.65, DOOR_Z); doorRight.castShadow = !isMobile; scene.add(doorRight);
   for(const [doorMesh, sign] of [[doorLeft, -1],[doorRight, 1]]){
-    const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(.022,.022,.5,10),
-      new THREE.MeshStandardMaterial({color:0xcccccc, metalness:.9, roughness:.15})
-    );
-    handle.rotation.x = Math.PI/2;
-    handle.position.set(sign * 0.55, 1.5, -0.1);
-    doorMesh.add(handle);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.5,10), new THREE.MeshStandardMaterial({color:0xcccccc, metalness:.9, roughness:.15}));
+    handle.rotation.x = Math.PI/2; handle.position.set(sign * 0.55, 1.5, -0.1); doorMesh.add(handle);
   }
-
-  const frameMat = new THREE.MeshStandardMaterial({
-    color:0x00e0b8, emissive:0x00e0b8, emissiveIntensity:.55,
-    metalness:.7, roughness:.3,
-  });
+  const frameMat = new THREE.MeshStandardMaterial({ color:0x00e0b8, emissive:0x00e0b8, emissiveIntensity:.55, metalness:.7, roughness:.3 });
   const frameTop = new THREE.Mesh(new THREE.BoxGeometry(3.5,.15,.2), frameMat);
-  frameTop.position.set(0, 3.35, DOOR_Z);
-  scene.add(frameTop);
+  frameTop.position.set(0, 3.35, DOOR_Z); scene.add(frameTop);
   for(const dx of [-1.7, 1.7]){
     const post = new THREE.Mesh(new THREE.BoxGeometry(.14, 3.4, .2), frameMat);
-    post.position.set(dx, 1.7, DOOR_Z);
-    scene.add(post);
+    post.position.set(dx, 1.7, DOOR_Z); scene.add(post);
   }
-  const threshold = new THREE.Mesh(new THREE.BoxGeometry(3.5,.05,.24),
-    new THREE.MeshStandardMaterial({color:0x00e0b8, emissive:0x00a888, emissiveIntensity:.4}));
-  threshold.position.set(0, .025, DOOR_Z);
-  scene.add(threshold);
+  const threshold = new THREE.Mesh(new THREE.BoxGeometry(3.5,.05,.24), new THREE.MeshStandardMaterial({color:0x00e0b8, emissive:0x00a888, emissiveIntensity:.4}));
+  threshold.position.set(0, .025, DOOR_Z); scene.add(threshold);
+  if(!isMobile){ const doorLight = new THREE.PointLight(0x00e0b8, 1.0, 7, 2); doorLight.position.set(0, 2.5, DOOR_Z - 0.5); scene.add(doorLight); }
 
-  if(!isMobile){
-    const doorLight = new THREE.PointLight(0x00e0b8, 1.0, 7, 2);
-    doorLight.position.set(0, 2.5, DOOR_Z - 0.5);
-    scene.add(doorLight);
-  }
-
-  // === СТОЙКА ===
+  // СТОЙКА
   const counterMat = new THREE.MeshStandardMaterial({ map:woodTex, roughness:.7 });
   const counterBody = new THREE.Mesh(new THREE.BoxGeometry(7,1.2,1.4), counterMat);
-  counterBody.position.set(0,.6,COUNTER_Z); counterBody.castShadow=!isMobile; counterBody.receiveShadow=!isMobile;
-  scene.add(counterBody);
-  const counterTop = new THREE.Mesh(new THREE.BoxGeometry(7.2,.08,1.6),
-    new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.6, roughness:.35, emissive:0x00a888, emissiveIntensity:.5}));
+  counterBody.position.set(0,.6,COUNTER_Z); counterBody.castShadow=!isMobile; counterBody.receiveShadow=!isMobile; scene.add(counterBody);
+  const counterTop = new THREE.Mesh(new THREE.BoxGeometry(7.2,.08,1.6), new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.6, roughness:.35, emissive:0x00a888, emissiveIntensity:.5}));
   counterTop.position.set(0,1.24,COUNTER_Z); scene.add(counterTop);
-
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6,1.5),
-    new THREE.MeshBasicMaterial({ map:neonTex, transparent:true }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6,1.5), new THREE.MeshBasicMaterial({ map:neonTex, transparent:true }));
   sign.position.set(0,3.1,-ROOM+.1); scene.add(sign);
   const signLight = new THREE.PointLight(0x00e0b8, isMobile ? 0.9 : 1.6, 12, 2);
   signLight.position.set(0,3,-ROOM+1.2); scene.add(signLight);
 
-  // ============================================================
   // ЧАСЫ
-  // ============================================================
   function createWallClock(x, y, z, rotationY = 0){
     const g = new THREE.Group();
-    const caseMat = new THREE.MeshStandardMaterial({
-      color:0x2a2a3a, metalness:.7, roughness:.35,
-      emissive:0x00a888, emissiveIntensity:.15,
-    });
+    const caseMat = new THREE.MeshStandardMaterial({ color:0x2a2a3a, metalness:.7, roughness:.35, emissive:0x00a888, emissiveIntensity:.15 });
     const caseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 32), caseMat);
-    caseMesh.rotation.x = Math.PI/2;
-    caseMesh.castShadow = !isMobile;
-    g.add(caseMesh);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 10, 40),
-      new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.85, roughness:.2,
-        emissive:0x00e0b8, emissiveIntensity:.4}));
-    rim.position.z = 0.04;
-    g.add(rim);
+    caseMesh.rotation.x = Math.PI/2; caseMesh.castShadow = !isMobile; g.add(caseMesh);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 10, 40), new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.85, roughness:.2, emissive:0x00e0b8, emissiveIntensity:.4}));
+    rim.position.z = 0.04; g.add(rim);
     const faceTex = canvasTex(512, 512, (ctx,w,h)=>{
       const cx = w/2, cy = h/2;
       const grad = ctx.createRadialGradient(cx,cy,20,cx,cy,240);
-      grad.addColorStop(0, '#f8f8f2');
-      grad.addColorStop(1, '#d8d8cc');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(cx, cy, 235, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.arc(cx, cy, 235, 0, Math.PI*2); ctx.stroke();
+      grad.addColorStop(0, '#f8f8f2'); grad.addColorStop(1, '#d8d8cc');
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(cx, cy, 235, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(cx, cy, 235, 0, Math.PI*2); ctx.stroke();
       for(let i=0;i<60;i++){
         const ang = (i/60) * Math.PI * 2 - Math.PI/2;
         const isHour = i % 5 === 0;
-        const len = isHour ? 24 : 12;
-        const wid = isHour ? 6 : 3;
-        const r1 = 210;
-        const r2 = 210 - len;
-        ctx.strokeStyle = isHour ? '#1a1a2a' : '#7a7a7a';
-        ctx.lineWidth = wid;
-        ctx.beginPath();
-        ctx.moveTo(cx + Math.cos(ang)*r1, cy + Math.sin(ang)*r1);
-        ctx.lineTo(cx + Math.cos(ang)*r2, cy + Math.sin(ang)*r2);
-        ctx.stroke();
+        const len = isHour ? 24 : 12; const wid = isHour ? 6 : 3;
+        const r1 = 210; const r2 = 210 - len;
+        ctx.strokeStyle = isHour ? '#1a1a2a' : '#7a7a7a'; ctx.lineWidth = wid;
+        ctx.beginPath(); ctx.moveTo(cx + Math.cos(ang)*r1, cy + Math.sin(ang)*r1);
+        ctx.lineTo(cx + Math.cos(ang)*r2, cy + Math.sin(ang)*r2); ctx.stroke();
       }
-      ctx.fillStyle = '#1a1a2a';
-      ctx.font = 'bold 60px Georgia, serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#1a1a2a'; ctx.font = 'bold 60px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for(let i=1;i<=12;i++){
-        const ang = (i/12) * Math.PI * 2 - Math.PI/2;
-        const r = 165;
+        const ang = (i/12) * Math.PI * 2 - Math.PI/2; const r = 165;
         ctx.fillText(i.toString(), cx + Math.cos(ang)*r, cy + Math.sin(ang)*r);
       }
-      ctx.fillStyle = '#00a888';
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText('PC SHOP', cx, cy + 90);
-      ctx.font = '14px sans-serif';
-      ctx.fillStyle = '#7a7a7a';
-      ctx.fillText('TIME', cx, cy + 112);
-      ctx.fillStyle = '#1a1a2a';
-      ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#00a888'; ctx.font = 'bold 22px sans-serif'; ctx.fillText('PC SHOP', cx, cy + 90);
+      ctx.font = '14px sans-serif'; ctx.fillStyle = '#7a7a7a'; ctx.fillText('TIME', cx, cy + 112);
+      ctx.fillStyle = '#1a1a2a'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.fill();
     });
-    const face = new THREE.Mesh(
-      new THREE.CircleGeometry(0.44, 40),
-      new THREE.MeshBasicMaterial({ map: faceTex })
-    );
-    face.position.z = 0.045;
-    g.add(face);
-
-    const hourHand = new THREE.Mesh(
-      new THREE.BoxGeometry(0.03, 0.24, 0.008),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.5})
-    );
-    hourHand.position.set(0, 0.12, 0.06);
-    hourHand.userData.role = 'hour';
-    g.add(hourHand);
-
-    const minuteHand = new THREE.Mesh(
-      new THREE.BoxGeometry(0.022, 0.32, 0.008),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.5})
-    );
-    minuteHand.position.set(0, 0.16, 0.065);
-    minuteHand.userData.role = 'minute';
-    g.add(minuteHand);
-
-    const secondHand = new THREE.Mesh(
-      new THREE.BoxGeometry(0.008, 0.36, 0.006),
-      new THREE.MeshStandardMaterial({color:0xd83030, metalness:.3, roughness:.5,
-        emissive:0xd83030, emissiveIntensity:.2})
-    );
-    secondHand.position.set(0, 0.14, 0.07);
-    secondHand.userData.role = 'second';
-    g.add(secondHand);
-
-    const secondTail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.014, 0.08, 0.006),
-      new THREE.MeshStandardMaterial({color:0xd83030})
-    );
-    secondTail.position.set(0, -0.04, 0.07);
-    secondTail.userData.role = 'second';
-    g.add(secondTail);
-
-    const axis = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.022, 0.02, 16),
-      new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.9, roughness:.15,
-        emissive:0x00e0b8, emissiveIntensity:.6})
-    );
-    axis.rotation.x = Math.PI/2;
-    axis.position.z = 0.075;
-    g.add(axis);
-
-    if(!isMobile){
-      const clockLight = new THREE.PointLight(0xffeecc, 0.6, 3, 2);
-      clockLight.position.z = 0.8;
-      g.add(clockLight);
-    }
-
-    g.position.set(x, y, z);
-    g.rotation.y = rotationY;
-    g.userData.isClock = true;
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.44, 40), new THREE.MeshBasicMaterial({ map: faceTex }));
+    face.position.z = 0.045; g.add(face);
+    const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.24, 0.008), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.5}));
+    hourHand.position.set(0, 0.12, 0.06); hourHand.userData.role = 'hour'; g.add(hourHand);
+    const minuteHand = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.32, 0.008), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.5}));
+    minuteHand.position.set(0, 0.16, 0.065); minuteHand.userData.role = 'minute'; g.add(minuteHand);
+    const secondHand = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.36, 0.006), new THREE.MeshStandardMaterial({color:0xd83030, metalness:.3, roughness:.5, emissive:0xd83030, emissiveIntensity:.2}));
+    secondHand.position.set(0, 0.14, 0.07); secondHand.userData.role = 'second'; g.add(secondHand);
+    const secondTail = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.08, 0.006), new THREE.MeshStandardMaterial({color:0xd83030}));
+    secondTail.position.set(0, -0.04, 0.07); secondTail.userData.role = 'second'; g.add(secondTail);
+    const axis = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.02, 16), new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.9, roughness:.15, emissive:0x00e0b8, emissiveIntensity:.6}));
+    axis.rotation.x = Math.PI/2; axis.position.z = 0.075; g.add(axis);
+    if(!isMobile){ const clockLight = new THREE.PointLight(0xffeecc, 0.6, 3, 2); clockLight.position.z = 0.8; g.add(clockLight); }
+    g.position.set(x, y, z); g.rotation.y = rotationY; g.userData.isClock = true;
     return g;
   }
-
-  const clock1 = createWallClock(-6.5, 2.7, -ROOM + 0.15, 0);
-  scene.add(clock1);
-
+  const clock1 = createWallClock(-6.5, 2.7, -ROOM + 0.15, 0); scene.add(clock1);
   const allClocks = [clock1];
   function updateClocks(){
     const now = new Date();
-    const h = now.getHours() % 12;
-    const m = now.getMinutes();
-    const s = now.getSeconds();
-    const ms = now.getMilliseconds();
+    const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
     const hourAngle = -((h + m/60) / 12) * Math.PI * 2;
     const minuteAngle = -((m + s/60) / 60) * Math.PI * 2;
     const secondAngle = -((s + ms/1000) / 60) * Math.PI * 2;
     for(const clock of allClocks){
       clock.traverse(o => {
-        if(o.userData.role === 'hour')   o.rotation.z = hourAngle;
+        if(o.userData.role === 'hour') o.rotation.z = hourAngle;
         if(o.userData.role === 'minute') o.rotation.z = minuteAngle;
         if(o.userData.role === 'second') o.rotation.z = secondAngle;
       });
     }
   }
 
-  // ============================================================
   // ДЕКОР
-  // ============================================================
   function createNightstand(x, z, rotation=0){
     const g = new THREE.Group();
     const woodMat = new THREE.MeshStandardMaterial({color:0x3a2410, roughness:.8});
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.55, 0.5), woodMat);
-    body.position.y = 0.275; body.castShadow = !isMobile; body.receiveShadow = !isMobile;
-    g.add(body);
-    const top = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.04, 0.56),
-      new THREE.MeshStandardMaterial({color:0x4a2e14, roughness:.7}));
-    top.position.y = 0.57; top.castShadow = !isMobile;
-    g.add(top);
-    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.02),
-      new THREE.MeshStandardMaterial({color:0x4a2e14, roughness:.75}));
-    doorPanel.position.set(0, 0.28, 0.255);
-    g.add(doorPanel);
-    const handle = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10),
-      new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
-    handle.position.set(0.2, 0.28, 0.28);
-    g.add(handle);
-
+    body.position.y = 0.275; body.castShadow = !isMobile; body.receiveShadow = !isMobile; g.add(body);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.04, 0.56), new THREE.MeshStandardMaterial({color:0x4a2e14, roughness:.7}));
+    top.position.y = 0.57; top.castShadow = !isMobile; g.add(top);
+    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.02), new THREE.MeshStandardMaterial({color:0x4a2e14, roughness:.75}));
+    doorPanel.position.set(0, 0.28, 0.255); g.add(doorPanel);
+    const handle = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10), new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
+    handle.position.set(0.2, 0.28, 0.28); g.add(handle);
     const potMat = new THREE.MeshStandardMaterial({color:0xb85a2a, roughness:.7});
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.14, 16), potMat);
     pot.position.set(-0.15, 0.66, 0); pot.castShadow = !isMobile; g.add(pot);
-    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.02, 16),
-      new THREE.MeshStandardMaterial({color:0x2a1a0a, roughness:1}));
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.02, 16), new THREE.MeshStandardMaterial({color:0x2a1a0a, roughness:1}));
     soil.position.set(-0.15, 0.72, 0); g.add(soil);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8),
-      new THREE.MeshStandardMaterial({color:0x2a6a2a, roughness:.9}));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8), new THREE.MeshStandardMaterial({color:0x2a6a2a, roughness:.9}));
     stem.position.set(-0.15, 0.83, 0); g.add(stem);
     for(let i=0;i<5;i++){
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8),
-        new THREE.MeshStandardMaterial({color:0x3a8a3a, roughness:.85}));
-      leaf.scale.set(1.5, 0.35, 0.8);
-      const ang = i/5*Math.PI*2;
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshStandardMaterial({color:0x3a8a3a, roughness:.85}));
+      leaf.scale.set(1.5, 0.35, 0.8); const ang = i/5*Math.PI*2;
       leaf.position.set(-0.15 + Math.cos(ang)*0.06, 0.79 + i*0.012, Math.sin(ang)*0.06);
-      leaf.rotation.y = ang;
-      g.add(leaf);
+      leaf.rotation.y = ang; g.add(leaf);
     }
     const flowerColors = [0xe74c3c, 0xffc93c, 0xec4899, 0xf97316, 0xa855f7, 0xffffff];
     const flowerColor = flowerColors[Math.floor(Math.random()*flowerColors.length)];
-    const flowerMat = new THREE.MeshStandardMaterial({
-      color:flowerColor, roughness:.6, emissive:flowerColor, emissiveIntensity:.2,
-    });
+    const flowerMat = new THREE.MeshStandardMaterial({color:flowerColor, roughness:.6, emissive:flowerColor, emissiveIntensity:.2});
     for(let i=0;i<6;i++){
       const ang = i/6*Math.PI*2;
       const petal = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), flowerMat);
-      petal.position.set(-0.15 + Math.cos(ang)*0.035, 0.94, Math.sin(ang)*0.035);
-      g.add(petal);
+      petal.position.set(-0.15 + Math.cos(ang)*0.035, 0.94, Math.sin(ang)*0.035); g.add(petal);
     }
-    const center = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 10),
-      new THREE.MeshStandardMaterial({color:0xffd700, emissive:0xffd700, emissiveIntensity:.5}));
+    const center = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 10), new THREE.MeshStandardMaterial({color:0xffd700, emissive:0xffd700, emissiveIntensity:.5}));
     center.position.set(-0.15, 0.95, 0); g.add(center);
-
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.08, 14),
-      new THREE.MeshStandardMaterial({color:0xffffff, roughness:.4}));
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.08, 14), new THREE.MeshStandardMaterial({color:0xffffff, roughness:.4}));
     cup.position.set(0.18, 0.63, 0.05); g.add(cup);
-    const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.01, 14),
-      new THREE.MeshStandardMaterial({color:0x3a1a0a, roughness:.5}));
+    const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.01, 14), new THREE.MeshStandardMaterial({color:0x3a1a0a, roughness:.5}));
     coffee.position.set(0.18, 0.67, 0.05); g.add(coffee);
-
-    g.position.set(x, 0, z);
-    g.rotation.y = rotation;
-    return g;
+    g.position.set(x, 0, z); g.rotation.y = rotation; return g;
   }
-
   function createFloorLamp(x, z){
     const g = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.05, 20),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.6, roughness:.4}));
-    base.position.y = 0.025; base.castShadow = !isMobile;
-    g.add(base);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.7, 12),
-      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.35}));
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.05, 20), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.6, roughness:.4}));
+    base.position.y = 0.025; base.castShadow = !isMobile; g.add(base);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.7, 12), new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.35}));
     pole.position.y = 0.85; g.add(pole);
-    const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.28, 20, 1, true),
-      new THREE.MeshStandardMaterial({color:0xfff4d6, emissive:0xffd18a, emissiveIntensity:.7, side:THREE.DoubleSide, roughness:.9}));
+    const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.28, 20, 1, true), new THREE.MeshStandardMaterial({color:0xfff4d6, emissive:0xffd18a, emissiveIntensity:.7, side:THREE.DoubleSide, roughness:.9}));
     shade.position.y = 1.78; g.add(shade);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 12),
-      new THREE.MeshBasicMaterial({color:0xffeebb}));
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 12), new THREE.MeshBasicMaterial({color:0xffeebb}));
     bulb.position.y = 1.7; g.add(bulb);
-    if(!isMobile){
-      const light = new THREE.PointLight(0xffd18a, 1.3, 6, 2);
-      light.position.y = 1.7; g.add(light);
-    }
-    g.position.set(x, 0, z);
-    return g;
+    if(!isMobile){ const light = new THREE.PointLight(0xffd18a, 1.3, 6, 2); light.position.y = 1.7; g.add(light); }
+    g.position.set(x, 0, z); return g;
   }
-
   function createTV(width=1.6, height=0.9){
     const g = new THREE.Group();
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.06),
-      new THREE.MeshStandardMaterial({color:0x0a0a0a, metalness:.7, roughness:.4}));
-    frame.castShadow = !isMobile;
-    g.add(frame);
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.06), new THREE.MeshStandardMaterial({color:0x0a0a0a, metalness:.7, roughness:.4}));
+    frame.castShadow = !isMobile; g.add(frame);
     const screenTex = canvasTex(1024, 512, (ctx,w,h)=>{
       const grad = ctx.createLinearGradient(0,0,0,h);
-      grad.addColorStop(0, '#0f1e2e');
-      grad.addColorStop(1, '#050a14');
+      grad.addColorStop(0, '#0f1e2e'); grad.addColorStop(1, '#050a14');
       ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
       ctx.strokeStyle = 'rgba(0,224,184,.1)'; ctx.lineWidth = 1;
       for(let x=0;x<w;x+=32){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
       for(let y=0;y<h;y+=32){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
-      ctx.font = 'bold 190px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 190px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.shadowColor = '#00e0b8'; ctx.shadowBlur = 50;
       const grad2 = ctx.createLinearGradient(0,0,w,0);
       grad2.addColorStop(0,'#00e0b8'); grad2.addColorStop(1,'#00b3ff');
-      ctx.fillStyle = grad2;
-      ctx.fillText('PC SHOP', w/2, h/2 - 20);
-      ctx.font = 'bold 44px sans-serif';
-      ctx.shadowBlur = 25;
-      ctx.fillStyle = '#9babcf';
+      ctx.fillStyle = grad2; ctx.fillText('PC SHOP', w/2, h/2 - 20);
+      ctx.font = 'bold 44px sans-serif'; ctx.shadowBlur = 25; ctx.fillStyle = '#9babcf';
       ctx.fillText(lang === 'en' ? 'PERFECT BUILD' : 'ИДЕАЛЬНАЯ СБОРКА', w/2, h/2 + 110);
-      ctx.fillStyle = '#ff4d6a';
-      ctx.shadowColor = '#ff4d6a'; ctx.shadowBlur = 20;
+      ctx.fillStyle = '#ff4d6a'; ctx.shadowColor = '#ff4d6a'; ctx.shadowBlur = 20;
       ctx.beginPath(); ctx.arc(60, 60, 14, 0, Math.PI*2); ctx.fill();
-      ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'left';
-      ctx.shadowBlur = 0; ctx.fillStyle = '#ff4d6a';
+      ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'left'; ctx.shadowBlur = 0; ctx.fillStyle = '#ff4d6a';
       ctx.fillText('LIVE', 88, 72);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#00e0b8';
-      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'right'; ctx.fillStyle = '#00e0b8'; ctx.font = 'bold 32px sans-serif';
       ctx.fillText(lang === 'en' ? '● OPEN' : '● ОТКРЫТО', w-40, 72);
     });
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(width-0.08, height-0.08),
-      new THREE.MeshBasicMaterial({map:screenTex}));
-    screen.position.z = 0.032;
-    g.add(screen);
-    if(!isMobile){
-      const light = new THREE.PointLight(0x00e0b8, 0.8, 5, 2);
-      light.position.z = 0.8; g.add(light);
-    }
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(width-0.08, height-0.08), new THREE.MeshBasicMaterial({map:screenTex}));
+    screen.position.z = 0.032; g.add(screen);
+    if(!isMobile){ const light = new THREE.PointLight(0x00e0b8, 0.8, 5, 2); light.position.z = 0.8; g.add(light); }
     return g;
   }
-
   function createPaymentTerminal(){
     const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.14),
-      new THREE.MeshStandardMaterial({color:0x1a1a2a, metalness:.5, roughness:.4}));
-    body.castShadow = !isMobile;
-    g.add(body);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.14), new THREE.MeshStandardMaterial({color:0x1a1a2a, metalness:.5, roughness:.4}));
+    body.castShadow = !isMobile; g.add(body);
     const screenTex = canvasTex(256, 160, (ctx,w,h)=>{
       const grad = ctx.createLinearGradient(0,0,0,h);
       grad.addColorStop(0, '#00e0b8'); grad.addColorStop(1, '#00b3ff');
@@ -1319,40 +1095,29 @@
       ctx.font = 'bold 22px sans-serif';
       ctx.fillText(lang === 'en' ? 'TO PAY' : 'К ОПЛАТЕ', w/2, h/2 + 50);
     });
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.12),
-      new THREE.MeshBasicMaterial({map:screenTex}));
-    screen.position.set(0, 0.04, 0.071);
-    g.add(screen);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.12), new THREE.MeshBasicMaterial({map:screenTex}));
+    screen.position.set(0, 0.04, 0.071); g.add(screen);
     for(let i=0;i<3;i++){
       for(let j=0;j<4;j++){
-        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.018, 0.008),
-          new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.6, roughness:.4}));
-        btn.position.set(-0.09 + j*0.06, -0.07 + i*0.025, 0.072);
-        g.add(btn);
+        const btn = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.018, 0.008), new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.6, roughness:.4}));
+        btn.position.set(-0.09 + j*0.06, -0.07 + i*0.025, 0.072); g.add(btn);
       }
     }
-    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.008, 0.03),
-      new THREE.MeshStandardMaterial({color:0x000000}));
-    slot.position.set(0, 0.108, 0.055);
-    g.add(slot);
-    const ind = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8),
-      new THREE.MeshBasicMaterial({color:0x00ff00}));
-    ind.position.set(0.1, -0.09, 0.072);
-    g.add(ind);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.008, 0.03), new THREE.MeshStandardMaterial({color:0x000000}));
+    slot.position.set(0, 0.108, 0.055); g.add(slot);
+    const ind = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), new THREE.MeshBasicMaterial({color:0x00ff00}));
+    ind.position.set(0.1, -0.09, 0.072); g.add(ind);
     return g;
   }
-
   function createCashStack(){
     const g = new THREE.Group();
     const colors = [0x5a8a3a, 0x6a5a2a, 0x4a6a8a, 0x8a3a5a, 0x3a6a4a];
     const stackSize = isMobile ? 5 : 10;
     for(let i=0;i<stackSize;i++){
       const c = colors[Math.floor(Math.random()*colors.length)];
-      const bill = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.0022, 0.075),
-        new THREE.MeshStandardMaterial({color:c, roughness:.9}));
+      const bill = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.0022, 0.075), new THREE.MeshStandardMaterial({color:c, roughness:.9}));
       bill.position.set((Math.random()-0.5)*0.004, i*0.0022, (Math.random()-0.5)*0.004);
-      bill.rotation.y = (Math.random()-0.5)*0.06;
-      g.add(bill);
+      bill.rotation.y = (Math.random()-0.5)*0.06; g.add(bill);
     }
     const topTex = canvasTex(128, 64, (ctx,w,h)=>{
       ctx.fillStyle = '#5a8a3a'; ctx.fillRect(0,0,w,h);
@@ -1361,187 +1126,103 @@
       ctx.fillText('100 ₽', w/2, h/2);
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(4,4,w-8,h-8);
     });
-    const top = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.003, 0.075),
-      new THREE.MeshBasicMaterial({map:topTex}));
-    top.position.y = stackSize*0.0022 + 0.001;
-    top.rotation.y = 0.05;
-    g.add(top);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.003, 0.075), new THREE.MeshBasicMaterial({map:topTex}));
+    top.position.y = stackSize*0.0022 + 0.001; top.rotation.y = 0.05; g.add(top);
     return g;
   }
-
   function createBigPlant(x, z){
     const g = new THREE.Group();
     const potMat = new THREE.MeshStandardMaterial({color:0x6a3a1a, roughness:.75});
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.42, 16), potMat);
     pot.position.y = 0.21; pot.castShadow = !isMobile; g.add(pot);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.025, 8, 20),
-      new THREE.MeshStandardMaterial({color:0x7a4a2a, roughness:.7}));
-    rim.rotation.x = Math.PI/2;
-    rim.position.y = 0.42; g.add(rim);
-    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 16),
-      new THREE.MeshStandardMaterial({color:0x2a1a0a, roughness:1}));
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.025, 8, 20), new THREE.MeshStandardMaterial({color:0x7a4a2a, roughness:.7}));
+    rim.rotation.x = Math.PI/2; rim.position.y = 0.42; g.add(rim);
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 16), new THREE.MeshStandardMaterial({color:0x2a1a0a, roughness:1}));
     soil.position.y = 0.43; g.add(soil);
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.55, 8),
-      new THREE.MeshStandardMaterial({color:0x4a3020, roughness:.9}));
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.55, 8), new THREE.MeshStandardMaterial({color:0x4a3020, roughness:.9}));
     trunk.position.y = 0.7; trunk.castShadow = !isMobile; g.add(trunk);
     for(let i=0;i<3;i++){
-      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.022, 0.35, 6),
-        new THREE.MeshStandardMaterial({color:0x4a3020, roughness:.9}));
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.022, 0.35, 6), new THREE.MeshStandardMaterial({color:0x4a3020, roughness:.9}));
       const ang = i/3 * Math.PI*2;
       branch.position.set(Math.cos(ang)*0.08, 0.95, Math.sin(ang)*0.08);
-      branch.rotation.z = Math.cos(ang)*0.5;
-      branch.rotation.x = Math.sin(ang)*0.5;
+      branch.rotation.z = Math.cos(ang)*0.5; branch.rotation.x = Math.sin(ang)*0.5;
       g.add(branch);
     }
     const greens = [0x2a7a2a, 0x3a9a3a, 0x2a8a2a, 0x4aaa4a, 0x1f6a1f];
     const leafCount = isMobile ? 8 : 22;
-    const segA = isMobile ? 6 : 12;
-    const segB = isMobile ? 5 : 10;
-    const plantMats = greens.map(c => new THREE.MeshStandardMaterial({
-      color:c, roughness:.85, flatShading:true,
-    }));
+    const segA = isMobile ? 6 : 12, segB = isMobile ? 5 : 10;
+    const plantMats = greens.map(c => new THREE.MeshStandardMaterial({color:c, roughness:.85, flatShading:true}));
     for(let i=0;i<leafCount;i++){
       const ang = (i / leafCount) * Math.PI * 2 + Math.random() * 0.3;
       const distFromCenter = Math.random() * 0.28;
       const yOffset = 1.05 + Math.random() * 0.55;
       const r = 0.1 + Math.random() * 0.08;
-      const leaf = new THREE.Mesh(
-        new THREE.SphereGeometry(r, segA, segB),
-        plantMats[i % plantMats.length]
-      );
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(r, segA, segB), plantMats[i % plantMats.length]);
       leaf.position.set(Math.cos(ang)*distFromCenter, yOffset, Math.sin(ang)*distFromCenter);
-      leaf.castShadow = !isMobile;
-      g.add(leaf);
+      leaf.castShadow = !isMobile; g.add(leaf);
     }
-    g.position.set(x, 0, z);
-    return g;
+    g.position.set(x, 0, z); return g;
   }
-
   function createDeskLamp(){
     const g = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.02, 16),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.7, roughness:.35}));
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.02, 16), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.7, roughness:.35}));
     g.add(base);
-    const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 8),
-      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.4}));
+    const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 8), new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.4}));
     arm1.position.set(0, 0.18, 0); g.add(arm1);
-    const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28, 8),
-      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.4}));
-    arm2.rotation.z = -Math.PI/3;
-    arm2.position.set(0.1, 0.42, 0); g.add(arm2);
-    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.16, 16, 1, true),
-      new THREE.MeshStandardMaterial({color:0x00e0b8, emissive:0x00e0b8, emissiveIntensity:.6, side:THREE.DoubleSide}));
-    shade.position.set(0.24, 0.42, 0);
-    shade.rotation.z = Math.PI/3;
-    g.add(shade);
-    if(!isMobile){
-      const light = new THREE.PointLight(0x00e0b8, 1.0, 4, 2);
-      light.position.set(0.24, 0.35, 0); g.add(light);
-    }
+    const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28, 8), new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.7, roughness:.4}));
+    arm2.rotation.z = -Math.PI/3; arm2.position.set(0.1, 0.42, 0); g.add(arm2);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.16, 16, 1, true), new THREE.MeshStandardMaterial({color:0x00e0b8, emissive:0x00e0b8, emissiveIntensity:.6, side:THREE.DoubleSide}));
+    shade.position.set(0.24, 0.42, 0); shade.rotation.z = Math.PI/3; g.add(shade);
+    if(!isMobile){ const light = new THREE.PointLight(0x00e0b8, 1.0, 4, 2); light.position.set(0.24, 0.35, 0); g.add(light); }
     return g;
   }
-
-  // Расположение декора
-  scene.add(createNightstand(-5.5, 10.2, Math.PI));
-  scene.add(createNightstand( 5.5, 10.2, Math.PI));
-  scene.add(createNightstand(-5.5, -10.2, 0));
-  scene.add(createNightstand( 5.5, -10.2, 0));
-
-  scene.add(createFloorLamp(-9.5,  9.5));
-  scene.add(createFloorLamp( 9.5,  9.5));
-  scene.add(createFloorLamp(-9.5, -10));
-  scene.add(createFloorLamp( 9.5, -10));
-
-  scene.add(createBigPlant(-9.8, 5));
-  scene.add(createBigPlant( 9.8, 5));
-  scene.add(createBigPlant(-9.8, -5));
-  scene.add(createBigPlant( 9.8, -5));
-
-  const tv = createTV(1.8, 1.0);
-  tv.position.set(-6.5, 1.7, -ROOM + 0.15);
-  scene.add(tv);
-
-  const tv2 = createTV(1.8, 1.0);
-  tv2.position.set(6.5, 1.7, -ROOM + 0.15);
-  scene.add(tv2);
-
+  scene.add(createNightstand(-5.5, 10.2, Math.PI)); scene.add(createNightstand( 5.5, 10.2, Math.PI));
+  scene.add(createNightstand(-5.5, -10.2, 0)); scene.add(createNightstand( 5.5, -10.2, 0));
+  scene.add(createFloorLamp(-9.5,  9.5)); scene.add(createFloorLamp( 9.5,  9.5));
+  scene.add(createFloorLamp(-9.5, -10)); scene.add(createFloorLamp( 9.5, -10));
+  scene.add(createBigPlant(-9.8, 5)); scene.add(createBigPlant( 9.8, 5));
+  scene.add(createBigPlant(-9.8, -5)); scene.add(createBigPlant( 9.8, -5));
+  const tv = createTV(1.8, 1.0); tv.position.set(-6.5, 1.7, -ROOM + 0.15); scene.add(tv);
+  const tv2 = createTV(1.8, 1.0); tv2.position.set(6.5, 1.7, -ROOM + 0.15); scene.add(tv2);
   const COUNTER_TOP_Y = 1.28;
-  const terminal = createPaymentTerminal();
-  terminal.position.set(2.2, COUNTER_TOP_Y + 0.11, COUNTER_Z);
-  terminal.rotation.y = -0.4;
-  scene.add(terminal);
+  const terminal = createPaymentTerminal(); terminal.position.set(2.2, COUNTER_TOP_Y + 0.11, COUNTER_Z); terminal.rotation.y = -0.4; scene.add(terminal);
+  const cash1 = createCashStack(); cash1.position.set(1.5, COUNTER_TOP_Y + 0.011, COUNTER_Z + 0.1); scene.add(cash1);
+  const cash2 = createCashStack(); cash2.position.set(1.75, COUNTER_TOP_Y + 0.011, COUNTER_Z - 0.15); cash2.rotation.y = 0.3; scene.add(cash2);
+  const deskLamp = createDeskLamp(); deskLamp.position.set(-2.4, COUNTER_TOP_Y, COUNTER_Z); deskLamp.rotation.y = -Math.PI/2; scene.add(deskLamp);
 
-  const cash1 = createCashStack();
-  cash1.position.set(1.5, COUNTER_TOP_Y + 0.011, COUNTER_Z + 0.1);
-  scene.add(cash1);
-
-  const cash2 = createCashStack();
-  cash2.position.set(1.75, COUNTER_TOP_Y + 0.011, COUNTER_Z - 0.15);
-  cash2.rotation.y = 0.3;
-  scene.add(cash2);
-
-  const deskLamp = createDeskLamp();
-  deskLamp.position.set(-2.4, COUNTER_TOP_Y, COUNTER_Z);
-  deskLamp.rotation.y = -Math.PI/2;
-  scene.add(deskLamp);
-
-  // ============================================================
   // БАНКОМАТ
-  // ============================================================
   function createATM(){
     const g = new THREE.Group();
     const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e2430, metalness: .8, roughness: .35 });
     const darkMat = new THREE.MeshStandardMaterial({ color: 0x08080f, metalness: .5, roughness: .65 });
     const accentMat = new THREE.MeshStandardMaterial({ color: 0x3a9bff, emissive: 0x3a9bff, emissiveIntensity: .55, metalness: .7, roughness: .3 });
     const steelMat = new THREE.MeshStandardMaterial({ color: 0x5a5f6e, metalness: .9, roughness: .25 });
-
     const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.15, 0.75), bodyMat);
-    lowerBody.position.y = 0.575;
-    lowerBody.castShadow = !isMobile; lowerBody.receiveShadow = !isMobile;
-    g.add(lowerBody);
-
+    lowerBody.position.y = 0.575; lowerBody.castShadow = !isMobile; lowerBody.receiveShadow = !isMobile; g.add(lowerBody);
     const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.8), darkMat);
     plinth.position.y = 0.05; g.add(plinth);
-
     const upperBody = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.5, 0.7), bodyMat);
-    upperBody.position.set(0, 1.95, -0.025);
-    upperBody.rotation.x = -0.06;
-    upperBody.castShadow = !isMobile;
-    g.add(upperBody);
-
+    upperBody.position.set(0, 1.95, -0.025); upperBody.rotation.x = -0.06; upperBody.castShadow = !isMobile; g.add(upperBody);
     const divider = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.05, 0.78), steelMat);
     divider.position.set(0, 1.18, 0); g.add(divider);
-
     const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.95), bodyMat);
-    canopy.position.set(0, 2.72, 0.08);
-    canopy.castShadow = !isMobile;
-    g.add(canopy);
-
+    canopy.position.set(0, 2.72, 0.08); canopy.castShadow = !isMobile; g.add(canopy);
     const canopyGlow = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.9), accentMat);
     canopyGlow.position.set(0, 2.66, 0.08); g.add(canopyGlow);
-
     const bankSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#0a1428'; ctx.fillRect(0,0,w,h);
       const grad = ctx.createLinearGradient(0, 0, w, 0);
       grad.addColorStop(0, '#3a9bff'); grad.addColorStop(1, '#00e0b8');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, h-22, w, 22); ctx.fillRect(0, 0, w, 12);
+      ctx.fillStyle = grad; ctx.fillRect(0, h-22, w, 22); ctx.fillRect(0, 0, w, 12);
       ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 40;
       ctx.font = 'bold 120px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#3a9bff';
-      ctx.fillText('PC BANK', w/2, h/2 - 20);
-      ctx.shadowBlur = 0;
-      ctx.font = 'bold 40px sans-serif'; ctx.fillStyle = '#9bbfd0';
+      ctx.fillStyle = '#3a9bff'; ctx.fillText('PC BANK', w/2, h/2 - 20);
+      ctx.shadowBlur = 0; ctx.font = 'bold 40px sans-serif'; ctx.fillStyle = '#9bbfd0';
       ctx.fillText(lang === 'en' ? 'CURRENCY EXCHANGE  •  24/7' : 'ОБМЕН ВАЛЮТЫ  •  24/7', w/2, h/2 + 70);
     });
     const bankSign = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.3), new THREE.MeshBasicMaterial({map: bankSignTex, transparent: true}));
     bankSign.position.set(0, 2.9, 0.36); g.add(bankSign);
-
-    if(!isMobile){
-      const signGlow = new THREE.PointLight(0x3a9bff, 0.9, 2.8, 2);
-      signGlow.position.set(0, 2.9, 0.8); g.add(signGlow);
-    }
-
+    if(!isMobile){ const signGlow = new THREE.PointLight(0x3a9bff, 0.9, 2.8, 2); signGlow.position.set(0, 2.9, 0.8); g.add(signGlow); }
     const screenTex = canvasTex(1024, 768, (ctx,w,h)=>{
       const grad = ctx.createLinearGradient(0, 0, 0, h);
       grad.addColorStop(0, '#0a1a3a'); grad.addColorStop(1, '#051024');
@@ -1559,13 +1240,11 @@
       ctx.font = 'bold 60px sans-serif'; ctx.fillStyle = '#9bbfd0'; ctx.fillText('₽', 320, 335);
       ctx.textAlign = 'center'; ctx.font = 'bold 90px sans-serif'; ctx.fillStyle = '#ffffff';
       ctx.fillText('=', w/2, 340);
-      ctx.textAlign = 'right';
-      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 40;
+      ctx.textAlign = 'right'; ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 40;
       ctx.fillStyle = '#3a9bff'; ctx.font = 'bold 100px sans-serif';
       ctx.fillText('1', w - 180, 335);
       ctx.font = 'bold 60px sans-serif'; ctx.fillText('💎', w - 90, 335);
-      ctx.shadowBlur = 0;
-      ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5a7ba0';
+      ctx.shadowBlur = 0; ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5a7ba0';
       ctx.fillText(lang === 'en' ? 'Insert card or press a button' : 'Поднесите карту или нажмите кнопку', w/2, 480);
       const labels = lang === 'en' ? ['EXCHANGE', 'BALANCE', 'EXIT'] : ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
       for(let i = 0; i < 3; i++){
@@ -1580,157 +1259,99 @@
     });
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.8), new THREE.MeshBasicMaterial({map: screenTex}));
     screen.position.set(0, 1.95, 0.34); screen.rotation.x = -0.06; g.add(screen);
-
     const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.93, 0.04), darkMat);
     screenFrame.position.set(0, 1.95, 0.31); screenFrame.rotation.x = -0.06; g.add(screenFrame);
-
-    if(!isMobile){
-      const screenLight = new THREE.PointLight(0x3a9bff, 1.3, 4.5, 2);
-      screenLight.position.set(0, 1.95, 1.0); g.add(screenLight);
-    }
-
-    const keypadPanel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.06),
-      new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4}));
+    if(!isMobile){ const screenLight = new THREE.PointLight(0x3a9bff, 1.3, 4.5, 2); screenLight.position.set(0, 1.95, 1.0); g.add(screenLight); }
+    const keypadPanel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.06), new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4}));
     keypadPanel.position.set(0, 1.05, 0.33); g.add(keypadPanel);
-
     const keypadFrame = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.67, 0.04), steelMat);
     keypadFrame.position.set(0, 1.05, 0.31); g.add(keypadFrame);
-
     for(let i = 0; i < 4; i++){
       for(let j = 0; j < 4; j++){
         const isRed = (i === 3 && j === 3);
         const btnMat = new THREE.MeshStandardMaterial({
           color: isRed ? 0x8a1a1a : 0x2a3a5a,
           emissive: isRed ? 0xd83030 : 0x1a3a6a,
-          emissiveIntensity: isRed ? 0.65 : 0.4,
-          metalness: .7, roughness: .3,
+          emissiveIntensity: isRed ? 0.65 : 0.4, metalness: .7, roughness: .3,
         });
         const btn = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.095, 0.04), btnMat);
-        btn.position.set(-0.30 + j * 0.2, 1.24 - i * 0.13, 0.36);
-        g.add(btn);
+        btn.position.set(-0.30 + j * 0.2, 1.24 - i * 0.13, 0.36); g.add(btn);
       }
     }
-
     const cardSlotOuter = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.07), accentMat);
     cardSlotOuter.position.set(0.55, 1.55, 0.32); g.add(cardSlotOuter);
-    const cardSlotInner = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.018, 0.05),
-      new THREE.MeshBasicMaterial({color: 0x000000}));
+    const cardSlotInner = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.018, 0.05), new THREE.MeshBasicMaterial({color: 0x000000}));
     cardSlotInner.position.set(0.55, 1.55, 0.35); g.add(cardSlotInner);
-
-    const cardIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8),
-      new THREE.MeshBasicMaterial({color: 0x00ff44}));
+    const cardIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), new THREE.MeshBasicMaterial({color: 0x00ff44}));
     cardIndicator.position.set(0.55, 1.44, 0.35); g.add(cardIndicator);
-
     const cashSlotOuter = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.11, 0.08), accentMat);
     cashSlotOuter.position.set(0, 0.7, 0.33); g.add(cashSlotOuter);
-    const cashSlotInner = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.06),
-      new THREE.MeshBasicMaterial({color: 0x000000}));
+    const cashSlotInner = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.06), new THREE.MeshBasicMaterial({color: 0x000000}));
     cashSlotInner.position.set(0, 0.7, 0.35); g.add(cashSlotInner);
-
-    if(!isMobile){
-      const cashGlow = new THREE.PointLight(0xff6644, 0.4, 1.5, 2);
-      cashGlow.position.set(0, 0.7, 0.5); g.add(cashGlow);
-    }
-
+    if(!isMobile){ const cashGlow = new THREE.PointLight(0xff6644, 0.4, 1.5, 2); cashGlow.position.set(0, 0.7, 0.5); g.add(cashGlow); }
     const sideTex = canvasTex(512, 512, (ctx,w,h)=>{
       ctx.fillStyle = '#0a1428'; ctx.fillRect(0, 0, w, h);
-      for(let i = 0; i < 10; i++){
-        ctx.fillStyle = `rgba(58,155,255,${0.05 + i * 0.01})`;
-        ctx.fillRect(0, i * 50, w, 25);
-      }
-      ctx.save();
-      ctx.translate(w/2, h/2); ctx.rotate(-Math.PI/2);
+      for(let i = 0; i < 10; i++){ ctx.fillStyle = `rgba(58,155,255,${0.05 + i * 0.01})`; ctx.fillRect(0, i * 50, w, 25); }
+      ctx.save(); ctx.translate(w/2, h/2); ctx.rotate(-Math.PI/2);
       ctx.font = 'bold 80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30;
-      ctx.fillStyle = '#3a9bff'; ctx.fillText('PC BANK', 0, 0);
-      ctx.restore();
+      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30; ctx.fillStyle = '#3a9bff';
+      ctx.fillText('PC BANK', 0, 0); ctx.restore();
       ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#9bbfd0';
       ctx.fillText('• ATM •', w/2, h - 40);
     });
-
-    const sideLabelLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.8),
-      new THREE.MeshBasicMaterial({map: sideTex, transparent: true}));
+    const sideLabelLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.8), new THREE.MeshBasicMaterial({map: sideTex, transparent: true}));
     sideLabelLeft.position.set(-0.68, 1.6, 0); sideLabelLeft.rotation.y = -Math.PI / 2; g.add(sideLabelLeft);
-
-    const sideLabelRight = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.8),
-      new THREE.MeshBasicMaterial({map: sideTex, transparent: true}));
+    const sideLabelRight = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.8), new THREE.MeshBasicMaterial({map: sideTex, transparent: true}));
     sideLabelRight.position.set(0.68, 1.6, 0); sideLabelRight.rotation.y = Math.PI / 2; g.add(sideLabelRight);
-
     const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.55, 12), steelMat);
     handle.rotation.z = Math.PI / 2; handle.position.set(-0.72, 1.55, 0.1); g.add(handle);
     for(const dy of [-0.28, 0.28]){
       const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 10), steelMat);
       mount.rotation.z = Math.PI / 2; mount.position.set(-0.7, 1.55 + dy, 0.1); g.add(mount);
     }
-
     const atmLabelTex = canvasTex(512, 128, (ctx,w,h)=>{
       ctx.fillStyle = '#0a1428'; ctx.fillRect(0, 0, w, h);
       ctx.font = 'bold 90px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30;
-      ctx.fillStyle = '#3a9bff'; ctx.fillText('ATM', w/2, h/2);
+      ctx.shadowColor = '#3a9bff'; ctx.shadowBlur = 30; ctx.fillStyle = '#3a9bff';
+      ctx.fillText('ATM', w/2, h/2);
     });
-    const atmLabel = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.16),
-      new THREE.MeshBasicMaterial({map: atmLabelTex, transparent: true}));
+    const atmLabel = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.16), new THREE.MeshBasicMaterial({map: atmLabelTex, transparent: true}));
     atmLabel.position.set(0, 2.55, 0.36); g.add(atmLabel);
-
-    const warnLight = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8),
-      new THREE.MeshBasicMaterial({color: 0xff3344}));
+    const warnLight = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), new THREE.MeshBasicMaterial({color: 0xff3344}));
     warnLight.position.set(-0.55, 2.55, 0.36); g.add(warnLight);
-
     return g;
   }
+  const atmMesh = createATM(); atmMesh.position.set(ATM_X, 0, ATM_Z); atmMesh.rotation.y = Math.PI/2; scene.add(atmMesh);
 
-  const atmMesh = createATM();
-  atmMesh.position.set(ATM_X, 0, ATM_Z);
-  atmMesh.rotation.y = Math.PI/2;
-  scene.add(atmMesh);
-
-  // ============================================================
   // ОБМЕННИК
-  // ============================================================
   function createExchanger(){
     const g = new THREE.Group();
     const bodyMat = new THREE.MeshStandardMaterial({color: 0x0a1a3a, metalness: .8, roughness: .35});
     const darkMat = new THREE.MeshStandardMaterial({color: 0x08080f, metalness: .5, roughness: .65});
     const accentMat = new THREE.MeshStandardMaterial({color: 0x00d4ff, emissive: 0x00d4ff, emissiveIntensity: .6, metalness: .7, roughness: .3});
     const steelMat = new THREE.MeshStandardMaterial({color: 0x5a5f6e, metalness: .9, roughness: .25});
-
     const body = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.65, 0.75), bodyMat);
-    body.position.y = 1.325; body.castShadow = !isMobile; body.receiveShadow = !isMobile;
-    g.add(body);
-
+    body.position.y = 1.325; body.castShadow = !isMobile; body.receiveShadow = !isMobile; g.add(body);
     const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.8), darkMat);
     plinth.position.y = 0.05; g.add(plinth);
-
     const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.95), bodyMat);
-    canopy.position.set(0, 2.78, 0.08); canopy.castShadow = !isMobile;
-    g.add(canopy);
-
+    canopy.position.set(0, 2.78, 0.08); canopy.castShadow = !isMobile; g.add(canopy);
     const canopyGlow = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.9), accentMat);
     canopyGlow.position.set(0, 2.72, 0.08); g.add(canopyGlow);
-
     const signTex = canvasTex(1024, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#001428'; ctx.fillRect(0,0,w,h);
       const grad = ctx.createLinearGradient(0, 0, w, 0);
       grad.addColorStop(0, '#00d4ff'); grad.addColorStop(1, '#00b3ff');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, h-22, w, 22); ctx.fillRect(0, 0, w, 12);
+      ctx.fillStyle = grad; ctx.fillRect(0, h-22, w, 22); ctx.fillRect(0, 0, w, 12);
       ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 40;
       ctx.font = 'bold 100px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#00d4ff';
-      ctx.fillText('💎 EXCHANGE', w/2, h/2 - 15);
-      ctx.shadowBlur = 0;
-      ctx.font = 'bold 36px sans-serif'; ctx.fillStyle = '#9bbfd0';
+      ctx.fillStyle = '#00d4ff'; ctx.fillText('💎 EXCHANGE', w/2, h/2 - 15);
+      ctx.shadowBlur = 0; ctx.font = 'bold 36px sans-serif'; ctx.fillStyle = '#9bbfd0';
       ctx.fillText('10 💎 = 495 ₽', w/2, h/2 + 70);
     });
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.3), new THREE.MeshBasicMaterial({map: signTex, transparent: true}));
     sign.position.set(0, 2.95, 0.36); g.add(sign);
-
-    if(!isMobile){
-      const signGlow = new THREE.PointLight(0x00d4ff, 0.9, 2.8, 2);
-      signGlow.position.set(0, 2.9, 0.8); g.add(signGlow);
-    }
-
+    if(!isMobile){ const signGlow = new THREE.PointLight(0x00d4ff, 0.9, 2.8, 2); signGlow.position.set(0, 2.9, 0.8); g.add(signGlow); }
     const screenTex = canvasTex(1024, 768, (ctx,w,h)=>{
       const grad = ctx.createLinearGradient(0, 0, 0, h);
       grad.addColorStop(0, '#001428'); grad.addColorStop(1, '#000810');
@@ -1747,17 +1368,13 @@
       ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 40;
       ctx.fillStyle = '#00d4ff'; ctx.fillText('10', 130, 335);
       ctx.font = 'bold 60px sans-serif'; ctx.fillText('💎', 260, 335);
-      ctx.shadowBlur = 0;
-      ctx.textAlign = 'center'; ctx.font = 'bold 90px sans-serif'; ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 0; ctx.textAlign = 'center'; ctx.font = 'bold 90px sans-serif'; ctx.fillStyle = '#ffffff';
       ctx.fillText('=', w/2, 340);
-      ctx.textAlign = 'right';
-      ctx.shadowColor = '#ffc93c'; ctx.shadowBlur = 40;
+      ctx.textAlign = 'right'; ctx.shadowColor = '#ffc93c'; ctx.shadowBlur = 40;
       ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 100px sans-serif';
       ctx.fillText('495', w-200, 335);
       ctx.font = 'bold 60px sans-serif'; ctx.fillText('₽', w-90, 335);
-      ctx.shadowBlur = 0;
-      ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillStyle = '#5a7ba0';
+      ctx.shadowBlur = 0; ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#5a7ba0';
       ctx.fillText(lang === 'en' ? 'Exchange blue coins for rubles' : 'Обмен синих монет на рубли', w/2, 480);
       const labels = lang === 'en' ? ['EXCHANGE', 'BALANCE', 'EXIT'] : ['ОБМЕН', 'БАЛАНС', 'ВЫХОД'];
       for(let i = 0; i < 3; i++){
@@ -1772,17 +1389,10 @@
     });
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.8), new THREE.MeshBasicMaterial({map: screenTex}));
     screen.position.set(0, 1.9, 0.34); g.add(screen);
-
     const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.93, 0.04), darkMat);
     screenFrame.position.set(0, 1.9, 0.31); g.add(screenFrame);
-
-    if(!isMobile){
-      const screenLight = new THREE.PointLight(0x00d4ff, 1.3, 4.5, 2);
-      screenLight.position.set(0, 1.9, 1.0); g.add(screenLight);
-    }
-
-    const keypadPanel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.55, 0.06),
-      new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4}));
+    if(!isMobile){ const screenLight = new THREE.PointLight(0x00d4ff, 1.3, 4.5, 2); screenLight.position.set(0, 1.9, 1.0); g.add(screenLight); }
+    const keypadPanel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.55, 0.06), new THREE.MeshStandardMaterial({color: 0x0a0a14, metalness: .7, roughness: .4}));
     keypadPanel.position.set(0, 1.0, 0.33); g.add(keypadPanel);
     const keypadFrame = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.62, 0.04), steelMat);
     keypadFrame.position.set(0, 1.0, 0.31); g.add(keypadFrame);
@@ -1790,172 +1400,108 @@
       for(let j = 0; j < 4; j++){
         const isRed = (i === 2 && j === 3);
         const btn = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.095, 0.04),
-          new THREE.MeshStandardMaterial({
-            color: isRed ? 0x8a1a1a : 0x0a2a4a,
-            emissive: isRed ? 0xd83030 : 0x00d4ff,
-            emissiveIntensity: isRed ? 0.65 : 0.4,
-            metalness: .7, roughness: .3,
-          }));
-        btn.position.set(-0.30 + j * 0.2, 1.15 - i * 0.13, 0.36);
-        g.add(btn);
+          new THREE.MeshStandardMaterial({ color: isRed ? 0x8a1a1a : 0x0a2a4a, emissive: isRed ? 0xd83030 : 0x00d4ff, emissiveIntensity: isRed ? 0.65 : 0.4, metalness: .7, roughness: .3 }));
+        btn.position.set(-0.30 + j * 0.2, 1.15 - i * 0.13, 0.36); g.add(btn);
       }
     }
-
     const coinSlot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 20), accentMat);
-    coinSlot.rotation.x = Math.PI / 2;
-    coinSlot.position.set(0.55, 1.4, 0.33); g.add(coinSlot);
-    const coinSlotIn = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 20),
-      new THREE.MeshBasicMaterial({color: 0x000000}));
-    coinSlotIn.rotation.x = Math.PI / 2;
-    coinSlotIn.position.set(0.55, 1.4, 0.35); g.add(coinSlotIn);
-
-    const coinIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8),
-      new THREE.MeshBasicMaterial({color: 0x00ff44}));
+    coinSlot.rotation.x = Math.PI / 2; coinSlot.position.set(0.55, 1.4, 0.33); g.add(coinSlot);
+    const coinSlotIn = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 20), new THREE.MeshBasicMaterial({color: 0x000000}));
+    coinSlotIn.rotation.x = Math.PI / 2; coinSlotIn.position.set(0.55, 1.4, 0.35); g.add(coinSlotIn);
+    const coinIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), new THREE.MeshBasicMaterial({color: 0x00ff44}));
     coinIndicator.position.set(0.55, 1.28, 0.35); g.add(coinIndicator);
-
     const cashSlot = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.11, 0.08), accentMat);
     cashSlot.position.set(0, 0.6, 0.33); g.add(cashSlot);
-    const cashSlotIn = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.06),
-      new THREE.MeshBasicMaterial({color: 0x000000}));
+    const cashSlotIn = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.06), new THREE.MeshBasicMaterial({color: 0x000000}));
     cashSlotIn.position.set(0, 0.6, 0.35); g.add(cashSlotIn);
-
     return g;
   }
+  const exchangerMesh = createExchanger(); exchangerMesh.position.set(EXCHANGE_X, 0, EXCHANGE_Z); exchangerMesh.rotation.y = Math.PI/2; scene.add(exchangerMesh);
 
-  const exchangerMesh = createExchanger();
-  exchangerMesh.position.set(EXCHANGE_X, 0, EXCHANGE_Z);
-  exchangerMesh.rotation.y = Math.PI/2;
-  scene.add(exchangerMesh);
-
-  // ============================================================
   // СПАЛЬНЫЙ МЕШОК
-  // ============================================================
   function createSleepingBag(x, z, rotation=0){
     const g = new THREE.Group();
     const bagMat = new THREE.MeshStandardMaterial({color:0x4a3060, roughness:.9});
     const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.6, 14), bagMat);
-    roll.rotation.z = Math.PI/2;
-    roll.position.set(0, 0.32, 0);
-    roll.castShadow = !isMobile;
-    g.add(roll);
+    roll.rotation.z = Math.PI/2; roll.position.set(0, 0.32, 0); roll.castShadow = !isMobile; g.add(roll);
     for(const dx of [-0.5, 0, 0.5]){
-      const strap = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.03, 8, 16),
-        new THREE.MeshStandardMaterial({color:0xa87a3a, roughness:.8}));
-      strap.rotation.y = Math.PI/2;
-      strap.position.set(dx, 0.32, 0);
-      g.add(strap);
+      const strap = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.03, 8, 16), new THREE.MeshStandardMaterial({color:0xa87a3a, roughness:.8}));
+      strap.rotation.y = Math.PI/2; strap.position.set(dx, 0.32, 0); g.add(strap);
     }
-    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.36),
-      new THREE.MeshStandardMaterial({color:0xe8e8f0, roughness:.95}));
-    pillow.position.set(0.95, 0.07, 0);
-    pillow.castShadow = !isMobile;
-    g.add(pillow);
-    const mat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.03, 0.9),
-      new THREE.MeshStandardMaterial({color:0x2a1a3a, roughness:1}));
-    mat.position.set(0.3, 0.015, 0);
-    mat.receiveShadow = !isMobile;
-    g.add(mat);
+    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.36), new THREE.MeshStandardMaterial({color:0xe8e8f0, roughness:.95}));
+    pillow.position.set(0.95, 0.07, 0); pillow.castShadow = !isMobile; g.add(pillow);
+    const mat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.03, 0.9), new THREE.MeshStandardMaterial({color:0x2a1a3a, roughness:1}));
+    mat.position.set(0.3, 0.015, 0); mat.receiveShadow = !isMobile; g.add(mat);
     const zzzMat = new THREE.MeshBasicMaterial({color:0xb8a8e8, transparent:true, opacity:.85});
     for(let i=0;i<3;i++){
       const zz = new THREE.Mesh(new THREE.SphereGeometry(0.05 + i*0.01, 8, 8), zzzMat);
-      zz.position.set(0.6 + i*0.18, 0.9 + i*0.18, 0);
-      g.add(zz);
+      zz.position.set(0.6 + i*0.18, 0.9 + i*0.18, 0); g.add(zz);
     }
     g.userData = { kind:'sleeping-bag' };
     g.traverse(o => { if(o.isMesh) o.userData.kind = 'sleeping-bag'; });
-    g.position.set(x, 0, z);
-    g.rotation.y = rotation;
+    g.position.set(x, 0, z); g.rotation.y = rotation;
     return g;
   }
+  const sleepingBag = createSleepingBag(-9, 8, Math.PI * 0.15); scene.add(sleepingBag);
 
-  const sleepingBag = createSleepingBag(-9, 8, Math.PI * 0.15);
-  scene.add(sleepingBag);
-
-  // ============================================================
   // ДЕТАЛИ
-  // ============================================================
   function makeMotherboard(tier){
     const g = new THREE.Group();
     const tColor = TIERS[tier].color;
-    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.6,.04,.45),
-      new THREE.MeshStandardMaterial({color:0x1a3a25, roughness:.75}));
-    g.add(pcb);
-    const socket = new THREE.Mesh(new THREE.BoxGeometry(.15,.025,.15),
-      new THREE.MeshStandardMaterial({color:0x999999, metalness:.85, roughness:.3}));
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.6,.04,.45), new THREE.MeshStandardMaterial({color:0x1a3a25, roughness:.75})); g.add(pcb);
+    const socket = new THREE.Mesh(new THREE.BoxGeometry(.15,.025,.15), new THREE.MeshStandardMaterial({color:0x999999, metalness:.85, roughness:.3}));
     socket.position.set(-.16,.033,.02); g.add(socket);
-    const lock = new THREE.Mesh(new THREE.BoxGeometry(.15,.005,.02),
-      new THREE.MeshStandardMaterial({color:0xcccccc, metalness:.9}));
+    const lock = new THREE.Mesh(new THREE.BoxGeometry(.15,.005,.02), new THREE.MeshStandardMaterial({color:0xcccccc, metalness:.9}));
     lock.position.set(-.16,.05,.12); g.add(lock);
     for(let i=0;i<4;i++){
-      const slot = new THREE.Mesh(new THREE.BoxGeometry(.008,.035,.16),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a}));
+      const slot = new THREE.Mesh(new THREE.BoxGeometry(.008,.035,.16), new THREE.MeshStandardMaterial({color:0x1a1a1a}));
       slot.position.set(.08 + i*.022, .038, -.12); g.add(slot);
     }
-    const pcie = new THREE.Mesh(new THREE.BoxGeometry(.24,.02,.01),
-      new THREE.MeshStandardMaterial({color:0x222222}));
+    const pcie = new THREE.Mesh(new THREE.BoxGeometry(.24,.02,.01), new THREE.MeshStandardMaterial({color:0x222222}));
     pcie.position.set(-.05,.03,-.02); g.add(pcie);
-    const chipset = new THREE.Mesh(new THREE.BoxGeometry(.09,.05,.09),
-      new THREE.MeshStandardMaterial({color:tColor, metalness:.85, roughness:.35, emissive:tColor, emissiveIntensity:.4}));
+    const chipset = new THREE.Mesh(new THREE.BoxGeometry(.09,.05,.09), new THREE.MeshStandardMaterial({color:tColor, metalness:.85, roughness:.35, emissive:tColor, emissiveIntensity:.4}));
     chipset.position.set(.16,.045,.12); g.add(chipset);
     for(let i=0;i<8;i++){
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.05,6),
-        new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.5}));
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.05,6), new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.5}));
       cap.position.set(-.26 + (i%4)*.035, .045, -.12 + Math.floor(i/4)*.06); g.add(cap);
     }
-    const io = new THREE.Mesh(new THREE.BoxGeometry(.02,.1,.2),
-      new THREE.MeshStandardMaterial({color:0x666666, metalness:.7}));
+    const io = new THREE.Mesh(new THREE.BoxGeometry(.02,.1,.2), new THREE.MeshStandardMaterial({color:0x666666, metalness:.7}));
     io.position.set(-.3,.05,-.12); g.add(io);
-    const bat = new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.01,12),
-      new THREE.MeshStandardMaterial({color:0xdddddd, metalness:.9}));
+    const bat = new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.01,12), new THREE.MeshStandardMaterial({color:0xdddddd, metalness:.9}));
     bat.position.set(.05,.048,.12); g.add(bat);
     return g;
   }
-
   function makeCPU(tier){
     const g = new THREE.Group();
     const tColor = TIERS[tier].color;
-    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.26,.025,.26),
-      new THREE.MeshStandardMaterial({color:0x0a2a15, roughness:.8}));
-    g.add(pcb);
-    const pins = new THREE.Mesh(new THREE.BoxGeometry(.22,.008,.22),
-      new THREE.MeshStandardMaterial({color:0xffcc33, metalness:.95, roughness:.15}));
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.26,.025,.26), new THREE.MeshStandardMaterial({color:0x0a2a15, roughness:.8})); g.add(pcb);
+    const pins = new THREE.Mesh(new THREE.BoxGeometry(.22,.008,.22), new THREE.MeshStandardMaterial({color:0xffcc33, metalness:.95, roughness:.15}));
     pins.position.y = .016; g.add(pins);
-    const ihs = new THREE.Mesh(new THREE.BoxGeometry(.2,.03,.2),
-      new THREE.MeshStandardMaterial({color:0xc8c8c8, metalness:.95, roughness:.15}));
+    const ihs = new THREE.Mesh(new THREE.BoxGeometry(.2,.03,.2), new THREE.MeshStandardMaterial({color:0xc8c8c8, metalness:.95, roughness:.15}));
     ihs.position.y = .036; g.add(ihs);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(.105,.006,6,24),
-      new THREE.MeshStandardMaterial({color:tColor, metalness:.8, roughness:.3, emissive:tColor, emissiveIntensity:.5}));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.105,.006,6,24), new THREE.MeshStandardMaterial({color:tColor, metalness:.8, roughness:.3, emissive:tColor, emissiveIntensity:.5}));
     ring.rotation.x = Math.PI/2; ring.position.y = .052; g.add(ring);
-    const cooler = new THREE.Mesh(new THREE.BoxGeometry(.18,.04,.18),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.6}));
+    const cooler = new THREE.Mesh(new THREE.BoxGeometry(.18,.04,.18), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.4, roughness:.6}));
     cooler.position.y = .075; g.add(cooler);
-    const fan = new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.008,16),
-      new THREE.MeshStandardMaterial({color:0x111111}));
+    const fan = new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.008,16), new THREE.MeshStandardMaterial({color:0x111111}));
     fan.rotation.x = Math.PI/2; fan.position.set(0,.097,0); g.add(fan);
     for(let i=0;i<7;i++){
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(.055,.004,.012),
-        new THREE.MeshBasicMaterial({color:tColor}));
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(.055,.004,.012), new THREE.MeshBasicMaterial({color:tColor}));
       blade.position.set(Math.cos(i/7*Math.PI*2)*.035, .1, Math.sin(i/7*Math.PI*2)*.035);
       blade.rotation.y = -i/7*Math.PI*2; g.add(blade);
     }
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.012,10),
-      new THREE.MeshBasicMaterial({color:tColor}));
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.012,10), new THREE.MeshBasicMaterial({color:tColor}));
     hub.rotation.x = Math.PI/2; hub.position.y = .102; g.add(hub);
     return g;
   }
-
   function makeRAM(tier){
     const g = new THREE.Group();
     const tColor = TIERS[tier].color;
-    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.5,.045,.1),
-      new THREE.MeshStandardMaterial({color:0x0a1a3a, roughness:.7}));
-    g.add(pcb);
-    const contacts = new THREE.Mesh(new THREE.BoxGeometry(.42,.008,.098),
-      new THREE.MeshStandardMaterial({color:0xffcc33, metalness:.95, roughness:.15}));
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.5,.045,.1), new THREE.MeshStandardMaterial({color:0x0a1a3a, roughness:.7})); g.add(pcb);
+    const contacts = new THREE.Mesh(new THREE.BoxGeometry(.42,.008,.098), new THREE.MeshStandardMaterial({color:0xffcc33, metalness:.95, roughness:.15}));
     contacts.position.y = -.028; g.add(contacts);
     for(let i=0;i<4;i++){
-      const chip = new THREE.Mesh(new THREE.BoxGeometry(.06,.008,.06),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a}));
+      const chip = new THREE.Mesh(new THREE.BoxGeometry(.06,.008,.06), new THREE.MeshStandardMaterial({color:0x1a1a1a}));
       chip.position.set(-.18 + i*.12, .027, 0); g.add(chip);
     }
     const hsMat = new THREE.MeshStandardMaterial({color:tColor, metalness:.85, roughness:.25, emissive:tColor, emissiveIntensity:.3});
@@ -1963,114 +1509,83 @@
       const hs = new THREE.Mesh(new THREE.BoxGeometry(.48,.07,.02), hsMat);
       hs.position.set(0,.06,dz); g.add(hs);
     }
-    const rgb = new THREE.Mesh(new THREE.BoxGeometry(.44,.012,.008),
-      new THREE.MeshBasicMaterial({color:tColor}));
+    const rgb = new THREE.Mesh(new THREE.BoxGeometry(.44,.012,.008), new THREE.MeshBasicMaterial({color:tColor}));
     rgb.position.y = .1; g.add(rgb);
     for(let i=0;i<10;i++){
-      const tooth = new THREE.Mesh(new THREE.BoxGeometry(.008,.02,.07),
-        new THREE.MeshStandardMaterial({color:tColor, metalness:.8, roughness:.3, emissive:tColor, emissiveIntensity:.2}));
+      const tooth = new THREE.Mesh(new THREE.BoxGeometry(.008,.02,.07), new THREE.MeshStandardMaterial({color:tColor, metalness:.8, roughness:.3, emissive:tColor, emissiveIntensity:.2}));
       tooth.position.set(-.22 + i*.048, .098, 0); g.add(tooth);
     }
     return g;
   }
-
   function makeGPU(tier){
     const g = new THREE.Group();
     const tColor = TIERS[tier].color;
-    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.6,.03,.32),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:.7}));
-    g.add(pcb);
-    const pcie = new THREE.Mesh(new THREE.BoxGeometry(.4,.015,.01),
-      new THREE.MeshStandardMaterial({color:0xffcc33, metalness:.95}));
+    const pcb = new THREE.Mesh(new THREE.BoxGeometry(.6,.03,.32), new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:.7})); g.add(pcb);
+    const pcie = new THREE.Mesh(new THREE.BoxGeometry(.4,.015,.01), new THREE.MeshStandardMaterial({color:0xffcc33, metalness:.95}));
     pcie.position.set(-.05,-.02,0); g.add(pcie);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(.02,.14,.32),
-      new THREE.MeshStandardMaterial({color:0x777777, metalness:.7, roughness:.4}));
+    const back = new THREE.Mesh(new THREE.BoxGeometry(.02,.14,.32), new THREE.MeshStandardMaterial({color:0x777777, metalness:.7, roughness:.4}));
     back.position.set(.3,.05,0); g.add(back);
     for(const dz of [-.1,-.04,.06,.12]){
-      const port = new THREE.Mesh(new THREE.BoxGeometry(.01,.03,.03),
-        new THREE.MeshStandardMaterial({color:0x111111}));
+      const port = new THREE.Mesh(new THREE.BoxGeometry(.01,.03,.03), new THREE.MeshStandardMaterial({color:0x111111}));
       port.position.set(.31,.02,dz); g.add(port);
     }
-    const hs = new THREE.Mesh(new THREE.BoxGeometry(.6,.1,.32),
-      new THREE.MeshStandardMaterial({color:0x222222, metalness:.6, roughness:.5, emissive:tColor, emissiveIntensity:.12}));
+    const hs = new THREE.Mesh(new THREE.BoxGeometry(.6,.1,.32), new THREE.MeshStandardMaterial({color:0x222222, metalness:.6, roughness:.5, emissive:tColor, emissiveIntensity:.12}));
     hs.position.y = .065; g.add(hs);
     for(const dx of [-.15,.15]){
-      const shroud = new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.02,16,1,true),
-        new THREE.MeshStandardMaterial({color:0x0a0a0a, side:THREE.DoubleSide}));
+      const shroud = new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.02,16,1,true), new THREE.MeshStandardMaterial({color:0x0a0a0a, side:THREE.DoubleSide}));
       shroud.rotation.x = Math.PI/2; shroud.position.set(dx,.12,0); g.add(shroud);
       for(let i=0;i<8;i++){
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(.07,.005,.014),
-          new THREE.MeshStandardMaterial({color:0x111111, metalness:.4}));
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(.07,.005,.014), new THREE.MeshStandardMaterial({color:0x111111, metalness:.4}));
         blade.position.set(dx + Math.cos(i/8*Math.PI*2)*.045, .12, Math.sin(i/8*Math.PI*2)*.045);
         blade.rotation.y = -i/8*Math.PI*2; g.add(blade);
       }
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.024,12),
-        new THREE.MeshBasicMaterial({color:tColor}));
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.024,12), new THREE.MeshBasicMaterial({color:tColor}));
       hub.rotation.x = Math.PI/2; hub.position.set(dx,.121,0); g.add(hub);
     }
-    const rgb = new THREE.Mesh(new THREE.BoxGeometry(.55,.008,.02),
-      new THREE.MeshBasicMaterial({color:tColor}));
+    const rgb = new THREE.Mesh(new THREE.BoxGeometry(.55,.008,.02), new THREE.MeshBasicMaterial({color:tColor}));
     rgb.position.set(0,.11,.16); g.add(rgb);
     return g;
   }
-
   function makePSU(tier){
     const g = new THREE.Group();
     const tColor = TIERS[tier].color;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(.35,.28,.35),
-      new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.65, roughness:.4, emissive:tColor, emissiveIntensity:.08}));
-    g.add(body);
-    const fan = new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.01,18),
-      new THREE.MeshStandardMaterial({color:0x0a0a0a}));
+    const body = new THREE.Mesh(new THREE.BoxGeometry(.35,.28,.35), new THREE.MeshStandardMaterial({color:0x2a2a2a, metalness:.65, roughness:.4, emissive:tColor, emissiveIntensity:.08})); g.add(body);
+    const fan = new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.01,18), new THREE.MeshStandardMaterial({color:0x0a0a0a}));
     fan.rotation.x = Math.PI/2; fan.position.y = .142; g.add(fan);
     for(let i=0;i<9;i++){
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(.09,.005,.018),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a}));
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(.09,.005,.018), new THREE.MeshStandardMaterial({color:0x1a1a1a}));
       blade.position.set(Math.cos(i/9*Math.PI*2)*.06, .145, Math.sin(i/9*Math.PI*2)*.06);
       blade.rotation.y = -i/9*Math.PI*2; g.add(blade);
     }
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,.014,12),
-      new THREE.MeshBasicMaterial({color:tColor}));
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,.014,12), new THREE.MeshBasicMaterial({color:tColor}));
     hub.rotation.x = Math.PI/2; hub.position.y = .148; g.add(hub);
     for(let i=0;i<4;i++){
-      const cable = new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.18,6),
-        new THREE.MeshStandardMaterial({color:0x111111, roughness:.7}));
-      cable.rotation.z = Math.PI/2;
-      cable.position.set(-.19,.08,-.12 + i*.07); g.add(cable);
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.18,6), new THREE.MeshStandardMaterial({color:0x111111, roughness:.7}));
+      cable.rotation.z = Math.PI/2; cable.position.set(-.19,.08,-.12 + i*.07); g.add(cable);
     }
     const ioMat = new THREE.MeshStandardMaterial({color:0x111111});
     for(let i=0;i<6;i++){
       const port = new THREE.Mesh(new THREE.BoxGeometry(.04,.03,.015), ioMat);
       port.position.set(-.1 + (i%3)*.05, .04, .176); g.add(port);
     }
-    const sticker = new THREE.Mesh(new THREE.BoxGeometry(.14,.1,.005),
-      new THREE.MeshBasicMaterial({color:tColor}));
+    const sticker = new THREE.Mesh(new THREE.BoxGeometry(.14,.1,.005), new THREE.MeshBasicMaterial({color:tColor}));
     sticker.position.set(.05,.06,-.176); g.add(sticker);
     return g;
   }
-
   const MODEL_FACTORIES = { mb:makeMotherboard, cpu:makeCPU, ram:makeRAM, gpu:makeGPU, psu:makePSU };
 
-  // ============================================================
   // ЧЕЛОВЕК
-  // ============================================================
   function makeHuman(opts = {}){
-    const {
-      shirt = 0x3498db, pants = 0x2c3e50, skin = 0xffdbac,
-      hair = 0x1a1a1a, shoes = 0x1a1a1a, height = 1,
-      hat = null, headphones = false, sunglasses = false,
-      beard = false, mustache = false,
-      accessory = null, dirty = false, tieColor = null,
-    } = opts;
-
+    const { shirt=0x3498db, pants=0x2c3e50, skin=0xffdbac, hair=0x1a1a1a, shoes=0x1a1a1a, height=1,
+      hat=null, headphones=false, sunglasses=false, beard=false, mustache=false,
+      accessory=null, dirty=false, tieColor=null } = opts;
     const g = new THREE.Group();
     const S = height;
     const shirtMat = new THREE.MeshStandardMaterial({color:shirt, roughness:.85});
-    const skinMat  = new THREE.MeshStandardMaterial({color:skin, roughness:.75});
-    const hairMat  = new THREE.MeshStandardMaterial({color:hair, roughness:.9});
+    const skinMat = new THREE.MeshStandardMaterial({color:skin, roughness:.75});
+    const hairMat = new THREE.MeshStandardMaterial({color:hair, roughness:.9});
     const pantsMat = new THREE.MeshStandardMaterial({color:pants, roughness:.9});
-    const shoeMat  = new THREE.MeshStandardMaterial({color:shoes, roughness:.7});
-
+    const shoeMat = new THREE.MeshStandardMaterial({color:shoes, roughness:.7});
     for(const dx of [-.11,.11]){
       const leg = new THREE.Mesh(new THREE.CapsuleGeometry(.075*S,.45*S,4,8), pantsMat);
       leg.position.set(dx*S,.35*S,0); leg.castShadow=!isMobile; g.add(leg);
@@ -2081,7 +1596,6 @@
     }
     const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.2*S,.55*S,6,10), shirtMat);
     torso.position.y = 1.02*S; torso.castShadow=!isMobile; g.add(torso);
-
     if(tieColor !== null){
       const tieMat = new THREE.MeshStandardMaterial({color:tieColor, roughness:.6});
       const tie = new THREE.Mesh(new THREE.BoxGeometry(.06*S,.32*S,.02*S), tieMat);
@@ -2099,28 +1613,22 @@
     neck.position.y = 1.36*S; g.add(neck);
     const head = new THREE.Mesh(new THREE.SphereGeometry(.185*S,16,12), skinMat);
     head.position.y = 1.58*S; head.scale.set(1,1.12,1); head.castShadow=!isMobile; g.add(head);
-    const hairTop = new THREE.Mesh(
-      new THREE.SphereGeometry(.19*S,16,12,0,Math.PI*2,0,Math.PI*.55), hairMat);
+    const hairTop = new THREE.Mesh(new THREE.SphereGeometry(.19*S,16,12,0,Math.PI*2,0,Math.PI*.55), hairMat);
     hairTop.position.y = 1.6*S; hairTop.scale.set(1,1.15,1); g.add(hairTop);
     if(!headphones && !hat){
       const bang = new THREE.Mesh(new THREE.BoxGeometry(.28*S,.06*S,.04*S), hairMat);
       bang.position.set(0,1.66*S,.16*S); g.add(bang);
     }
-
     if(sunglasses){
-      const sg = new THREE.Mesh(new THREE.BoxGeometry(.32*S,.1*S,.04*S),
-        new THREE.MeshStandardMaterial({color:0x050505, metalness:.8, roughness:.15}));
+      const sg = new THREE.Mesh(new THREE.BoxGeometry(.32*S,.1*S,.04*S), new THREE.MeshStandardMaterial({color:0x050505, metalness:.8, roughness:.15}));
       sg.position.set(0,1.6*S,.17*S); g.add(sg);
-      const bridge = new THREE.Mesh(new THREE.BoxGeometry(.05*S,.02*S,.02*S),
-        new THREE.MeshStandardMaterial({color:0x050505}));
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(.05*S,.02*S,.02*S), new THREE.MeshStandardMaterial({color:0x050505}));
       bridge.position.set(0,1.6*S,.19*S); g.add(bridge);
     } else {
       for(const dx of [-.065,.065]){
-        const eyeW = new THREE.Mesh(new THREE.SphereGeometry(.028*S,10,8),
-          new THREE.MeshBasicMaterial({color:0xffffff}));
+        const eyeW = new THREE.Mesh(new THREE.SphereGeometry(.028*S,10,8), new THREE.MeshBasicMaterial({color:0xffffff}));
         eyeW.position.set(dx*S,1.6*S,.155*S); eyeW.scale.set(1,1.1,.7); g.add(eyeW);
-        const pupil = new THREE.Mesh(new THREE.SphereGeometry(.014*S,6,6),
-          new THREE.MeshBasicMaterial({color:0x111111}));
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(.014*S,6,6), new THREE.MeshBasicMaterial({color:0x111111}));
         pupil.position.set(dx*S,1.6*S,.175*S); g.add(pupil);
       }
       for(const dx of [-.065,.065]){
@@ -2130,10 +1638,8 @@
     }
     const nose = new THREE.Mesh(new THREE.ConeGeometry(.022*S,.05*S,6), skinMat);
     nose.rotation.x = Math.PI/2; nose.position.set(0,1.555*S,.175*S); g.add(nose);
-    const mouth = new THREE.Mesh(new THREE.TorusGeometry(.035*S,.008*S,6,12,Math.PI),
-      new THREE.MeshBasicMaterial({color:0x8b1a1a}));
-    mouth.rotation.x = Math.PI; mouth.rotation.z = Math.PI;
-    mouth.position.set(0,1.49*S,.165*S); g.add(mouth);
+    const mouth = new THREE.Mesh(new THREE.TorusGeometry(.035*S,.008*S,6,12,Math.PI), new THREE.MeshBasicMaterial({color:0x8b1a1a}));
+    mouth.rotation.x = Math.PI; mouth.rotation.z = Math.PI; mouth.position.set(0,1.49*S,.165*S); g.add(mouth);
     for(const dx of [-.185,.185]){
       const ear = new THREE.Mesh(new THREE.SphereGeometry(.035*S,8,6), skinMat);
       ear.position.set(dx*S,1.57*S,0); ear.scale.set(.6,1,1); g.add(ear);
@@ -2143,21 +1649,18 @@
       m.position.set(0,1.52*S,.17*S); g.add(m);
     }
     if(beard){
-      const bd = new THREE.Mesh(
-        new THREE.SphereGeometry(.165*S,12,10,0,Math.PI*2,Math.PI*.6,Math.PI*.4), hairMat);
+      const bd = new THREE.Mesh(new THREE.SphereGeometry(.165*S,12,10,0,Math.PI*2,Math.PI*.6,Math.PI*.4), hairMat);
       bd.position.set(0,1.56*S,.01*S); g.add(bd);
     }
     if(hat){
       const hatMat = new THREE.MeshStandardMaterial({color:hat.color, roughness:.85});
       if(hat.type === 'cap'){
-        const cap = new THREE.Mesh(
-          new THREE.SphereGeometry(.2*S,12,10,0,Math.PI*2,0,Math.PI*.5), hatMat);
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(.2*S,12,10,0,Math.PI*2,0,Math.PI*.5), hatMat);
         cap.position.y = 1.67*S; g.add(cap);
         const visor = new THREE.Mesh(new THREE.BoxGeometry(.26*S,.02*S,.15*S), hatMat);
         visor.position.set(0,1.66*S,.19*S); g.add(visor);
       } else if(hat.type === 'beanie'){
-        const cap = new THREE.Mesh(
-          new THREE.SphereGeometry(.2*S,12,10,0,Math.PI*2,0,Math.PI*.62), hatMat);
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(.2*S,12,10,0,Math.PI*2,0,Math.PI*.62), hatMat);
         cap.position.y = 1.65*S; g.add(cap);
         const band = new THREE.Mesh(new THREE.TorusGeometry(.19*S,.02*S,6,16), hatMat);
         band.rotation.x = Math.PI/2; band.position.y = 1.65*S; g.add(band);
@@ -2169,12 +1672,9 @@
       arc.position.y = 1.58*S; g.add(arc);
       for(const dx of [-.19,.19]){
         const cup = new THREE.Mesh(new THREE.CylinderGeometry(.065*S,.065*S,.045*S,10), hpMat);
-        cup.rotation.z = Math.PI/2;
-        cup.position.set(dx*S,1.58*S,0); g.add(cup);
-        const glow = new THREE.Mesh(new THREE.TorusGeometry(.06*S,.008*S,6,12),
-          new THREE.MeshBasicMaterial({color:0x00e0b8}));
-        glow.rotation.y = Math.PI/2;
-        glow.position.set(dx*S + (dx>0? .024*S : -.024*S), 1.58*S, 0); g.add(glow);
+        cup.rotation.z = Math.PI/2; cup.position.set(dx*S,1.58*S,0); g.add(cup);
+        const glow = new THREE.Mesh(new THREE.TorusGeometry(.06*S,.008*S,6,12), new THREE.MeshBasicMaterial({color:0x00e0b8}));
+        glow.rotation.y = Math.PI/2; glow.position.set(dx*S + (dx>0? .024*S : -.024*S), 1.58*S, 0); g.add(glow);
       }
     }
     if(accessory === 'briefcase'){
@@ -2182,8 +1682,7 @@
       const br = new THREE.Mesh(new THREE.BoxGeometry(.26*S,.2*S,.1*S), brMat);
       br.position.set(-.34*S,.5*S,0); g.add(br);
       for(const dx of [-.07,.07]){
-        const lock = new THREE.Mesh(new THREE.BoxGeometry(.03*S,.03*S,.02*S),
-          new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
+        const lock = new THREE.Mesh(new THREE.BoxGeometry(.03*S,.03*S,.02*S), new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.9, roughness:.2}));
         lock.position.set(-.34*S + dx*S, .52*S, .06*S); g.add(lock);
       }
     } else if(accessory === 'can'){
@@ -2196,8 +1695,7 @@
       const canTop = new THREE.Mesh(new THREE.CylinderGeometry(.048*S,.048*S,.01*S,16), canTopMat);
       canTop.position.set(-.38*S,.705*S,.08*S); g.add(canTop);
       const tab = new THREE.Mesh(new THREE.TorusGeometry(.014*S,.004*S,6,12), canTopMat);
-      tab.rotation.x = Math.PI/2;
-      tab.position.set(-.38*S,.715*S,.08*S); g.add(tab);
+      tab.rotation.x = Math.PI/2; tab.position.set(-.38*S,.715*S,.08*S); g.add(tab);
       const labelMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.6});
       const label = new THREE.Mesh(new THREE.CylinderGeometry(.053*S,.053*S,.06*S,16,1,true), labelMat);
       label.position.set(-.38*S,.62*S,.08*S); g.add(label);
@@ -2205,24 +1703,20 @@
       const bpMat = new THREE.MeshStandardMaterial({color:0x2a4a8a, roughness:.85});
       const bp = new THREE.Mesh(new THREE.BoxGeometry(.36*S,.42*S,.18*S), bpMat);
       bp.position.set(0,1.05*S,-.21*S); g.add(bp);
-      const pocket = new THREE.Mesh(new THREE.BoxGeometry(.26*S,.16*S,.04*S),
-        new THREE.MeshStandardMaterial({color:0x1a3a6a, roughness:.85}));
+      const pocket = new THREE.Mesh(new THREE.BoxGeometry(.26*S,.16*S,.04*S), new THREE.MeshStandardMaterial({color:0x1a3a6a, roughness:.85}));
       pocket.position.set(0,.92*S,-.3*S); g.add(pocket);
     } else if(accessory === 'watch'){
       const watchMat = new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.12});
       const watch = new THREE.Mesh(new THREE.TorusGeometry(.04*S,.014*S,6,12), watchMat);
-      watch.rotation.x = Math.PI/2;
-      watch.position.set(.26*S,.72*S,0); g.add(watch);
+      watch.rotation.x = Math.PI/2; watch.position.set(.26*S,.72*S,0); g.add(watch);
     }
     if(dirty){
       const patchMat = new THREE.MeshStandardMaterial({color:0x2a2018, roughness:1});
       for(let i=0;i<5;i++){
         const patch = new THREE.Mesh(new THREE.BoxGeometry(.05*S,.05*S,.005*S), patchMat);
-        const ang = Math.random()*Math.PI*2;
-        const r = .19*S;
+        const ang = Math.random()*Math.PI*2; const r = .19*S;
         patch.position.set(Math.cos(ang)*r, (0.9 + Math.random()*0.35)*S, Math.sin(ang)*r);
-        patch.lookAt(0, patch.position.y, 0);
-        g.add(patch);
+        patch.lookAt(0, patch.position.y, 0); g.add(patch);
       }
     }
     return g;
@@ -2230,82 +1724,42 @@
 
   function makeHomeless(){
     const g = new THREE.Group();
-    const h = makeHuman({
-      shirt: 0x4a5a7a, pants: 0x3a3028, skin: 0xddb088,
-      hair: 0x3a2a1a, shoes: 0x2a2018,
-      hat: { type:'beanie', color: 0x2a3a5a },
-      mustache: false, beard: false, dirty: false,
-      accessory: 'can', height: 0.95,
-    });
-    g.add(h);
-    return g;
+    const h = makeHuman({ shirt:0x4a5a7a, pants:0x3a3028, skin:0xddb088, hair:0x3a2a1a, shoes:0x2a2018,
+      hat:{ type:'beanie', color: 0x2a3a5a }, mustache:false, beard:false, dirty:false,
+      accessory:'can', height:0.95 });
+    g.add(h); return g;
   }
-
   function makeWorker(){
     const g = new THREE.Group();
-    const h = makeHuman({
-      shirt: 0xf39c12, pants: 0x2c3e50, skin: 0xffdbac,
-      hair: 0x3a2410,
-      hat: { type:'cap', color: 0xe67e22 },
-      mustache: true, accessory: 'briefcase', height: 1.0,
-    });
-    g.add(h);
-    return g;
+    const h = makeHuman({ shirt:0xf39c12, pants:0x2c3e50, skin:0xffdbac, hair:0x3a2410,
+      hat:{ type:'cap', color:0xe67e22 }, mustache:true, accessory:'briefcase', height:1.0 });
+    g.add(h); return g;
   }
-
   function makeSchoolkid(){
     const g = new THREE.Group();
-    const kid = makeHuman({
-      shirt: 0x9b59b6, pants: 0x2c3e50, skin: 0xffdbac,
-      hair: 0x3a2410, headphones: true,
-      accessory: 'backpack', height: 0.75,
-    });
-    g.add(kid);
-    return g;
+    const kid = makeHuman({ shirt:0x9b59b6, pants:0x2c3e50, skin:0xffdbac, hair:0x3a2410,
+      headphones:true, accessory:'backpack', height:0.75 });
+    g.add(kid); return g;
   }
-
   function makeParent(gender){
-    if(gender === 'f'){
-      return makeHuman({
-        shirt: 0xe91e63, pants: 0x2c3e50, skin: 0xf1c27d,
-        hair: 0x8b4513, height: 0.98,
-      });
-    }
-    return makeHuman({
-      shirt: 0x3498db, pants: 0x2c3e50, skin: 0xffdbac,
-      hair: 0x1a1a1a, height: 1.02,
-    });
+    if(gender === 'f'){ return makeHuman({ shirt:0xe91e63, pants:0x2c3e50, skin:0xf1c27d, hair:0x8b4513, height:0.98 }); }
+    return makeHuman({ shirt:0x3498db, pants:0x2c3e50, skin:0xffdbac, hair:0x1a1a1a, height:1.02 });
   }
-
   function makeRichMan(){
     const g = new THREE.Group();
-    const h = makeHuman({
-      shirt: 0x1a1a2a, pants: 0x1a1a2a, skin: 0xffdbac,
-      hair: 0x1a1a1a, sunglasses: true,
-      tieColor: 0xb8860b,
-      accessory: 'watch', height: 1.02,
-    });
-    g.add(h);
-    return g;
+    const h = makeHuman({ shirt:0x1a1a2a, pants:0x1a1a2a, skin:0xffdbac, hair:0x1a1a1a,
+      sunglasses:true, tieColor:0xb8860b, accessory:'watch', height:1.02 });
+    g.add(h); return g;
   }
-
   function makeBodyguard(){
     const g = new THREE.Group();
-    const h = makeHuman({
-      shirt: 0x0a0a0a, pants: 0x0a0a0a, skin: 0xf1c27d,
-      hair: 0x0a0a0a, sunglasses: true,
-      tieColor: 0x1a1a1a, height: 1.12,
-    });
-    g.add(h);
-    return g;
+    const h = makeHuman({ shirt:0x0a0a0a, pants:0x0a0a0a, skin:0xf1c27d, hair:0x0a0a0a,
+      sunglasses:true, tieColor:0x1a1a1a, height:1.12 });
+    g.add(h); return g;
   }
-
   function makeDonk(){
     const g = new THREE.Group();
-    const player = makeHuman({
-      shirt: 0xf4f4f4, pants: 0x1a1a2a, skin: 0xffdbac,
-      hair: 0xf0e0a0, height: 0.92,
-    });
+    const player = makeHuman({ shirt:0xf4f4f4, pants:0x1a1a2a, skin:0xffdbac, hair:0xf0e0a0, height:0.92 });
     const jerseyMat = new THREE.MeshStandardMaterial({color:0xd83030, roughness:.85});
     const jersey = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.56, 0.3), jerseyMat);
     jersey.position.set(0, 1.05, 0); player.add(jersey);
@@ -2331,47 +1785,32 @@
       const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.055, 14), headsetMat);
       cup.rotation.x = Math.PI / 2; cup.rotation.z = Math.PI / 2;
       cup.position.set(dx, 1.28, 0.02); player.add(cup);
-      const glow = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.008, 6, 16),
-        new THREE.MeshBasicMaterial({color:0x00e0b8}));
+      const glow = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.008, 6, 16), new THREE.MeshBasicMaterial({color:0x00e0b8}));
       glow.rotation.y = Math.PI / 2;
       glow.position.set(dx + (dx > 0 ? 0.026 : -0.026), 1.28, 0.02); player.add(glow);
     }
-    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.028, 0.015),
-      new THREE.MeshStandardMaterial({color:0xd83030, roughness:.7}));
+    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.028, 0.015), new THREE.MeshStandardMaterial({color:0xd83030, roughness:.7}));
     ribbon.position.set(0, 1.44, 0.19); player.add(ribbon);
     const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.014, 20),
       new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.1, emissive:0xffc93c, emissiveIntensity:.55}));
     medal.rotation.x = Math.PI / 2; medal.position.set(0, 1.32, 0.21); player.add(medal);
     const trophy = new THREE.Group();
     const trophyMat = new THREE.MeshStandardMaterial({color:0xffc93c, metalness:.98, roughness:.1, emissive:0xffc93c, emissiveIntensity:.4});
-    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.05, 12),
-      new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.5, roughness:.4}));
+    const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.05, 12), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.5, roughness:.4}));
     tBase.position.y = -0.16; trophy.add(tBase);
     const tStem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.1, 10), trophyMat);
     tStem.position.y = -0.09; trophy.add(tStem);
     const tCup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.055, 0.15, 16), trophyMat);
     tCup.position.y = 0.04; trophy.add(tCup);
     trophy.position.set(-0.44, 0.92, 0.15); trophy.rotation.z = 0.2; player.add(trophy);
-    g.add(player);
-    return g;
+    g.add(player); return g;
   }
-
   function makeMillionaire(){
     const g = new THREE.Group();
-    const goldMat = new THREE.MeshStandardMaterial({
-      color: 0xffd700, metalness: .95, roughness: .15,
-      emissive: 0xffc93c, emissiveIntensity: .25,
-    });
-    const player = makeHuman({
-      shirt: 0xffd700, pants: 0x1a1a1a, skin: 0xffdbac,
-      hair: 0x1a1a1a, sunglasses: true,
-      tieColor: 0xffd700,
-      accessory: 'watch', height: 1.05,
-    });
-    const topHatMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a0a, metalness: .7, roughness: .35,
-      emissive: 0xffd700, emissiveIntensity: .15,
-    });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: .95, roughness: .15, emissive: 0xffc93c, emissiveIntensity: .25 });
+    const player = makeHuman({ shirt:0xffd700, pants:0x1a1a1a, skin:0xffdbac, hair:0x1a1a1a,
+      sunglasses:true, tieColor:0xffd700, accessory:'watch', height:1.05 });
+    const topHatMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: .7, roughness: .35, emissive: 0xffd700, emissiveIntensity: .15 });
     const topCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.35, 20), topHatMat);
     topCyl.position.y = 1.95; player.add(topCyl);
     const topBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.025, 20), topHatMat);
@@ -2380,11 +1819,8 @@
     topBand.rotation.x = Math.PI/2; topBand.position.y = 1.85; player.add(topBand);
     const chain = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.018, 8, 24), goldMat);
     chain.rotation.x = Math.PI/2; chain.position.y = 1.32; player.add(chain);
-    const pendant = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.055, 0),
-      new THREE.MeshStandardMaterial({color:0x00d4ff, emissive:0x00d4ff, emissiveIntensity:.8,
-        metalness:.9, roughness:.15})
-    );
+    const pendant = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0),
+      new THREE.MeshStandardMaterial({color:0x00d4ff, emissive:0x00d4ff, emissiveIntensity:.8, metalness:.9, roughness:.15}));
     pendant.position.set(0, 1.2, 0.2); player.add(pendant);
     const caseMat = new THREE.MeshStandardMaterial({color: 0x1a1a2a, roughness:.5, metalness:.4});
     const moneyCase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.1), caseMat);
@@ -2393,123 +1829,75 @@
       const lock = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.02), goldMat);
       lock.position.set(-0.34 + dx, 0.58, 0.1); player.add(lock);
     }
-    const caseHandle = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12), goldMat);
-    caseHandle.rotation.y = Math.PI/2;
-    caseHandle.position.set(-0.34, 0.68, 0.05); player.add(caseHandle);
-    const watchMat = new THREE.MeshStandardMaterial({
-      color: 0xffd700, metalness: 1.0, roughness: .08,
-      emissive: 0xffd700, emissiveIntensity: .5,
-    });
+    const watchMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1.0, roughness: .08, emissive: 0xffd700, emissiveIntensity: .5 });
     const watch = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.016, 8, 20), watchMat);
-    watch.rotation.x = Math.PI/2;
-    watch.position.set(0.26, 0.72, 0); player.add(watch);
+    watch.rotation.x = Math.PI/2; watch.position.set(0.26, 0.72, 0); player.add(watch);
     for(const dx of [-0.11, 0.11]){
       const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.26), goldMat);
       shoe.position.set(dx, 0.045, 0.04); player.add(shoe);
     }
-    g.add(player);
-    return g;
+    g.add(player); return g;
   }
-
   function createCustomerMesh(tier){
     const g = new THREE.Group();
     g.userData.kind = 'customer';
-
-    if(tier === 0){
-      g.add(makeHomeless());
-    } else if(tier === 1){
-      g.add(makeWorker());
-    } else if(tier === 2){
+    if(tier === 0){ g.add(makeHomeless()); }
+    else if(tier === 1){ g.add(makeWorker()); }
+    else if(tier === 2){
       g.add(makeSchoolkid());
-      const mom = makeParent('f');
-      mom.position.set(-0.72, 0, -0.35); mom.rotation.y = 0.18; g.add(mom);
-      const dad = makeParent('m');
-      dad.position.set(0.72, 0, -0.35); dad.rotation.y = -0.18; g.add(dad);
+      const mom = makeParent('f'); mom.position.set(-0.72, 0, -0.35); mom.rotation.y = 0.18; g.add(mom);
+      const dad = makeParent('m'); dad.position.set(0.72, 0, -0.35); dad.rotation.y = -0.18; g.add(dad);
     } else if(tier === 3){
       g.add(makeRichMan());
-      const bg1 = makeBodyguard();
-      bg1.position.set(-0.88, 0, -0.4); bg1.rotation.y = 0.2; g.add(bg1);
-      const bg2 = makeBodyguard();
-      bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2; g.add(bg2);
+      const bg1 = makeBodyguard(); bg1.position.set(-0.88, 0, -0.4); bg1.rotation.y = 0.2; g.add(bg1);
+      const bg2 = makeBodyguard(); bg2.position.set(0.88, 0, -0.4); bg2.rotation.y = -0.2; g.add(bg2);
     } else if(tier === 4){
       g.add(makeDonk());
-      const fan = makeHuman({
-        shirt: 0x2a2a3a, pants: 0x1a1a1a, skin: 0xf1c27d,
-        hair: 0x3a2410, height: 0.95, accessory: 'backpack',
-      });
+      const fan = makeHuman({ shirt:0x2a2a3a, pants:0x1a1a1a, skin:0xf1c27d, hair:0x3a2410, height:0.95, accessory:'backpack' });
       fan.position.set(0.9, 0, -0.5); fan.rotation.y = -0.2; g.add(fan);
-      const bg = makeBodyguard();
-      bg.position.set(-0.95, 0, -0.45); bg.rotation.y = 0.25; g.add(bg);
+      const bg = makeBodyguard(); bg.position.set(-0.95, 0, -0.45); bg.rotation.y = 0.25; g.add(bg);
     } else {
       g.add(makeMillionaire());
-      const positions = [
-        [-1.1, 0.2, -0.5], [1.1, -0.2, -0.5],
-        [-1.4, 0.25, 0.3], [1.4, -0.25, 0.3],
-      ];
+      const positions = [[-1.1, 0.2, -0.5], [1.1, -0.2, -0.5], [-1.4, 0.25, 0.3], [1.4, -0.25, 0.3]];
       for(const [x, rotY, z] of positions){
-        const bg = makeBodyguard();
-        bg.position.set(x, 0, z);
-        bg.rotation.y = rotY;
-        g.add(bg);
+        const bg = makeBodyguard(); bg.position.set(x, 0, z); bg.rotation.y = rotY; g.add(bg);
       }
     }
-
-    g.traverse(o => {
-      if(o.isMesh){
-        o.userData.kind = 'customer';
-        o.userData.root = g;
-      }
-    });
+    g.traverse(o => { if(o.isMesh){ o.userData.kind = 'customer'; o.userData.root = g; } });
     return g;
   }
 
-  // ============================================================
   // ПОЛКИ
-  // ============================================================
-  const componentMeshes = [];
-  const labelSprites = [];
+  const componentMeshes = [], labelSprites = [];
   const rackMat = new THREE.MeshStandardMaterial({ map:metalTex, metalness:.6, roughness:.5 });
-
   for(let c=0;c<COMPONENTS.length;c++){
     const z = SHELF_Z_START + c*SHELF_Z_SPACING;
     for(const dx of [-.5,.5]){
       const post = new THREE.Mesh(new THREE.BoxGeometry(.08, WALL_H-.4, .08), rackMat);
-      post.position.set(SHELF_X + dx, (WALL_H-.4)/2, z);
-      post.castShadow = !isMobile; scene.add(post);
+      post.position.set(SHELF_X + dx, (WALL_H-.4)/2, z); post.castShadow = !isMobile; scene.add(post);
     }
     for(const y of SHELF_TIER_Y){
-      const board = new THREE.Mesh(new THREE.BoxGeometry(1.2,.05,1.6),
-        new THREE.MeshStandardMaterial({ map:woodTex, roughness:.8 }));
-      board.position.set(SHELF_X, y-.15, z);
-      board.castShadow = !isMobile; board.receiveShadow = !isMobile; scene.add(board);
+      const board = new THREE.Mesh(new THREE.BoxGeometry(1.2,.05,1.6), new THREE.MeshStandardMaterial({ map:woodTex, roughness:.8 }));
+      board.position.set(SHELF_X, y-.15, z); board.castShadow = !isMobile; board.receiveShadow = !isMobile; scene.add(board);
     }
-    if(!isMobile){
-      const l = new THREE.PointLight(0xaaccff, .5, 4, 2);
-      l.position.set(SHELF_X + .5, 2.2, z); scene.add(l);
-    }
+    if(!isMobile){ const l = new THREE.PointLight(0xaaccff, .5, 4, 2); l.position.set(SHELF_X + .5, 2.2, z); scene.add(l); }
   }
-
   function makeLabel(text1, text2, text3, tierColor){
     const canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 256;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = 'rgba(8,12,20,0.92)';
-    ctx.beginPath();
-    const r = 28;
+    ctx.beginPath(); const r = 28;
     ctx.moveTo(r,0); ctx.lineTo(512-r,0); ctx.arcTo(512,0,512,r,r);
     ctx.lineTo(512,256-r); ctx.arcTo(512,256,512-r,256,r);
     ctx.lineTo(r,256); ctx.arcTo(0,256,0,256-r,r);
-    ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r);
-    ctx.closePath(); ctx.fill();
+    ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = tierColor; ctx.lineWidth = 6; ctx.stroke();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 54px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 54px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(text1, 256, 78);
-    ctx.fillStyle = tierColor;
-    ctx.font = 'bold 52px sans-serif';
+    ctx.fillStyle = tierColor; ctx.font = 'bold 52px sans-serif';
     ctx.fillText(text2, 256, 155);
-    ctx.fillStyle = '#ffc93c';
-    ctx.font = 'bold 58px sans-serif';
+    ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 58px sans-serif';
     ctx.fillText(text3, 256, 228);
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -2518,8 +1906,6 @@
     sprite.scale.set(1.1, .55, 1);
     return sprite;
   }
-
-  // Обычные полки tier 0-3
   for(let c=0;c<COMPONENTS.length;c++){
     const comp = COMPONENTS[c];
     const z = SHELF_Z_START + c*SHELF_Z_SPACING;
@@ -2529,32 +1915,20 @@
       mesh.position.set(SHELF_X, y, z);
       mesh.userData = { kind:'shelf-component', componentId:comp.id, tier:t };
       mesh.traverse(o => { if(o.isMesh) o.userData.parentData = mesh.userData; });
-      scene.add(mesh);
-      componentMeshes.push(mesh);
-
+      scene.add(mesh); componentMeshes.push(mesh);
       const label = makeLabel(compName(comp), tierName(t), TIERS[t].cost + ' ₽', TIERS[t].hex);
       label.position.set(SHELF_X, y + .3, z);
       label.userData = { kind:'shelf-label', componentId:comp.id, tier:t };
-      scene.add(label);
-      labelSprites.push(label);
+      scene.add(label); labelSprites.push(label);
     }
   }
 
   // VIP-витрина "TOP PC"
   (()=>{
     const panel = new THREE.Mesh(new THREE.BoxGeometry(2.3, 3.05, 0.08),
-      new THREE.MeshStandardMaterial({
-        color:0x1a0a30, metalness:.6, roughness:.5,
-        emissive:0x5a00a8, emissiveIntensity:.35,
-      }));
-    panel.position.set(TOPSHELF_X, 1.7, TOPSHELF_Z);
-    panel.receiveShadow = !isMobile;
-    scene.add(panel);
-
-    const frameMatP = new THREE.MeshStandardMaterial({
-      color:0xa855f7, metalness:.9, roughness:.2,
-      emissive:0xa855f7, emissiveIntensity:.55,
-    });
+      new THREE.MeshStandardMaterial({ color:0x1a0a30, metalness:.6, roughness:.5, emissive:0x5a00a8, emissiveIntensity:.35 }));
+    panel.position.set(TOPSHELF_X, 1.7, TOPSHELF_Z); panel.receiveShadow = !isMobile; scene.add(panel);
+    const frameMatP = new THREE.MeshStandardMaterial({ color:0xa855f7, metalness:.9, roughness:.2, emissive:0xa855f7, emissiveIntensity:.55 });
     const topBar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.15), frameMatP);
     topBar.position.set(TOPSHELF_X, 3.24, TOPSHELF_Z + 0.05); scene.add(topBar);
     const botBar = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.15), frameMatP);
@@ -2563,38 +1937,26 @@
       const sideBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.15, 0.15), frameMatP);
       sideBar.position.set(TOPSHELF_X + dx, 1.7, TOPSHELF_Z + 0.05); scene.add(sideBar);
     }
-
     for(let i=0;i<5;i++){
       const y = TOPSHELF_SHELF_Y[i];
-      const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 0.35),
-        new THREE.MeshStandardMaterial({color:0x2a1a3a, metalness:.7, roughness:.4}));
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 0.35), new THREE.MeshStandardMaterial({color:0x2a1a3a, metalness:.7, roughness:.4}));
       shelf.position.set(TOPSHELF_X, y - 0.025, TOPSHELF_Z + 0.12); scene.add(shelf);
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.02, 0.02),
-        new THREE.MeshBasicMaterial({color:0xa855f7}));
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.02, 0.02), new THREE.MeshBasicMaterial({color:0xa855f7}));
       strip.position.set(TOPSHELF_X, y - 0.06, TOPSHELF_Z + 0.28); scene.add(strip);
-      if(!isMobile){
-        const light = new THREE.PointLight(0xa855f7, 0.5, 2.5, 2);
-        light.position.set(TOPSHELF_X, y + 0.15, TOPSHELF_Z + 0.35); scene.add(light);
-      }
+      if(!isMobile){ const light = new THREE.PointLight(0xa855f7, 0.5, 2.5, 2); light.position.set(TOPSHELF_X, y + 0.15, TOPSHELF_Z + 0.35); scene.add(light); }
     }
-
     const topSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#0a0420'; ctx.fillRect(0,0,w,h);
-      ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 10;
-      ctx.strokeRect(12,12,w-24,h-24);
+      ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 10; ctx.strokeRect(12,12,w-24,h-24);
       ctx.font='bold 140px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 50;
       ctx.fillStyle = '#a855f7'; ctx.fillText('TOP PC', w/2, h/2 - 15);
-      ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.45;
-      ctx.fillText('TOP PC', w/2, h/2 - 15);
-      ctx.globalAlpha = 1;
-      ctx.font='bold 40px sans-serif'; ctx.fillStyle = '#ffc93c';
+      ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.45; ctx.fillText('TOP PC', w/2, h/2 - 15);
+      ctx.globalAlpha = 1; ctx.font='bold 40px sans-serif'; ctx.fillStyle = '#ffc93c';
       ctx.fillText('★ ELITE SERIES ★', w/2, h/2 + 75);
     });
-    const topSign = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5),
-      new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
+    const topSign = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
     topSign.position.set(TOPSHELF_X, 3.6, TOPSHELF_Z + 0.06); scene.add(topSign);
-
     for(let i=0;i<COMPONENTS.length;i++){
       const comp = COMPONENTS[i];
       const shelfY = TOPSHELF_SHELF_Y[i];
@@ -2603,33 +1965,21 @@
       mesh.position.set(TOPSHELF_X, detailY, TOPSHELF_Z + 0.12);
       mesh.userData = { kind:'shelf-component', componentId:comp.id, tier:4 };
       mesh.traverse(o => { if(o.isMesh) o.userData.parentData = mesh.userData; });
-      scene.add(mesh);
-      componentMeshes.push(mesh);
-
+      scene.add(mesh); componentMeshes.push(mesh);
       const label = makeLabel(compName(comp), tierName(4), TIERS[4].cost + ' ₽', TIERS[4].hex);
       label.position.set(TOPSHELF_X, shelfY + 0.35, TOPSHELF_Z + 0.3);
       label.scale.set(0.85, 0.42, 1);
       label.userData = { kind:'shelf-label', componentId:comp.id, tier:4 };
-      scene.add(label);
-      labelSprites.push(label);
+      scene.add(label); labelSprites.push(label);
     }
   })();
 
   // СУПЕР ТОП ВИТРИНА
   (()=>{
     const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.05, 2.3),
-      new THREE.MeshStandardMaterial({
-        color: 0x0a1a2a, metalness: .6, roughness: .5,
-        emissive: 0x003a55, emissiveIntensity: .45,
-      }));
-    panel.position.set(MEGASHELF_X + 0.35, 1.7, MEGASHELF_Z);
-    panel.receiveShadow = !isMobile;
-    scene.add(panel);
-
-    const frameMatB = new THREE.MeshStandardMaterial({
-      color: 0x00d4ff, metalness: .9, roughness: .2,
-      emissive: 0x00d4ff, emissiveIntensity: .65,
-    });
+      new THREE.MeshStandardMaterial({ color: 0x0a1a2a, metalness: .6, roughness: .5, emissive: 0x003a55, emissiveIntensity: .45 }));
+    panel.position.set(MEGASHELF_X + 0.35, 1.7, MEGASHELF_Z); panel.receiveShadow = !isMobile; scene.add(panel);
+    const frameMatB = new THREE.MeshStandardMaterial({ color: 0x00d4ff, metalness: .9, roughness: .2, emissive: 0x00d4ff, emissiveIntensity: .65 });
     const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 2.4), frameMatB);
     topBar.position.set(MEGASHELF_X + 0.35, 3.24, MEGASHELF_Z); scene.add(topBar);
     const botBar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 2.4), frameMatB);
@@ -2638,50 +1988,34 @@
       const sideBar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.15, 0.08), frameMatB);
       sideBar.position.set(MEGASHELF_X + 0.35, 1.7, MEGASHELF_Z + dz); scene.add(sideBar);
     }
-
     for(let i=0;i<5;i++){
       const y = MEGASHELF_Y[i];
-      const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 2.2),
-        new THREE.MeshStandardMaterial({color: 0x0a1a2a, metalness: .7, roughness: .4}));
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 2.2), new THREE.MeshStandardMaterial({color: 0x0a1a2a, metalness: .7, roughness: .4}));
       shelf.position.set(MEGASHELF_X + 0.15, y - 0.025, MEGASHELF_Z); scene.add(shelf);
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 2.0),
-        new THREE.MeshBasicMaterial({color: 0x00d4ff}));
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 2.0), new THREE.MeshBasicMaterial({color: 0x00d4ff}));
       strip.position.set(MEGASHELF_X - 0.05, y - 0.06, MEGASHELF_Z); scene.add(strip);
-      if(!isMobile){
-        const light = new THREE.PointLight(0x00d4ff, 0.55, 2.5, 2);
-        light.position.set(MEGASHELF_X - 0.15, y + 0.15, MEGASHELF_Z); scene.add(light);
-      }
+      if(!isMobile){ const light = new THREE.PointLight(0x00d4ff, 0.55, 2.5, 2); light.position.set(MEGASHELF_X - 0.15, y + 0.15, MEGASHELF_Z); scene.add(light); }
     }
-
     const topSignTex = canvasTex(1024, 256, (ctx,w,h)=>{
       ctx.fillStyle = '#00142a'; ctx.fillRect(0,0,w,h);
-      ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 10;
-      ctx.strokeRect(12,12,w-24,h-24);
+      ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 10; ctx.strokeRect(12,12,w-24,h-24);
       ctx.font='bold 130px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 55;
-      ctx.fillStyle = '#00d4ff';
-      ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', w/2, h/2 - 15);
+      ctx.fillStyle = '#00d4ff'; ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', w/2, h/2 - 15);
       ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.45;
       ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', w/2, h/2 - 15);
-      ctx.globalAlpha = 1;
-      ctx.font='bold 38px sans-serif'; ctx.fillStyle = '#00d4ff';
+      ctx.globalAlpha = 1; ctx.font='bold 38px sans-serif'; ctx.fillStyle = '#00d4ff';
       ctx.fillText(lang === 'en' ? '💎 BLUE COINS ONLY 💎' : '💎 ТОЛЬКО ЗА СИНИЕ МОНЕТЫ 💎', w/2, h/2 + 75);
     });
-    const topSign = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.0),
-      new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
-    topSign.position.set(MEGASHELF_X + 0.1, 3.6, MEGASHELF_Z);
-    topSign.rotation.y = Math.PI/2;
-    scene.add(topSign);
-
+    const topSign = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.0), new THREE.MeshBasicMaterial({map:topSignTex, transparent:true}));
+    topSign.position.set(MEGASHELF_X + 0.1, 3.6, MEGASHELF_Z); topSign.rotation.y = Math.PI/2; scene.add(topSign);
     for(let i=0;i<COMPONENTS.length;i++){
       const comp = COMPONENTS[i];
       const shelfY = MEGASHELF_Y[i];
       const detailY = shelfY + comp.size[1]/2 * 1.7 + 0.02;
       const mesh = MODEL_FACTORIES[comp.id](5);
       mesh.position.set(MEGASHELF_X - 0.15, detailY, MEGASHELF_Z);
-      mesh.rotation.y = 0;
-      mesh.scale.set(1.7, 1.7, 1.7);
-
+      mesh.rotation.y = 0; mesh.scale.set(1.7, 1.7, 1.7);
       mesh.traverse(o => {
         if(o.isMesh && o.material){
           if(o.material.emissive !== undefined){
@@ -2691,39 +2025,26 @@
           }
         }
       });
-
       mesh.userData = { kind:'shelf-component', componentId:comp.id, tier:5 };
       mesh.traverse(o => { if(o.isMesh) o.userData.parentData = mesh.userData; });
-      scene.add(mesh);
-      componentMeshes.push(mesh);
-
-      if(!isMobile){
-        const itemLight = new THREE.PointLight(0x00d4ff, 0.7, 1.8, 2);
-        itemLight.position.set(MEGASHELF_X - 0.35, shelfY + 0.35, MEGASHELF_Z);
-        scene.add(itemLight);
-      }
-
+      scene.add(mesh); componentMeshes.push(mesh);
+      if(!isMobile){ const itemLight = new THREE.PointLight(0x00d4ff, 0.7, 1.8, 2); itemLight.position.set(MEGASHELF_X - 0.35, shelfY + 0.35, MEGASHELF_Z); scene.add(itemLight); }
       const bluePrice = BLUE_PRICES[comp.id];
       const canvas = document.createElement('canvas');
       canvas.width = 512; canvas.height = 256;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = 'rgba(8,20,40,0.95)';
-      ctx.beginPath();
-      const r = 28;
+      ctx.beginPath(); const r = 28;
       ctx.moveTo(r,0); ctx.lineTo(512-r,0); ctx.arcTo(512,0,512,r,r);
       ctx.lineTo(512,256-r); ctx.arcTo(512,256,512-r,256,r);
       ctx.lineTo(r,256); ctx.arcTo(0,256,0,256-r,r);
-      ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r);
-      ctx.closePath(); ctx.fill();
+      ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 6; ctx.stroke();
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 52px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 52px sans-serif'; ctx.textAlign = 'center';
       ctx.fillText(compName(comp), 256, 78);
-      ctx.fillStyle = '#00d4ff';
-      ctx.font = 'bold 56px sans-serif';
+      ctx.fillStyle = '#00d4ff'; ctx.font = 'bold 56px sans-serif';
       ctx.fillText(lang === 'en' ? 'SUPER TOP' : 'СУПЕР ТОП', 256, 155);
-      ctx.fillStyle = '#00d4ff';
-      ctx.font = 'bold 76px sans-serif';
+      ctx.fillStyle = '#00d4ff'; ctx.font = 'bold 76px sans-serif';
       ctx.fillText('💎 ' + bluePrice, 256, 232);
       const tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -2732,67 +2053,39 @@
       label.scale.set(1.1, .55, 1);
       label.position.set(MEGASHELF_X - 0.3, shelfY + 0.35, MEGASHELF_Z);
       label.userData = { kind:'shelf-label', componentId:comp.id, tier:5 };
-      scene.add(label);
-      labelSprites.push(label);
+      scene.add(label); labelSprites.push(label);
     }
   })();
 
-  // ============================================================
   // ВЕРСТАК
-  // ============================================================
   const benchMat = new THREE.MeshStandardMaterial({ map:metalTex, metalness:.4, roughness:.6 });
   const benchTop = new THREE.Mesh(new THREE.BoxGeometry(1.8,.1,8), benchMat);
-  benchTop.position.set(BENCH_X, 1, 0);
-  benchTop.castShadow = !isMobile; benchTop.receiveShadow = !isMobile;
-  scene.add(benchTop);
+  benchTop.position.set(BENCH_X, 1, 0); benchTop.castShadow = !isMobile; benchTop.receiveShadow = !isMobile; scene.add(benchTop);
   for(const dz of [-3.6,3.6]){
     const leg = new THREE.Mesh(new THREE.BoxGeometry(1.6,.95,1.6), benchMat);
     leg.position.set(BENCH_X,.475,dz); leg.castShadow=!isMobile; scene.add(leg);
   }
-
-  const benchMat2 = new THREE.MeshStandardMaterial({
-    color:0x1a1d26, metalness:.85, roughness:.35,
-    emissive:0x001820, emissiveIntensity:.2,
-  });
+  const benchMat2 = new THREE.MeshStandardMaterial({ color:0x1a1d26, metalness:.85, roughness:.35, emissive:0x001820, emissiveIntensity:.2 });
   const benchPlate = new THREE.Mesh(new THREE.BoxGeometry(1.5, .02, 7.5), benchMat2);
-  benchPlate.position.set(BENCH_X, 1.06, 0);
-  benchPlate.receiveShadow = !isMobile;
-  scene.add(benchPlate);
-
-  const matRubber = new THREE.Mesh(new THREE.BoxGeometry(1.1, .015, 7),
-    new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:1}));
-  matRubber.position.set(BENCH_X, 1.075, 0);
-  scene.add(matRubber);
-
+  benchPlate.position.set(BENCH_X, 1.06, 0); benchPlate.receiveShadow = !isMobile; scene.add(benchPlate);
+  const matRubber = new THREE.Mesh(new THREE.BoxGeometry(1.1, .015, 7), new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:1}));
+  matRubber.position.set(BENCH_X, 1.075, 0); scene.add(matRubber);
   const toolWall = new THREE.Group();
-  const wallPanelMat = new THREE.MeshStandardMaterial({
-    color:0x1a1f2a, metalness:.7, roughness:.5,
-    emissive:0x001820, emissiveIntensity:.15,
-  });
+  const wallPanelMat = new THREE.MeshStandardMaterial({ color:0x1a1f2a, metalness:.7, roughness:.5, emissive:0x001820, emissiveIntensity:.15 });
   const wallPanel = new THREE.Mesh(new THREE.BoxGeometry(.08, 1.2, 8), wallPanelMat);
-  wallPanel.position.set(BENCH_X + 1.3, 1.8, 0);
-  wallPanel.castShadow = !isMobile; wallPanel.receiveShadow = !isMobile;
-  toolWall.add(wallPanel);
+  wallPanel.position.set(BENCH_X + 1.3, 1.8, 0); wallPanel.castShadow = !isMobile; wallPanel.receiveShadow = !isMobile; toolWall.add(wallPanel);
   const toolFrame = new THREE.Mesh(new THREE.BoxGeometry(.1, 1.3, 8.2),
-    new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.9, roughness:.2,
-      emissive:0x00e0b8, emissiveIntensity:.35}));
-  toolFrame.position.set(BENCH_X + 1.36, 1.8, 0);
-  toolWall.add(toolFrame);
-
+    new THREE.MeshStandardMaterial({color:0x00e0b8, metalness:.9, roughness:.2, emissive:0x00e0b8, emissiveIntensity:.35}));
+  toolFrame.position.set(BENCH_X + 1.36, 1.8, 0); toolWall.add(toolFrame);
   const screwdriverColors = [0xd83a3a, 0x3a8ad8, 0xf3b03a, 0x3ad86a];
   for(let i=0;i<4;i++){
     const sd = new THREE.Group();
-    const handleColor = screwdriverColors[i];
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(.035, .04, .16, 12),
-      new THREE.MeshStandardMaterial({color:handleColor, roughness:.5, metalness:.2}));
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(.035, .04, .16, 12), new THREE.MeshStandardMaterial({color:screwdriverColors[i], roughness:.5, metalness:.2}));
     handle.rotation.z = Math.PI/2; sd.add(handle);
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .22, 8),
-      new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15}));
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .22, 8), new THREE.MeshStandardMaterial({color:0xb0b0b8, metalness:.95, roughness:.15}));
     shaft.rotation.z = Math.PI/2; shaft.position.x = .19; sd.add(shaft);
-    sd.position.set(BENCH_X + 1.28, 2.1 - i * 0.22, -2.5);
-    sd.rotation.y = -Math.PI/2; toolWall.add(sd);
+    sd.position.set(BENCH_X + 1.28, 2.1 - i * 0.22, -2.5); sd.rotation.y = -Math.PI/2; toolWall.add(sd);
   }
-
   for(let i=0;i<3;i++){
     const wrench = new THREE.Group();
     const wMat = new THREE.MeshStandardMaterial({color:0xc8c8d0, metalness:.95, roughness:.2});
@@ -2802,44 +2095,25 @@
     const head2 = new THREE.Mesh(new THREE.TorusGeometry(.05, .012, 6, 16), wMat);
     head2.position.y = -.2; wrench.add(head2);
     wrench.position.set(BENCH_X + 1.28, 2.1 - i * 0.25, 0.5 + i * 0.35);
-    wrench.rotation.z = Math.PI/2 + (i - 1) * 0.15;
-    wrench.rotation.y = -Math.PI/2;
-    toolWall.add(wrench);
+    wrench.rotation.z = Math.PI/2 + (i - 1) * 0.15; wrench.rotation.y = -Math.PI/2; toolWall.add(wrench);
   }
-
   scene.add(toolWall);
-
   const benchLampGroup = new THREE.Group();
-  const benchLampArm = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 8),
-    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3}));
+  const benchLampArm = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 8), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3}));
   benchLampArm.position.set(BENCH_X + 1.3, 3.2, 0); benchLampGroup.add(benchLampArm);
-  const benchLampArm2 = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 8),
-    new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3}));
-  benchLampArm2.rotation.z = Math.PI/2;
-  benchLampArm2.position.set(BENCH_X + 1.05, 3.45, 0); benchLampGroup.add(benchLampArm2);
+  const benchLampArm2 = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .5, 8), new THREE.MeshStandardMaterial({color:0x1a1a1a, metalness:.85, roughness:.3}));
+  benchLampArm2.rotation.z = Math.PI/2; benchLampArm2.position.set(BENCH_X + 1.05, 3.45, 0); benchLampGroup.add(benchLampArm2);
   const benchLampHead = new THREE.Mesh(new THREE.BoxGeometry(.4, .06, 1.4),
-    new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.7, roughness:.35,
-      emissive:0x00e0b8, emissiveIntensity:.3}));
+    new THREE.MeshStandardMaterial({color:0x2a2a3a, metalness:.7, roughness:.35, emissive:0x00e0b8, emissiveIntensity:.3}));
   benchLampHead.position.set(BENCH_X + 0.8, 3.45, 0); benchLampGroup.add(benchLampHead);
-  const benchLampGlow = new THREE.Mesh(new THREE.BoxGeometry(.32, .02, 1.3),
-    new THREE.MeshBasicMaterial({color:0xddeeff}));
+  const benchLampGlow = new THREE.Mesh(new THREE.BoxGeometry(.32, .02, 1.3), new THREE.MeshBasicMaterial({color:0xddeeff}));
   benchLampGlow.position.set(BENCH_X + 0.8, 3.41, 0); benchLampGroup.add(benchLampGlow);
-  if(!isMobile){
-    const benchLampLight = new THREE.PointLight(0xddeeff, 1.4, 6, 2);
-    benchLampLight.position.set(BENCH_X + 0.8, 3.3, 0);
-    benchLampGroup.add(benchLampLight);
-  }
+  if(!isMobile){ const benchLampLight = new THREE.PointLight(0xddeeff, 1.4, 6, 2); benchLampLight.position.set(BENCH_X + 0.8, 3.3, 0); benchLampGroup.add(benchLampLight); }
   scene.add(benchLampGroup);
-
-  if(!isMobile){
-    const benchLight = new THREE.PointLight(0x00e0b8, 1.2, 6, 2);
-    benchLight.position.set(BENCH_X - 1, 2.5, 0); scene.add(benchLight);
-  }
-
+  if(!isMobile){ const benchLight = new THREE.PointLight(0x00e0b8, 1.2, 6, 2); benchLight.position.set(BENCH_X - 1, 2.5, 0); scene.add(benchLight); }
   const caseFrame = new THREE.Mesh(new THREE.BoxGeometry(1.5,.05,7.4),
     new THREE.MeshStandardMaterial({color:0x0a1420, metalness:.7, roughness:.4, emissive:0x003828, emissiveIntensity:.2}));
   caseFrame.position.set(BENCH_X, 1.06, 0); scene.add(caseFrame);
-
   const benchSlotMeshes = {};
   for(let i=0;i<COMPONENTS.length;i++){
     const comp = COMPONENTS[i];
@@ -2851,7 +2125,6 @@
     scene.add(pad);
     benchSlotMeshes[comp.id] = { pad, placedMesh:null, z, comp };
   }
-
   function refreshBenchVisuals(){
     for(const comp of COMPONENTS){
       const slot = benchSlotMeshes[comp.id];
@@ -2872,15 +2145,12 @@
     }
   }
 
-  // ============================================================
   // ДИАЛОГИ
-  // ============================================================
   const dialogBubbleEl = document.getElementById('dialogBubble');
   const dialogSpeakerEl = document.getElementById('dialogSpeaker');
   const dialogTextEl = document.getElementById('dialogText');
   const dialogCursorEl = document.getElementById('dialogCursor');
-  let dialogHideTimer = null;
-  let typeTimer = null;
+  let dialogHideTimer = null, typeTimer = null;
 
   const GREETINGS = {
     ru: {
@@ -2922,7 +2192,7 @@
     },
     en: {
       0: [
-        { who:'Wanderer', text:'Hey bro, I could use a PC, huh? Just... to game on...' },
+        { who:'Wanderer', text:'Hey bro, could I get a PC? Just... to game on...' },
         { who:'Wanderer', text:'Listen, I have internet! Almost... I need a PC!' },
         { who:'Wanderer', text:'Hey boss! Give me a PC... I will pay... someday...' },
         { who:'Oddball',  text:'Listen bro... I was thinking... how about a PC, huh?' },
@@ -3064,7 +2334,6 @@
     dialogCursorEl.style.display = 'inline-block';
     dialogBubbleEl.classList.add('show');
     let i = 0;
-    const TYPE_DELAY = 38;
     function typeNext(){
       if(i >= text.length){
         dialogCursorEl.style.display = 'none';
@@ -3075,7 +2344,7 @@
       const ch = text[i];
       if(ch !== ' ' && ch !== '*' && i % 3 === 0) typeClick();
       i++;
-      typeTimer = setTimeout(typeNext, TYPE_DELAY);
+      typeTimer = setTimeout(typeNext, 38);
     }
     typeNext();
   }
@@ -3086,9 +2355,7 @@
     dialogBubbleEl.classList.remove('show');
   }
 
-  // ============================================================
   // ДЕНЬ / НОЧЬ / СОН
-  // ============================================================
   const dayPanelEl = document.getElementById('dayPanel');
   const dayIconEl = document.getElementById('dayIcon');
   const dayNumEl = document.getElementById('dayNum');
@@ -3102,11 +2369,8 @@
 
   function fmtTime(sec){
     sec = Math.max(0, Math.floor(sec));
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s.toString().padStart(2,'0')}`;
+    return Math.floor(sec / 60) + ':' + (sec % 60).toString().padStart(2,'0');
   }
-
   function updateDayHUD(){
     dayNumEl.textContent = dayState.day;
     if(dayState.isNight){
@@ -3119,7 +2383,6 @@
       dayPanelEl.classList.remove('night');
     }
   }
-
   function startNight(){
     if(dayState.isNight) return;
     dayState.isNight = true;
@@ -3131,7 +2394,6 @@
     nightHintEl.classList.add('show');
     try{ beep(300, .3, 'sine', .05); setTimeout(()=>beep(200, .4, 'sine', .04), 200); }catch(e){}
   }
-
   function startDay(){
     dayState.isNight = false;
     dayState.timeLeft = DAY_DURATION;
@@ -3143,23 +2405,17 @@
     nightHintEl.classList.remove('show');
     sleepBtnEl.classList.remove('show');
   }
-
   function updateDay(dt){
     if(dayState.isNight || dayState.isSleeping) return;
     dayState.timeLeft -= dt;
-    if(dayState.timeLeft <= 0){
-      dayState.timeLeft = 0;
-      startNight();
-    }
+    if(dayState.timeLeft <= 0){ dayState.timeLeft = 0; startNight(); }
     updateDayHUD();
   }
-
   function onSleepingBagClicked(){
     if(!dayState.isNight){ toast(t('sleepOnlyNight'), true); return; }
     if(dayState.isSleeping) return;
     sleepBtnEl.classList.add('show');
   }
-
   function playWakeUpSound(){
     try{
       ensureAudio(); if(!audioCtx) return;
@@ -3183,9 +2439,7 @@
       }, 520);
     }catch(e){}
   }
-
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
   async function doSleep(){
     if(!dayState.isNight || dayState.isSleeping) return;
     dayState.isSleeping = true;
@@ -3197,20 +2451,16 @@
     await sleep(1500);
     sleepDayTextEl.textContent = t('sleepDay') + ' ' + dayState.day;
     sleepSubTextEl.textContent = t('sleepFalling');
-    sleepDayTextEl.classList.add('visible');
-    sleepSubTextEl.classList.add('visible');
+    sleepDayTextEl.classList.add('visible'); sleepSubTextEl.classList.add('visible');
     await sleep(1400);
-    sleepDayTextEl.classList.remove('visible');
-    sleepSubTextEl.classList.remove('visible');
+    sleepDayTextEl.classList.remove('visible'); sleepSubTextEl.classList.remove('visible');
     await sleep(700);
     dayState.day += 1;
     sleepDayTextEl.textContent = t('sleepDay') + ' ' + dayState.day;
     sleepSubTextEl.textContent = t('sleepWaking');
-    sleepDayTextEl.classList.add('visible');
-    sleepSubTextEl.classList.add('visible');
+    sleepDayTextEl.classList.add('visible'); sleepSubTextEl.classList.add('visible');
     await sleep(1500);
-    sleepDayTextEl.classList.remove('visible');
-    sleepSubTextEl.classList.remove('visible');
+    sleepDayTextEl.classList.remove('visible'); sleepSubTextEl.classList.remove('visible');
     await sleep(400);
     sleepOverlayEl.classList.remove('visible');
     await sleep(1500);
@@ -3222,9 +2472,7 @@
   }
   sleepBtnEl.addEventListener('click', doSleep);
 
-  // ============================================================
-  // БАНКОМАТ — UI
-  // ============================================================
+  // БАНКОМАТ UI
   const atmBtnEl = document.getElementById('atmBtn');
   const atmModalEl = document.getElementById('atmModal');
   const atmMoneyEl = document.getElementById('atmMoney');
@@ -3238,16 +2486,13 @@
       btn.disabled = state.money < parseInt(btn.dataset.amount);
     });
   }
-
   function openATM(){
     if(atmOpen || exOpen) return;
     atmOpen = true;
     atmModalEl.classList.add('show');
     updateATMUI();
     sfxATM();
-    if(playing && !isMobile && document.pointerLockElement){
-      try{ document.exitPointerLock(); }catch(e){}
-    }
+    if(playing && !isMobile && document.pointerLockElement){ try{ document.exitPointerLock(); }catch(e){} }
   }
   function closeATM(){
     if(!atmOpen) return;
@@ -3255,7 +2500,6 @@
     atmModalEl.classList.remove('show');
     beep(500,.08,'sine',.05);
   }
-
   atmBtnEl.addEventListener('click', (e) => { e.stopPropagation(); openATM(); });
   atmCloseEl.addEventListener('click', (e) => { e.stopPropagation(); closeATM(); });
   atmModalEl.querySelectorAll('.atm-buttons button').forEach(btn => {
@@ -3267,20 +2511,14 @@
       const blue = Math.floor(amount / 500);
       state.blue += blue;
       sfxCoin();
-      const msg = lang === 'en'
-        ? `Exchanged ${amount} ₽ → ${blue} 💎`
-        : `Обменяно ${amount} ₽ → ${blue} 💎`;
+      const msg = lang === 'en' ? `Exchanged ${amount} ₽ → ${blue} 💎` : `Обменяно ${amount} ₽ → ${blue} 💎`;
       toast(msg, false, 'blue');
-      updateATMUI();
-      updateAll();
-      save();
+      updateATMUI(); updateAll(); save();
     });
   });
   atmModalEl.addEventListener('click', (e) => { if(e.target === atmModalEl) closeATM(); });
 
-  // ============================================================
-  // ОБМЕННИК — UI
-  // ============================================================
+  // ОБМЕННИК UI
   const exBtnEl = document.getElementById('exBtn');
   const exModalEl = document.getElementById('exModal');
   const exBlueEl = document.getElementById('exBlue');
@@ -3294,16 +2532,13 @@
       btn.disabled = state.blue < parseInt(btn.dataset.amount);
     });
   }
-
   function openEx(){
     if(exOpen || atmOpen) return;
     exOpen = true;
     exModalEl.classList.add('show');
     updateExUI();
     sfxATM();
-    if(playing && !isMobile && document.pointerLockElement){
-      try{ document.exitPointerLock(); }catch(e){}
-    }
+    if(playing && !isMobile && document.pointerLockElement){ try{ document.exitPointerLock(); }catch(e){} }
   }
   function closeEx(){
     if(!exOpen) return;
@@ -3311,7 +2546,6 @@
     exModalEl.classList.remove('show');
     beep(500,.08,'sine',.05);
   }
-
   exBtnEl.addEventListener('click', (e) => { e.stopPropagation(); openEx(); });
   exCloseEl.addEventListener('click', (e) => { e.stopPropagation(); closeEx(); });
   exModalEl.querySelectorAll('.atm-buttons button').forEach(btn => {
@@ -3323,20 +2557,14 @@
       const money = Math.floor(amount / 10) * 495;
       state.money += money;
       sfxCoin();
-      const msg = lang === 'en'
-        ? `Exchanged ${amount} 💎 → ${money} ₽`
-        : `Обменяно ${amount} 💎 → ${money} ₽`;
+      const msg = lang === 'en' ? `Exchanged ${amount} 💎 → ${money} ₽` : `Обменяно ${amount} 💎 → ${money} ₽`;
       toast(msg, false, 'cyan');
-      updateExUI();
-      updateAll();
-      save();
+      updateExUI(); updateAll(); save();
     });
   });
   exModalEl.addEventListener('click', (e) => { if(e.target === exModalEl) closeEx(); });
 
-  // ============================================================
   // ДВЕРИ
-  // ============================================================
   let doorSoundPlayed = false;
   function updateDoors(dt){
     let shouldOpen = false;
@@ -3361,37 +2589,24 @@
     if(doorState.target === 0 && doorState.open < 0.5) doorSoundPlayed = false;
   }
 
-  // ============================================================
   // СПАВН КЛИЕНТА
-  // ============================================================
   function spawnCustomer(){
     if(state.customer) return;
     let tier;
-
-    if(state.ordersDone < 2){
-      tier = 0;
-    } else {
+    if(state.ordersDone < 2){ tier = 0; }
+    else {
       const r = Math.random();
       const rating = state.rating;
       const topChance = Math.max(0.05, Math.min(0.25, (rating - 40) / 240));
       const megaChance = rating >= 60 ? Math.max(0.03, Math.min(0.18, (rating - 60) / 250)) : 0;
       const bonus = Math.max(0, (rating - 50) / 100);
-
-      if(r < megaChance){
-        tier = 5;
-      } else if(r < megaChance + topChance){
-        tier = 4;
-      } else if(r < megaChance + topChance + 0.20 - bonus*0.1){
-        tier = 3;
-      } else if(r < megaChance + topChance + 0.50 - bonus*0.15){
-        tier = 2;
-      } else if(r < megaChance + topChance + 0.80 - bonus*0.15){
-        tier = 1;
-      } else {
-        tier = 0;
-      }
+      if(r < megaChance){ tier = 5; }
+      else if(r < megaChance + topChance){ tier = 4; }
+      else if(r < megaChance + topChance + 0.20 - bonus*0.1){ tier = 3; }
+      else if(r < megaChance + topChance + 0.50 - bonus*0.15){ tier = 2; }
+      else if(r < megaChance + topChance + 0.80 - bonus*0.15){ tier = 1; }
+      else { tier = 0; }
     }
-
     const mesh = createCustomerMesh(tier);
     mesh.position.set(0, 0, ROOM + 2.5);
     scene.add(mesh);
@@ -3401,7 +2616,6 @@
     beep(880,.08,'sine',.04);
     setTimeout(()=>beep(1200,.1,'sine',.04),80);
   }
-
   function updateCustomerMovement(dt){
     const c = state.customer;
     if(!c) return;
@@ -3426,81 +2640,54 @@
     }
   }
 
-  // ============================================================
   // ЛОГИКА
-  // ============================================================
   function buyComponent(componentId, tier){
-    if(state.inventory[componentId] !== undefined){
-      toast(t('youHave') + ' ' + compName(getComp(componentId)) + '.', true); return;
-    }
-
-    let cost = 0;
-    let curName = '₽';
-
+    if(state.inventory[componentId] !== undefined){ toast(t('youHave') + ' ' + compName(getComp(componentId)) + '.', true); return; }
+    let cost = 0, curName = '₽';
     if(tier === 5){
-      cost = BLUE_PRICES[componentId];
-      curName = '💎';
+      cost = BLUE_PRICES[componentId]; curName = '💎';
       if(state.blue < cost){ toast(t('needMoney') + ' ' + cost + ' 💎', true); sfxFail(); return; }
       state.blue -= cost;
     } else {
-      cost = TIERS[tier].cost;
-      curName = '₽';
+      cost = TIERS[tier].cost; curName = '₽';
       if(state.money < cost){ toast(t('needMoney') + ' ' + cost + ' ₽', true); sfxFail(); return; }
       state.money -= cost;
     }
-
     state.inventory[componentId] = tier;
     sfxBuy();
     toast(t('bought') + ' ' + compName(getComp(componentId)) + ' · ' + tierName(tier) + ' (−' + cost + ' ' + curName + ')', false, tier === 5 ? 'cyan' : '');
-    updateAll();
-    save();
+    updateAll(); save();
   }
-
   function placeComponent(componentId){
     if(state.builtPC[componentId] !== undefined){ toast(t('slotBusy'), true); return; }
-    if(state.inventory[componentId] === undefined){
-      toast(t('noPart'), true); sfxFail(); return;
-    }
+    if(state.inventory[componentId] === undefined){ toast(t('noPart'), true); sfxFail(); return; }
     state.builtPC[componentId] = state.inventory[componentId];
     delete state.inventory[componentId];
     sfxPlace();
-    refreshBenchVisuals();
-    updateAll();
-    save();
+    refreshBenchVisuals(); updateAll(); save();
     toast(t('placed') + ' ' + compName(getComp(componentId)));
   }
-
   function takePC(){
-    if(Object.keys(state.builtPC).length < COMPONENTS.length){
-      toast(t('allParts'), true); return;
-    }
+    if(Object.keys(state.builtPC).length < COMPONENTS.length){ toast(t('allParts'), true); return; }
     let sum = 0;
     for(const c of COMPONENTS) sum += state.builtPC[c.id];
     const avg = sum / COMPONENTS.length;
     state.holdingPC = { components: {...state.builtPC}, avgTier: avg };
     state.builtPC = {};
-    refreshBenchVisuals();
-    updateAll();
-    save();
+    refreshBenchVisuals(); updateAll(); save();
     sfxCoin();
     toast(t('pcReady'), false, 'gold');
   }
-
   function givePCToCustomer(){
     if(!state.holdingPC || !state.customer || !state.customer.arrived) return;
     if(!state.order){ return; }
     const expected = state.order.tier;
     const actual = state.holdingPC.avgTier;
     const diff = actual - expected;
-
-    let ratingDelta = 0;
-    let reactionKey = '';
-    let good = true;
-
+    let ratingDelta = 0, reactionKey = '', good = true;
     if(Math.abs(diff) <= 0.4){ ratingDelta = +6; reactionKey = 'perfect'; good = true; }
     else if(diff < -0.4){ ratingDelta = -3; reactionKey = 'cheap'; good = false; }
     else { ratingDelta = -6; reactionKey = 'expensive'; good = false; }
-
     if(expected === 5){
       const blueDelta = Math.floor(MEGA_REWARD_BLUE * (reactionKey === 'perfect' ? 1 : reactionKey === 'cheap' ? 0.5 : 0.7));
       state.blue += blueDelta;
@@ -3511,27 +2698,19 @@
       const rewardMul = reactionKey === 'perfect' ? 1.3 : reactionKey === 'cheap' ? 0.7 : 0.9;
       const reward = Math.floor(TIERS[expected].cost * 5 * 2 * rewardMul);
       state.money += reward;
-      const deltaStr = (ratingDelta > 0 ? '+' : '') + ratingDelta;
-      toast((good ? '✅' : '❌') + ' ' + t('rating') + ' ' + deltaStr + ' · +' + reward + ' ₽', !good);
+      toast((good ? '✅' : '❌') + ' ' + t('rating') + ' ' + (ratingDelta > 0 ? '+' : '') + ratingDelta + ' · +' + reward + ' ₽', !good);
     }
-
     state.rating = Math.max(0, Math.min(100, state.rating + ratingDelta));
     state.ordersDone++;
     if(reactionKey === 'perfect') state.perfectOrders++;
-
     if(good){ sfxWin(); sfxCoin(); } else { sfxFail(); }
-
     const reaction = pickRandom(REACTIONS[lang][reactionKey][expected]);
     showDialog(reaction.who, reaction.text, 4500);
-
     state.holdingPC = null;
     leavingCustomerRef = state.customer;
     state.customer = null;
     state.order = null;
-    updateOrderHUD();
-    updateAll();
-    save();
-
+    updateOrderHUD(); updateAll(); save();
     setTimeout(() => {
       if(leavingCustomerRef){
         const startTime = performance.now();
@@ -3539,10 +2718,10 @@
         const endZ = ROOM + 3;
         const dur = 1800;
         function walkOut(now){
-          const t2 = Math.min((now - startTime) / dur, 1);
-          leavingCustomerRef.mesh.position.z = startZ + (endZ - startZ) * t2;
+          const tt = Math.min((now - startTime) / dur, 1);
+          leavingCustomerRef.mesh.position.z = startZ + (endZ - startZ) * tt;
           leavingCustomerRef.mesh.rotation.z = Math.sin(now * .02) * .05;
-          if(t2 < 1){ requestAnimationFrame(walkOut); }
+          if(tt < 1){ requestAnimationFrame(walkOut); }
           else {
             scene.remove(leavingCustomerRef.mesh);
             leavingCustomerRef = null;
@@ -3556,12 +2735,9 @@
       hideDialog();
     }, 4500);
   }
-
   function getComp(id){ return COMPONENTS.find(c => c.id === id); }
 
-  // ============================================================
   // HUD
-  // ============================================================
   const $ = id => document.getElementById(id);
   const moneyEl = $('money');
   const blueEl = $('blueCurrency');
@@ -3580,12 +2756,10 @@
   for(const c of COMPONENTS){
     const el = document.createElement('div');
     el.className = 'inv-slot';
-    el.innerHTML = `<div>${c.icon}</div><div class="inv-name">${c.id}</div>
-      <div class="tier-dot" style="display:none"></div>`;
+    el.innerHTML = `<div>${c.icon}</div><div class="inv-name">${c.id}</div><div class="tier-dot" style="display:none"></div>`;
     inventoryEl.appendChild(el);
     invEls[c.id] = el;
   }
-
   const tableBtns = {};
   for(const c of COMPONENTS){
     const btn = document.createElement('button');
@@ -3599,7 +2773,6 @@
   takeBtn.textContent = '📦 ' + t('take');
   takeBtn.addEventListener('click', takePC);
   tableUIEl.appendChild(takeBtn);
-
   giveBtnEl.addEventListener('click', givePCToCustomer);
 
   function updateMoney(){ moneyEl.textContent = Math.floor(state.money) + ' ₽'; }
@@ -3619,9 +2792,7 @@
     const tc = Math.round(Math.max(0.05, Math.min(0.25, (state.rating - 40) / 240)) * 100);
     const mc = state.rating >= 60 ? Math.round(Math.max(0.03, Math.min(0.18, (state.rating - 60) / 250)) * 100) : 0;
     const tcEl = document.getElementById('topChance');
-    if(tcEl){
-      tcEl.innerHTML = '🎮 ' + t('ratingTop') + ': ' + tc + '% &nbsp; 💎 MEGA: ' + mc + '%';
-    }
+    if(tcEl){ tcEl.innerHTML = '🎮 ' + t('ratingTop') + ': ' + tc + '% &nbsp; 💎 MEGA: ' + mc + '%'; }
   }
   function updateInventory(){
     for(const c of COMPONENTS){
@@ -3677,8 +2848,7 @@
   }
   function updateGiveBtn(){
     const c = state.customer;
-    const show = !!state.holdingPC && !!c && c.arrived;
-    giveBtnEl.classList.toggle('show', show);
+    giveBtnEl.classList.toggle('show', !!state.holdingPC && !!c && c.arrived);
   }
   function updateATMBtn(){
     if(atmOpen || exOpen){ atmBtnEl.classList.remove('show'); exBtnEl.classList.remove('show'); return; }
@@ -3691,18 +2861,11 @@
     exBtnEl.classList.toggle('show', showEx);
   }
   function updateAll(){
-    updateMoney();
-    updateBlue();
-    updateRating();
-    updateInventory();
-    updateOrderHUD();
-    updateTableUI();
-    updateGiveBtn();
-    updateATMBtn();
+    updateMoney(); updateBlue(); updateRating(); updateInventory();
+    updateOrderHUD(); updateTableUI(); updateGiveBtn(); updateATMBtn();
     if(atmOpen) updateATMUI();
     if(exOpen) updateExUI();
   }
-
   function toast(text, isError=false, cls=''){
     const tt = document.createElement('div');
     tt.className = 'toast' + (isError ? ' error' : cls ? ' ' + cls : '');
@@ -3711,11 +2874,8 @@
     setTimeout(() => tt.remove(), 2000);
   }
 
-  // ============================================================
   // RAYCAST
-  // ============================================================
   const raycaster = new THREE.Raycaster();
-
   function tryClick(screenX, screenY, isMobileTap){
     if(!playing || atmOpen || exOpen) return;
     let ndcX = 0, ndcY = 0;
@@ -3725,19 +2885,16 @@
     }
     raycaster.setFromCamera({x:ndcX,y:ndcY}, camera);
     raycaster.far = isMobileTap ? 8 : 6;
-
     const targets = [];
     for(const m of componentMeshes) targets.push(m);
     for(const l of labelSprites) targets.push(l);
     targets.push(sleepingBag);
     const hits = raycaster.intersectObjects(targets, true);
     if(!hits.length) return;
-
     let obj = hits[0].object;
     while(obj && !obj.userData.kind && !obj.userData.parentData) obj = obj.parent;
     const data = obj?.userData?.kind ? obj.userData : (obj?.userData?.parentData || null);
     if(!data) return;
-
     if(data.kind === 'shelf-component' || data.kind === 'shelf-label'){
       buyComponent(data.componentId, data.tier);
     } else if(data.kind === 'sleeping-bag'){
@@ -3745,22 +2902,15 @@
     }
   }
 
-  // ============================================================
   // ВИДИМОСТЬ ТАБЛИЧЕК
-  // ============================================================
   const _tmpTargetPos = new THREE.Vector3();
   const _tmpDir = new THREE.Vector3();
   const _blockers = [];
-
   function isVisibleFromCamera(targetObj){
     if(!targetObj) return true;
     _blockers.length = 0;
-    if(state.customer && state.customer.mesh){
-      state.customer.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); });
-    }
-    if(leavingCustomerRef && leavingCustomerRef.mesh){
-      leavingCustomerRef.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); });
-    }
+    if(state.customer && state.customer.mesh){ state.customer.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); }); }
+    if(leavingCustomerRef && leavingCustomerRef.mesh){ leavingCustomerRef.mesh.traverse(o => { if(o.isMesh) _blockers.push(o); }); }
     if(_blockers.length === 0) return true;
     targetObj.getWorldPosition(_tmpTargetPos);
     const camPos = camera.position;
@@ -3774,7 +2924,6 @@
     if(hits.length > 0 && hits[0].distance < distance - 0.15) return false;
     return true;
   }
-
   function updateLabelVisibility(){
     if(!state.customer && !leavingCustomerRef){
       for(const label of labelSprites){ if(!label.visible) label.visible = true; }
@@ -3786,22 +2935,14 @@
     }
   }
 
-  // ============================================================
   // УПРАВЛЕНИЕ
-  // ============================================================
-  let playing = false;
-  let pointerLocked = false;
-  let pointerLockFailed = false;
+  let playing = false, pointerLocked = false, pointerLockFailed = false;
   let dragging = false, lastMX=0, lastMY=0, mouseMoved=false;
   const keys = {};
   addEventListener('keydown', e => keys[e.code]=true);
-  addEventListener('keyup',   e => keys[e.code]=false);
-
-  document.addEventListener('pointerlockchange', () => {
-    pointerLocked = document.pointerLockElement === renderer.domElement;
-  });
+  addEventListener('keyup', e => keys[e.code]=false);
+  document.addEventListener('pointerlockchange', () => { pointerLocked = document.pointerLockElement === renderer.domElement; });
   document.addEventListener('pointerlockerror', () => { pointerLockFailed = true; });
-
   document.addEventListener('mousemove', e => {
     if(!playing || isMobile || atmOpen || exOpen) return;
     if(pointerLocked) applyLook(e.movementX, e.movementY, LOOK_SENS_DESKTOP);
@@ -3812,18 +2953,13 @@
       lastMX = e.clientX; lastMY = e.clientY;
     }
   });
-
   const canvas = renderer.domElement;
   canvas.addEventListener('contextmenu', e => e.preventDefault());
-
   canvas.addEventListener('mousedown', e => {
     if(!playing || isMobile || atmOpen || exOpen) return;
-    if(e.target.closest && (
-      e.target.closest('#tableUI') || e.target.closest('#giveBtn') ||
+    if(e.target.closest && (e.target.closest('#tableUI') || e.target.closest('#giveBtn') ||
       e.target.closest('#sleepBtn') || e.target.closest('#atmBtn') ||
-      e.target.closest('#exBtn') || e.target.closest('#atmModal') ||
-      e.target.closest('#exModal')
-    )) return;
+      e.target.closest('#exBtn') || e.target.closest('#atmModal') || e.target.closest('#exModal'))) return;
     if(pointerLocked){ if(e.button === 0) tryClick(0,0,false); return; }
     if(!pointerLockFailed){ canvas.requestPointerLock(); return; }
     dragging = true; mouseMoved = false; lastMX = e.clientX; lastMY = e.clientY;
@@ -3835,13 +2971,11 @@
       if(!mouseMoved && e.button === 0) tryClick(0,0,false);
     }
   });
-
   canvas.style.touchAction = 'none';
   let joyBase=null, joyKnob=null, joyTouchId=null;
   let joyStartX=0, joyStartY=0, joyDX=0, joyDY=0;
   const JOY_MAX = 55;
   const lookTouches = new Map();
-
   function onTouchStart(e){
     if(!playing || atmOpen || exOpen) return;
     e.preventDefault();
@@ -3853,10 +2987,7 @@
         joyStartX = x; joyStartY = y; joyDX = 0; joyDY = 0;
         showJoy(x,y);
       } else {
-        lookTouches.set(t.identifier, {
-          lastX:x, lastY:y, startX:x, startY:y,
-          startTime:performance.now(), moved:false,
-        });
+        lookTouches.set(t.identifier, { lastX:x, lastY:y, startX:x, startY:y, startTime:performance.now(), moved:false });
       }
     }
   }
@@ -3865,8 +2996,7 @@
     e.preventDefault();
     for(const t of e.changedTouches){
       if(t.identifier === joyTouchId){
-        let dx = t.clientX - joyStartX;
-        let dy = t.clientY - joyStartY;
+        let dx = t.clientX - joyStartX, dy = t.clientY - joyStartY;
         const len = Math.hypot(dx,dy);
         if(len > JOY_MAX){ dx = dx/len*JOY_MAX; dy = dy/len*JOY_MAX; }
         joyDX = dx/JOY_MAX; joyDY = dy/JOY_MAX;
@@ -3885,9 +3015,8 @@
     if(!playing || atmOpen || exOpen) return;
     e.preventDefault();
     for(const t of e.changedTouches){
-      if(t.identifier === joyTouchId){
-        joyTouchId = null; joyDX = 0; joyDY = 0; hideJoy();
-      } else {
+      if(t.identifier === joyTouchId){ joyTouchId = null; joyDX = 0; joyDY = 0; hideJoy(); }
+      else {
         const lt = lookTouches.get(t.identifier);
         if(lt){
           const dt = performance.now() - lt.startTime;
@@ -3905,10 +3034,9 @@
     }
   }
   canvas.addEventListener('touchstart', onTouchStart, {passive:false});
-  canvas.addEventListener('touchmove',  onTouchMove,  {passive:false});
-  canvas.addEventListener('touchend',   onTouchEnd,   {passive:false});
-  canvas.addEventListener('touchcancel',onTouchEnd,   {passive:false});
-
+  canvas.addEventListener('touchmove', onTouchMove, {passive:false});
+  canvas.addEventListener('touchend', onTouchEnd, {passive:false});
+  canvas.addEventListener('touchcancel', onTouchEnd, {passive:false});
   function showJoy(x,y){
     if(!joyBase){
       joyBase = document.createElement('div'); joyBase.id = 'joyBase';
@@ -3920,12 +3048,10 @@
     joyKnob.style.transform = 'translate(0,0)';
   }
   function hideJoy(){ if(joyBase) joyBase.style.display = 'none'; }
-
   let yaw = 0, pitch = 0;
   const PITCH_LIMIT = Math.PI/2 - .05;
   function applyLook(dx,dy,s){ yaw -= dx*s; pitch -= dy*s; pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch)); }
   function updateCameraRotation(){ camera.rotation.y = yaw; camera.rotation.x = pitch; camera.rotation.z = 0; }
-
   function updateMovement(dt){
     if(!playing) return;
     if(dayState.isSleeping || atmOpen || exOpen) return;
@@ -3938,7 +3064,7 @@
     if(len > 1){ mx/=len; mz/=len; }
     const speed = (keys.ShiftLeft || keys.ShiftRight) ? RUN_SPEED : WALK_SPEED;
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-    const rx =  Math.cos(yaw), rz = -Math.sin(yaw);
+    const rx = Math.cos(yaw), rz = -Math.sin(yaw);
     if(mx || mz){
       camera.position.x += (fx*mz + rx*mx) * speed * dt;
       camera.position.z += (fz*mz + rz*mx) * speed * dt;
@@ -3946,12 +3072,10 @@
     const lim = ROOM - 1;
     camera.position.x = Math.max(-lim, Math.min(lim, camera.position.x));
     camera.position.z = Math.max(-lim, Math.min(lim, camera.position.z));
-
     if(Math.abs(camera.position.z - COUNTER_Z) < 1.4 && Math.abs(camera.position.x) < 3.8){
       if(camera.position.z < COUNTER_Z) camera.position.z = COUNTER_Z - 1.4;
       else camera.position.z = COUNTER_Z + 1.4;
     }
-
     const customerGroups = [];
     if(state.customer && state.customer.mesh) customerGroups.push(state.customer.mesh);
     if(leavingCustomerRef && leavingCustomerRef.mesh) customerGroups.push(leavingCustomerRef.mesh);
@@ -4034,19 +3158,11 @@
   function save(){
     try{
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        money: state.money,
-        blue: state.blue,
-        rating: state.rating,
-        ordersDone: state.ordersDone,
-        perfectOrders: state.perfectOrders,
-        megaOrders: state.megaOrders,
-        inventory: state.inventory,
-        builtPC: state.builtPC,
-        holdingPC: state.holdingPC,
+        money: state.money, blue: state.blue, rating: state.rating,
+        ordersDone: state.ordersDone, perfectOrders: state.perfectOrders, megaOrders: state.megaOrders,
+        inventory: state.inventory, builtPC: state.builtPC, holdingPC: state.holdingPC,
         orderTier: state.order ? state.order.tier : null,
-        day: dayState.day,
-        timeLeft: dayState.timeLeft,
-        isNight: dayState.isNight,
+        day: dayState.day, timeLeft: dayState.timeLeft, isNight: dayState.isNight,
       }));
     }catch(e){}
   }
@@ -4065,87 +3181,70 @@
       if(d.builtPC && typeof d.builtPC === 'object') state.builtPC = d.builtPC;
       if(d.holdingPC && typeof d.holdingPC === 'object') state.holdingPC = d.holdingPC;
       if(typeof d.day === 'number' && d.day > 0) dayState.day = d.day;
-      if(typeof d.timeLeft === 'number' && d.timeLeft > 0 && d.timeLeft <= DAY_DURATION){
-        dayState.timeLeft = d.timeLeft;
-      }
+      if(typeof d.timeLeft === 'number' && d.timeLeft > 0 && d.timeLeft <= DAY_DURATION) dayState.timeLeft = d.timeLeft;
       if(typeof d.isNight === 'boolean') dayState.isNight = d.isNight;
     }catch(e){}
   }
 
-  // ============================================================
-  // ПЕРЕВОД ИНТЕРФЕЙСА
-  // ============================================================
+  // ПРИМЕНИТЬ ЯЗЫК
   function applyLanguage(){
     document.documentElement.lang = lang;
-    $('lbl-money').textContent = t('lblMoney');
-    $('lbl-blue').textContent = t('lblBlue');
-    $('lbl-rating').textContent = t('lblRating');
-    $('lbl-order').textContent = t('lblOrder');
-    $('lbl-table').textContent = t('lblTable');
-    $('lbl-give').textContent = t('lblGive');
-    $('lbl-atm').textContent = t('lblAtm');
-    $('lbl-ex').textContent = t('lblEx');
-    $('lbl-day').textContent = t('lblDay');
-    $('lbl-night').textContent = t('lblNight');
-    $('lbl-sleep').textContent = t('lblSleep');
-    $('atm-title').textContent = t('atmTitle');
-    $('atm-sub-1').textContent = t('atmSub');
-    $('atm-lbl-rub').textContent = t('atmRub');
-    $('atm-lbl-blue').textContent = t('atmBlue');
-    $('ex-title').textContent = t('exTitle');
-    $('ex-sub-1').textContent = t('exSub');
-    $('ex-lbl-blue').textContent = t('atmBlue');
-    $('ex-lbl-rub').textContent = t('atmRub');
+    const set = (id, key) => { const el = $(id); if(el) el.textContent = t(key); };
+    set('lbl-money', 'lblMoney');
+    set('lbl-blue', 'lblBlue');
+    set('lbl-rating', 'lblRating');
+    set('lbl-order', 'lblOrder');
+    set('lbl-table', 'lblTable');
+    set('lbl-give', 'lblGive');
+    set('lbl-atm', 'lblAtm');
+    set('lbl-ex', 'lblEx');
+    set('lbl-day', 'lblDay');
+    set('lbl-night', 'lblNight');
+    set('lbl-sleep', 'lblSleep');
+    set('atm-title', 'atmTitle');
+    set('atm-sub-1', 'atmSub');
+    set('atm-lbl-rub', 'atmRub');
+    set('atm-lbl-blue', 'atmBlue');
+    set('ex-title', 'exTitle');
+    set('ex-sub-1', 'exSub');
+    set('ex-lbl-blue', 'atmBlue');
+    set('ex-lbl-rub', 'atmRub');
     document.querySelectorAll('[data-ru][data-en]').forEach(el => {
       el.textContent = lang === 'en' ? el.dataset.en : el.dataset.ru;
     });
-    $('start-desc').textContent = t('startDesc');
-    $('start-hint-1').innerHTML = t('startHint1');
-    $('start-hint-2').innerHTML = t('startHint2');
-    $('start-hint-3').innerHTML = t('startHint3');
-    $('start-mob-1').innerHTML = t('startMob1');
-    $('start-mob-2').innerHTML = t('startMob2');
-    $('start-mob-3').innerHTML = t('startMob3');
-    $('startBtn').textContent = t('startTitle');
+    set('start-desc', 'startDesc');
+    const sh1 = $('start-hint-1'); if(sh1) sh1.innerHTML = t('startHint1');
+    const sh2 = $('start-hint-2'); if(sh2) sh2.innerHTML = t('startHint2');
+    const sh3 = $('start-hint-3'); if(sh3) sh3.innerHTML = t('startHint3');
+    const sm1 = $('start-mob-1'); if(sm1) sm1.innerHTML = t('startMob1');
+    const sm2 = $('start-mob-2'); if(sm2) sm2.innerHTML = t('startMob2');
+    const sm3 = $('start-mob-3'); if(sm3) sm3.innerHTML = t('startMob3');
+    const sb = $('startBtn'); if(sb) sb.textContent = t('startTitle');
     if(!state.order) orderTextEl.textContent = t('waitingClient');
     updateAll();
     updateDayHUD();
   }
 
   // ============================================================
-  // ЭКРАН ВЫБОРА ЯЗЫКА
+  // ОБРАБОТКА ВЫБОРА ЯЗЫКА ОТ ПРОСТОГО SCRIPT
   // ============================================================
-  const langScreenEl = $('langScreen');
-  const startScreenEl = $('startScreen');
-
-  function chooseLanguage(code){
+  window.__onLangChosen = function(code){
     lang = code;
-    localStorage.setItem(LANG_KEY, code);
     applyLanguage();
-    langScreenEl.classList.add('hidden');
-    startScreenEl.classList.remove('hidden');
-  }
+  };
 
-  document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.addEventListener('click', () => chooseLanguage(btn.dataset.lang));
-  });
-
-  // ============================================================
   // ГЛАВНЫЙ ЦИКЛ
-  // ============================================================
   let last = performance.now();
   let lastUITick = 0;
   function loop(now){
     const dt = Math.min((now-last)/1000, .05);
     last = now;
-
     updateMovement(dt);
     updateCameraRotation();
     updateCustomerMovement(dt);
     updateDoors(dt);
     updateDay(dt);
     updateClocks();
-
     if(now - lastUITick > 100){
       lastUITick = now;
       updatePrompt();
@@ -4153,31 +3252,15 @@
       updateGiveBtn();
       updateATMBtn();
     }
-
     checkAdaptive(now);
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
 
-  // ============================================================
   // ИНИЦИАЛИЗАЦИЯ
-  // ============================================================
   load();
   refreshBenchVisuals();
-
-  // Если язык уже выбран ранее — пропускаем экран
-  if(lang && I18N[lang]){
-    applyLanguage();
-    langScreenEl.classList.add('hidden');
-    startScreenEl.classList.remove('hidden');
-  } else {
-    // Показываем экран выбора языка, стартовый экран скрыт
-    lang = 'ru'; // временно, чтобы applyLanguage не падал
-    applyLanguage();
-    langScreenEl.classList.remove('hidden');
-    startScreenEl.classList.add('hidden');
-  }
-
+  applyLanguage();
   updateAll();
   updateDayHUD();
   if(dayState.isNight){
