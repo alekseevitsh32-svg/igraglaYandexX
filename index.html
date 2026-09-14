@@ -467,7 +467,7 @@
     { id:'psu', name:'Питание',    icon:'⚡', size:[.35,.28,.35] },
   ];
   const TIERS = [
-    { name:'Базовая',   short:'BASE', color:0x8fa0b8, hex:'#8fa0b8', cost:100,  buyer:'бомж' },
+    { name:'Базовая',   short:'BASE', color:0x8fa0b8, hex:'#8fa0b8', cost:100,  buyer:'странник' },
     { name:'Стандарт',  short:'STD',  color:0x3a9bff, hex:'#3a9bff', cost:250,  buyer:'работяга' },
     { name:'Игровая',   short:'GAME', color:0x00e0b8, hex:'#00e0b8', cost:500,  buyer:'школьник с родителями' },
     { name:'Премиум',   short:'PRO',  color:0xffc93c, hex:'#ffc93c', cost:1000, buyer:'богач с охраной' },
@@ -481,7 +481,7 @@
   const MEGA_REWARD_MONEY = 5000;
 
   const START_MONEY = 2000;
-  const SAVE_KEY = 'pc-shop-3d-v13';
+  const SAVE_KEY = 'pc-shop-3d-v15';
   const PLAYER_HEIGHT = 1.6;
   const WALK_SPEED = 4, RUN_SPEED = 7;
   const LOOK_SENS_DESKTOP = 0.0022, LOOK_SENS_TOUCH = 0.0055;
@@ -2004,6 +2004,21 @@
       const cap = new THREE.Mesh(new THREE.CylinderGeometry(.022*S,.022*S,.05*S,6),
         new THREE.MeshStandardMaterial({color:0x888888, metalness:.8}));
       cap.position.set(-.36*S,.72*S,.06*S); g.add(cap);
+    } else if(accessory === 'can'){
+      const canMat = new THREE.MeshStandardMaterial({color:0xd83030, metalness:.85, roughness:.25});
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(.052*S,.052*S,.16*S,16), canMat);
+      can.position.set(-.38*S,.62*S,.08*S); g.add(can);
+      const canTopMat = new THREE.MeshStandardMaterial({color:0xc0c0c8, metalness:.95, roughness:.15});
+      const canBottom = new THREE.Mesh(new THREE.CylinderGeometry(.048*S,.048*S,.01*S,16), canTopMat);
+      canBottom.position.set(-.38*S,.535*S,.08*S); g.add(canBottom);
+      const canTop = new THREE.Mesh(new THREE.CylinderGeometry(.048*S,.048*S,.01*S,16), canTopMat);
+      canTop.position.set(-.38*S,.705*S,.08*S); g.add(canTop);
+      const tab = new THREE.Mesh(new THREE.TorusGeometry(.014*S,.004*S,6,12), canTopMat);
+      tab.rotation.x = Math.PI/2;
+      tab.position.set(-.38*S,.715*S,.08*S); g.add(tab);
+      const labelMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.6});
+      const label = new THREE.Mesh(new THREE.CylinderGeometry(.053*S,.053*S,.06*S,16,1,true), labelMat);
+      label.position.set(-.38*S,.62*S,.08*S); g.add(label);
     } else if(accessory === 'backpack'){
       const bpMat = new THREE.MeshStandardMaterial({color:0x2a4a8a, roughness:.85});
       const bp = new THREE.Mesh(new THREE.BoxGeometry(.36*S,.42*S,.18*S), bpMat);
@@ -2031,16 +2046,21 @@
     return g;
   }
 
-  function makeHomeless(){
+  function makeHomeless(){ // Странник — чистый, без лохмотьев
     const g = new THREE.Group();
     const h = makeHuman({
-      shirt: 0x4a3a2a, pants: 0x3a3028, skin: 0x8d5524,
-      hair: 0x4a3a2a, shoes: 0x2a2018,
-      hat: { type:'beanie', color: 0x3a2a20 },
-      beard: true, mustache: true,
-      accessory: 'bottle', dirty: true, height: 0.92,
+      shirt: 0x4a5a7a,
+      pants: 0x3a3028,
+      skin: 0xddb088,
+      hair: 0x3a2a1a,
+      shoes: 0x2a2018,
+      hat: { type:'beanie', color: 0x2a3a5a },
+      mustache: false,
+      beard: false,
+      dirty: false,
+      accessory: 'can',
+      height: 0.95,
     });
-    h.rotation.x = 0.06;
     g.add(h);
     return g;
   }
@@ -2420,9 +2440,7 @@
     }
   })();
 
-  // ============================================================
-  // СУПЕР ТОП ВИТРИНА (за 💎) — ИСПРАВЛЕННЫЕ МОДЕЛЬКИ
-  // ============================================================
+  // СУПЕР ТОП ВИТРИНА (за 💎)
   (()=>{
     const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.05, 2.3),
       new THREE.MeshStandardMaterial({
@@ -2489,7 +2507,6 @@
       mesh.rotation.y = 0;
       mesh.scale.set(1.7, 1.7, 1.7);
 
-      // Усиливаем свечение для tier 5
       mesh.traverse(o => {
         if(o.isMesh && o.material){
           if(o.material.emissive !== undefined){
@@ -2505,7 +2522,6 @@
       scene.add(mesh);
       componentMeshes.push(mesh);
 
-      // Индивидуальный cyan-фонарик у каждой детали
       if(!isMobile){
         const itemLight = new THREE.PointLight(0x00d4ff, 0.7, 1.8, 2);
         itemLight.position.set(MEGASHELF_X - 0.35, shelfY + 0.35, MEGASHELF_Z);
@@ -2693,9 +2709,11 @@
 
   const GREETINGS = {
     0: [
-      { who:'Бомж', text:'Эй, братан... *ик*... мне бы комп, а? Ну там... погамать...' },
-      { who:'Бомж', text:'Слышь... *ик*... у меня интернет есть! Почти... комп нужен!' },
-      { who:'Бомж', text:'Э, начальник! *ик*... дай комп... я отдам... когда-нибудь...' },
+      { who:'Странник', text:'Эй, братан, мне бы комп, а? Ну там... погамать...' },
+      { who:'Странник', text:'Слышь, у меня интернет есть! Почти... комп нужен!' },
+      { who:'Странник', text:'Э, начальник! Дай комп... я отдам... когда-нибудь...' },
+      { who:'Чудак',    text:'Слушай, брат... я тут подумал... а давай комп, а?' },
+      { who:'Прохожий', text:'Мне бы простенький... в танки играть. Ну и в эти...' },
     ],
     1: [
       { who:'Работяга', text:'Здорово. Комп нужен рабочий. Без наворотов, но чтобы работал.' },
@@ -2729,7 +2747,11 @@
 
   const REACTIONS = {
     perfect: {
-      0: [{ who:'Бомж', text:'Вот это... *ик*... по-нашему! Спасибо, брат!' }],
+      0: [
+        { who:'Странник', text:'Вот это... по-нашему! Спасибо, брат!' },
+        { who:'Чудак',    text:'Ооо... вот это вещь! Уважаю!' },
+        { who:'Прохожий', text:'Я всегда знал, что ты хороший человек!' },
+      ],
       1: [{ who:'Работяга', text:'О, то что надо. Спасибо, мужик.' }],
       2: [{ who:'Школьник', text:'ВОТ ЭТО ТЕМА! Мам, смотри, какой!' }],
       3: [{ who:'Богач', text:'Приемлемо. Охрана, оплатите.' }],
@@ -2741,7 +2763,10 @@
       ],
     },
     cheap: {
-      0: [{ who:'Бомж', text:'Э... это чё... *ик*... это не тянет... воняет...' }],
+      0: [
+        { who:'Странник', text:'Э... это чё... это не тянет... воняет...' },
+        { who:'Чудак',    text:'Ты чё, меня обмануть хочешь?' },
+      ],
       1: [{ who:'Работяга', text:'Слушай, это старьё. Я просил нормальное.' }],
       2: [{ who:'Школьник', text:'Эээ... это не потянет КС... :(' }],
       3: [{ who:'Богач', text:'Это... что это? Я просил лучшее, а не это.' }],
@@ -2752,7 +2777,10 @@
       ],
     },
     expensive: {
-      0: [{ who:'Бомж', text:'Ты чё... *ик*... обалдел? Я тебе не олигарх!' }],
+      0: [
+        { who:'Странник', text:'Ты чё... обалдел? Я тебе не олигарх!' },
+        { who:'Чудак',    text:'Эээ... у меня столько нету... ты дурак, что ли?' },
+      ],
       1: [{ who:'Работяга', text:'Слышь, ты чего цены задираешь? Мне такое не по карману.' }],
       2: [{ who:'Мама', text:'Мы не настолько богаты! Заберите это.' }],
       3: [{ who:'Богач', text:'Я просил лучшее, а не самое дорогое. Разница очевидна.' }],
@@ -3201,7 +3229,7 @@
     let reactionKey = '';
     let good = true;
 
-    if(Math.abs(diff) <= 0.4){ ratingDelta = +4; reactionKey = 'perfect'; good = true; }
+    if(Math.abs(diff) <= 0.4){ ratingDelta = +6; reactionKey = 'perfect'; good = true; }
     else if(diff < -0.4){ ratingDelta = -3; reactionKey = 'cheap'; good = false; }
     else { ratingDelta = -6; reactionKey = 'expensive'; good = false; }
 
